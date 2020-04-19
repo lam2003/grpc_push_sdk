@@ -1,0 +1,215 @@
+syntax = "proto3";
+package grpc.push.gateway;
+
+
+enum UserTerminalType {
+    UTT_UNKNOWN = 0;
+    UTT_DESKTOP = 1; //PC YY
+    UTT_MOBILEPHONE = 2; //手机YY
+    UTT_WEBYY = 3; //web yy
+    UTT_WEBYYXL = 4; //web yy迅雷版
+    UTT_PIP = 5; //LOL盒子杀人夜等
+    UTT_EDU = 6; //教育
+    UTT_IPAD = 7; //iPad平板
+    UTT_APAD = 8; //Android平板
+    UTT_MKBA = 9; //快播手机Android版
+    UTT_TIANLAI = 10; //天籁智能电视客户端
+    UTT_WEBYYH5 = 11; //h5
+    UTT_SERVER = 65535; //来自server, 某些模拟客户端直接通过s2s发消息给SDK端口
+};
+
+
+enum StreamURI {
+    PPushGateWayUNKNOWN = 0;
+    PPushGateWayLoginURI = 1001;
+    PPushGateWayLoginResURI = 1002;
+    PPushGateWayLogoutURI = 1003;
+    PPushGateWayLogoutResURI = 1004;
+    PPushGateWayJoinGroupURI = 1005;
+    PPushGateWayJoinGroupResURI = 1006;
+    PPushGateWayLeaveGroupURI = 1007;
+    PPushGateWayLeaveGroupResURI = 1008;
+    PPushGateWayPingURI = 1009;
+    PPushGateWayPongURI = 1010;
+    PPushGateWayNotifyToCloseURI = 1011;
+    PPushGateWayPushDataByUidURI = 1012;
+    PPushGateWayPushDataByGroupURI = 1013;
+};
+
+
+
+
+message UserGroup {
+    uint64 userGroupType = 1;
+    uint64 userGroupId = 2;
+}
+
+message LoginRequest {
+    string appid = 1;
+    uint32 uid = 2;
+    uint64 suid = 3;
+    bool reLogin = 4; //重登
+    bytes ticket = 5; //ticket，断线重连时带上
+    bytes cookie = 6; //cookie，兼容
+    bytes context = 7; //客户端上下文
+    string account = 8; //账号(username/email/…)
+    string password = 9; //密码
+    uint64 appKey = 10; //应用id
+    UserTerminalType termnialType = 11; //terminal type
+}
+
+
+message LoginResponse {
+    uint32 resCode = 1; //返回码
+    uint32 uid = 2;
+    uint64 suid = 3;
+    bytes context = 4; //客户端上下文
+    uint64 pushgwIp = 5; //pushgateway ip
+    uint32 pushgwPort = 6; //pushgateway port
+}
+
+message LogoutRequest {
+    string appid = 1;
+    uint64 suid = 2;
+    uint32 uid = 3;
+    bytes context = 4; //客户端上下文
+    uint64 appKey = 5; //应用id
+    UserTerminalType termnialType = 6; //terminal type
+}
+
+
+message LogoutResponse {
+    uint32 resCode = 1; //返回码
+    uint32 uid = 2;
+    uint64 suid = 3;
+    bytes context = 4; //客户端上下文
+    uint64 pushgwIp = 5; //pushgateway ip
+    uint32 pushgwPort = 6; //pushgateway port
+}
+
+message JoinGroupRequest {
+    uint32 uid = 1;
+    uint64 suid = 2;
+    bytes context = 3; //客户端上下文
+    repeated UserGroup userGroupSet = 4; //userGroupIdSet
+}
+
+
+message JoinGroupResponse {
+    uint32 uid = 1;
+    uint64 suid = 2;
+    uint32 resCode = 3; //返回码
+    bytes context = 4; //客户端上下文
+    uint64 pushgwIp = 5; //pushgateway ip
+    uint32 pushgwPort = 6; //pushgateway port
+    repeated UserGroup userGroupSet = 7; //replace userGroupIdSet
+}
+
+message LeaveGroupRequest {
+    uint32 uid = 1;
+    uint64 suid = 2;
+    bytes context = 3; //客户端上下文
+    repeated UserGroup userGroupSet = 4; //userGroupIdSet
+}
+
+
+message LeaveGroupResponse {
+    uint32 uid = 1;
+    uint64 suid = 2;
+    uint32 resCode = 3; //返回码
+    bytes context = 4; //客户端上下文
+    uint64 pushgwIp = 5; //pushgateway ip
+    uint32 pushgwPort = 6; //pushgateway port
+    repeated UserGroup userGroupSet = 7; //replace userGroupIdSet
+}
+
+
+
+message PingRequest {
+    uint32 uid = 1;
+    uint64 suid = 2;
+    bytes context = 3; //客户端上下文
+}
+
+message PongResponse {
+    uint32 uid = 1;
+    uint64 suid = 2;
+    bytes context = 3; //客户端上下文
+    uint64 pushgwIp = 5; //pushgateway ip
+    uint32 pushgwPort = 6; //pushgateway port
+}
+
+message PushRegReq {
+    StreamURI uri = 1;
+    bytes msgData = 2;
+
+}
+
+message PushData {
+    uint64 suid = 1;
+    uint32 uid = 2;
+    uint64 GroupType = 3;
+    uint64 GroupId = 4;
+    string serviceName = 5;
+    StreamURI uri = 6;
+    bytes msgData = 7;
+    uint64 seqNum = 8;
+    string serverId = 9;
+    map<uint32, string> key2Exstr = 10;
+
+}
+
+
+message PushToClientReq {
+    bytes context = 1;
+    string fromSrvId = 2;
+    string serviceName = 3;
+    uint64 suid = 4; //默认通过suid发送
+    uint32 uid = 5; //通过uid发送则发送到这个uid所有的suid
+    uint32 fromUid = 6;
+    bytes data = 9;
+    map<uint32, string> key2Exstr = 10;
+    uint64 seqid = 11;
+
+}
+
+
+message PushToClientResp {
+    uint32 resCode = 1; //返回码
+    bytes context = 2;
+    uint64 seqid = 3;
+}
+
+
+message PushToGroupReq {
+    bytes context = 1;
+    string fromSrvId = 2;
+    string serviceName = 3;
+    uint32 fromUid = 6;
+    uint64 GroupType = 7;
+    uint64 GroupId = 8; //通过group发送则发送到这个group所有的suid
+    bytes data = 9;
+    map<uint32, string> key2Exstr = 10;
+    uint64 seqid = 11;
+
+}
+
+
+message PushToGroupResp {
+    uint32 resCode = 1; //返回码
+    bytes context = 2;
+    uint64 seqid = 3;
+}
+
+
+service pushGateway {
+    //client
+    //rpc UserLogin (LoginRequest) returns (LoginResponse);
+    //rpc UserLogout (LogoutRequest) returns (LogoutResponse);
+    //rpc UserJoinGroup (JoinGroupRequest) returns (JoinGroupResponse);
+    //rpc UserLeaveGroup (LeaveGroupRequest) returns (LeaveGroupResponse);
+    rpc PushRegister (stream PushRegReq) returns (stream PushData);
+    //server
+    rpc PushDataToClient (PushToClientReq) returns (PushToClientResp);
+    rpc PushDataToGroup (PushToGroupReq) returns (PushToGroupResp);
+}

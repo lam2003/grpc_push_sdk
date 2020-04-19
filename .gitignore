@@ -1,0 +1,4 @@
+out/
+.vscode/
+
+build/linux/Release_x64/
