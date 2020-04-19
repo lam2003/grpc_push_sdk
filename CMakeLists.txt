@@ -10,10 +10,6 @@ cmake_policy(SET CMP0074 NEW)
 cmake_policy(SET CMP0077 NEW)
 cmake_policy(SET CMP0091 NEW)
 
-#set(CMAKE_C_VISIBILITY_PRESET hidden)
-#set(CMAKE_CXX_VISIBILITY_PRESET hidden)
-#set(CMAKE_VISIBILITY_INLINES_HIDDEN TRUE)
-
 if(NOT WIN32)
     add_compile_options(-fvisibility=hidden -fPIC)
 endif()
@@ -26,6 +22,7 @@ set(gRPC_BUILD_CSHARP_EXT OFF)
 set(protobuf_BUILD_TESTS OFF)
 set(BENCHMARK_ENABLE_LTO:BOOL OFF)
 set(BENCHMARK_ENABLE_TESTING:BOOL OFF)
+
 set(BUILD_STATIC_LIBS ON)
 set(BUILD_SHARED_LIBS OFF)
 set(RUN_HAVE_STD_REGEX 0)
@@ -36,8 +33,6 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 set(PUBLIC_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include)
 set(THIRD_PARTY_DIR ${PROJECT_SOURCE_DIR}/3rdparty)
-
-# add_subdirectory(src)
 
 set(CMAKE_FOLDER 3rdparty)
 add_subdirectory(${THIRD_PARTY_DIR}/grpc)

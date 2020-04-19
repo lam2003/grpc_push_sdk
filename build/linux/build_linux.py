@@ -19,7 +19,7 @@ init_common(os.path.abspath('..'), 'linux')
 # args = parser.parse_args()
 # SHARED_LIB = args.shared
 
-#获取平台相关的参数
+# 获取平台相关的参数
 bits, linkage = platform.architecture()
 if bits == '64bit':
     ARCH = 'x64'
@@ -28,28 +28,30 @@ elif bits == '32bit':
 else:
     ARCH = bits
 
-#生成构建文件夹
+# 生成构建文件夹
 set_build_folder_name(BUILD_MODE + '_' + ARCH)
 
-libs_path = os.path.abspath(os.path.join(BUILD_DIR,"lib"))
+libs_path = os.path.abspath(os.path.join(BUILD_DIR, "lib"))
 
 print('Architecture:', ARCH)
 print('Build mode  :', BUILD_MODE)
 print('Libs path:', libs_path)
 
 
-#cmake初始化
+# cmake初始化
 cmake_cmd = [
-  'cmake',
-  '-B', BUILD_DIR,
-  '../..',
-  '-DCMAKE_BUILD_TYPE=' + BUILD_MODE
+    'cmake',
+    '-B', BUILD_DIR,
+    '../..'
 ]
 
-# cmake_cmd.extend(xxx)
+cmake_cmd.extend(get_common_cmake_parameters(SHARED_LIB))
 
 call(cmake_cmd)
-build('all')
+
+build('grpc_cpp_plugin')
+build('protoc')
+build('grpc++')
 
 # def copy_nakama_lib():
 #     copy_file(BUILD_DIR + '/src/libnakama-cpp.a', release_libs_path)
@@ -78,7 +80,6 @@ build('all')
 #     copy_file(BUILD_DIR + '/src/libnakama-cpp.so', dest)
 
 # makedirs(release_libs_path)
-
 
 
 # if BUILD_GRPC_CLIENT:
