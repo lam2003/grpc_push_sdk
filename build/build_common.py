@@ -26,17 +26,17 @@ def init_common(build_common_path, target_platform):
     global  TARGET_PLATFORM
     TARGET_PLATFORM = target_platform
 
-    # #定义源码目录
-    # src_include = os.path.realpath(os.path.join(build_common_path, '..', 'include'))
-    # src_third_party = os.path.realpath(os.path.join(build_common_path, '..', '3rdparty'))
-    # # 定义输出目录
-    # dest_include = os.path.realpath(os.path.join(build_common_path, '..', 'out', BUILD_MODE,'service-mesh-cpp-sdk', 'include'))
+    #定义源码目录
+    src_include = os.path.realpath(os.path.join(build_common_path, '..', 'include'))
+    src_third_party = os.path.realpath(os.path.join(build_common_path, '..', '3rdparty'))
+    # 定义输出目录
+    dest_include = os.path.realpath(os.path.join(build_common_path, '..', 'out','service-mesh-sdk', 'include'))
     
-    # #复制源码目录的头文件到输出目录
-    # copy_folder(os.path.join(src_include, 'service-mesh-cpp'), dest_include)
-    # copy_folder(os.path.join(src_third_party, 'nonstd'), dest_include)
-    # copy_folder(os.path.join(src_include, 'service-mesh-c'), dest_include)
-    # copy_folder(os.path.join(src_include, 'service-mesh-c-wrapper'), dest_include)
+    #复制源码目录的头文件到输出目录
+    copy_folder(os.path.join(src_include, 'service-mesh-cpp'), dest_include)
+    copy_folder(os.path.join(src_third_party, 'nonstd'), dest_include)
+    copy_folder(os.path.join(src_include, 'service-mesh-c'), dest_include)
+    copy_folder(os.path.join(src_include, 'service-mesh-c-wrapper'), dest_include)
 
 def call(command, shell=False):
     print('calling:', str(command))
@@ -85,9 +85,9 @@ def bool2cmake(bVal):
     else:
         return 'OFF'
 
-# def copy_file(src, dest):
-#     shutil.copy(src, dest)
-#     print('copied', os.path.basename(src))
+def copy_file(src, dest):
+    shutil.copy(src, dest)
+    print('copied', os.path.basename(src))
 
 def copy_folder(src, dest, replace=True):
     folder_name = os.path.basename(src)
@@ -99,23 +99,12 @@ def copy_folder(src, dest, replace=True):
     shutil.copytree(src, dest_full_path)
     print('copied', os.path.basename(src))
 
-# def copy_libs():
-#     print
-#     print('copying to release folder...')
-
-#     copy_nakama_lib()
-
-#     if BUILD_REST_CLIENT or BUILD_GRPC_CLIENT:
-#         copy_protobuf_lib()
-
-#     if BUILD_GRPC_CLIENT or USE_CPPREST:
-#         copy_ssl_lib()
-    
-#     if BUILD_GRPC_CLIENT:
-#         copy_grpc_lib()
-
-#     if USE_CPPREST:
-#         copy_rest_lib()
+def copy_libs():
+    print
+    print('copying to release folder...')
+    copy_protobuf_lib()
+    copy_ssl_lib()
+    copy_grpc_lib()
 
 # def set_install_name(dylib_path):
 #     if (IOS_RPATH_ENABLE and TARGET_PLATFORM == 'ios') or (MAC_RPATH_ENABLE and TARGET_PLATFORM == 'mac'):
