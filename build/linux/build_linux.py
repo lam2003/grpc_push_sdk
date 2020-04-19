@@ -42,13 +42,14 @@ print('Libs path:', libs_path)
 cmake_cmd = [
   'cmake',
   '-B', BUILD_DIR,
-  '-DCMAKE_BUILD_TYPE=' + BUILD_MODE,
-  '../..'
+  '../..',
+  '-DCMAKE_BUILD_TYPE=' + BUILD_MODE
 ]
 
 # cmake_cmd.extend(xxx)
 
 call(cmake_cmd)
+build('all')
 
 # def copy_nakama_lib():
 #     copy_file(BUILD_DIR + '/src/libnakama-cpp.a', release_libs_path)
