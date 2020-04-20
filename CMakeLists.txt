@@ -34,6 +34,11 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set(PUBLIC_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include)
 set(THIRD_PARTY_DIR ${PROJECT_SOURCE_DIR}/3rdparty)
 
+if(BUILD_MODE MATCHES "Debug")
+    message("##################BUILD DEBUG##################")
+    set(CMAKE_CXX_FLAGS "-g ${CMAKE_CXX_FLAGS}")
+endif()
+
 set(CMAKE_FOLDER 3rdparty)
 add_subdirectory(${THIRD_PARTY_DIR}/grpc)
 add_subdirectory(${THIRD_PARTY_DIR}/spdlog)

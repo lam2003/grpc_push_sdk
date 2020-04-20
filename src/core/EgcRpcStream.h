@@ -8,7 +8,7 @@ using Reply = std::shared_ptr<PushData>;
 
 namespace EgcTrans {
 
-/*¹ÜÀí channel cq ºÍurl*/
+/*ç®¡ç† channel cq å’Œurl*/
 class EgcChannel {
 public:
   EgcChannel();
@@ -24,7 +24,7 @@ private:
   std::vector<std::string> urls_;
 };
 
-/*´ÓEgcChannel »ñÈ¡ cq channel £¬·½±ãIOTHREADÊ¹ÓÃ*/
+/*ä»EgcChannel è·å– cq channel ï¼Œæ–¹ä¾¿IOTHREADä½¿ç”¨*/
 class EgcIO {
 public:
   EgcIO();
@@ -50,7 +50,7 @@ public:
   void Start();
   void Stop() const;
   void ShutdownCQ();
-  // todo Õâ¸ö·½·¨´æÔÚ¶àÏß³Ìµ÷ÓÃµÄÎÊÌâ
+  // todo è¿™ä¸ªæ–¹æ³•å­˜åœ¨å¤šçº¿ç¨‹è°ƒç”¨çš„é—®é¢˜
   bool PushRequest(EgcTrans::IEgcInnerEvt evt);
 
 private:
@@ -128,8 +128,8 @@ private:
   std::atomic_bool exit_loop_{false};
   std::atomic_bool stream_reopen_{false};
   std::atomic_bool stream_init_{false};
-  std::atomic_bool stream_established_{false}; //Á÷½¨Á¢³É¹¦ÁË
-  std::atomic_bool link_ready_login_ok_{false}; // login³É¹¦ÁË£¬Á´Â·ÒÑ¾­´òÍ¨
+  std::atomic_bool stream_established_{false}; //æµå»ºç«‹æˆåŠŸäº†
+  std::atomic_bool link_ready_login_ok_{false}; // loginæˆåŠŸäº†ï¼Œé“¾è·¯å·²ç»æ‰“é€š
   std::atomic_bool readable_ = {true};
   std::atomic_bool writeable_ = {true};
   uint64_t suid_;

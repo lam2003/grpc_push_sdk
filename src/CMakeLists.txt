@@ -28,10 +28,6 @@ elseif(CMAKE_COMPILER_IS_GNUCC)
     target_compile_options(service-mesh-cpp PRIVATE -Wno-conversion -Wno-pedantic -Wno-cast-qual -Wno-sign-compare)
 endif()
 
-if(BUILD_MODE MATCHES "Debug")
-    target_compile_options(service-mesh-cpp PUBLIC -g)
-endif()
-
 target_compile_features(service-mesh-cpp PUBLIC cxx_std_11)
 
 target_link_libraries(service-mesh-cpp PUBLIC libgrpc++.a)
@@ -45,6 +41,7 @@ target_include_directories(service-mesh-cpp
     PRIVATE .
     PRIVATE core
     PRIVATE ${THIRD_PARTY_DIR}/spdlog/include
+    PRIVATE ${THIRD_PARTY_DIR}/grpc/include
     PRIVATE ${THIRD_PARTY_DIR}/grpc/third_party/protobuf/src 
 )
 

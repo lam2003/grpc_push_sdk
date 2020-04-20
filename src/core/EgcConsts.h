@@ -19,9 +19,9 @@
 
 static std::string GRPC_LOG_NAME = "edu_grpc_log";
 
-//ĞŞ¸´ioÊÍ·Å
+//ä¿®å¤ioé‡Šæ”¾
 #define ONE_CHANNEL 0
-//ÍË³öcqºÍgrpc
+//é€€å‡ºcqå’Œgrpc
 #define USE_SEND_SHUTDOWN 1
 
 // for test
@@ -80,11 +80,11 @@ class EgcParam : public EgcCommon::SingleTon<EgcParam> {
   std::string GetToken() { return token_; }
   std::string GetPushSvr() { return PUSH_SVR_DOMAIN; }
  private:
-  uint64_t appkey_;  // »¶¾ÛÔÆÓ¦ÓÃ±êÊ¶
+  uint64_t appkey_;  // æ¬¢èšäº‘åº”ç”¨æ ‡è¯†
   uint64_t appid_;
   egc_uid_t uid_;
   uint64_t suid_;
-  // TODO ÒªÌæ»»ÎªwstringÃ´£¿
+  // TODO è¦æ›¿æ¢ä¸ºwstringä¹ˆï¼Ÿ
   std::string passwd_;
   std::string accout_;
   std::string token_;

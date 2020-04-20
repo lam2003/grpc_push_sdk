@@ -29,7 +29,7 @@ set_build_folder_name(BUILD_MODE + '_' + ARCH)
 libs_path = os.path.abspath(os.path.join('../../out/lib/'))
 
 print('Architecture:', ARCH)
-print('Build mode  :', BUILD_MODE)
+print('Build mode:', BUILD_MODE)
 print('Libs path:', libs_path)
 
 
@@ -37,7 +37,7 @@ print('Libs path:', libs_path)
 cmake_cmd = [
     'cmake',
     '-B', BUILD_DIR,
-    '-DBUILD_MODE'.join(BUILD_MODE),
+    '-DBUILD_MODE='+ BUILD_MODE,
     '../..'
 ]
 
