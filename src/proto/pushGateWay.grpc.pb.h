@@ -31,19 +31,15 @@ namespace grpc {
 namespace push {
 namespace gateway {
 
-class pushGateway final {
+class PushGateway final {
  public:
   static constexpr char const* service_full_name() {
-    return "grpc.push.gateway.pushGateway";
+    return "grpc.push.gateway.PushGateway";
   }
   class StubInterface {
    public:
     virtual ~StubInterface() {}
     // client
-    // rpc UserLogin (LoginRequest) returns (LoginResponse);
-    // rpc UserLogout (LogoutRequest) returns (LogoutResponse);
-    // rpc UserJoinGroup (JoinGroupRequest) returns (JoinGroupResponse);
-    // rpc UserLeaveGroup (LeaveGroupRequest) returns (LeaveGroupResponse);
     std::unique_ptr< ::grpc::ClientReaderWriterInterface< ::grpc::push::gateway::PushRegReq, ::grpc::push::gateway::PushData>> PushRegister(::grpc::ClientContext* context) {
       return std::unique_ptr< ::grpc::ClientReaderWriterInterface< ::grpc::push::gateway::PushRegReq, ::grpc::push::gateway::PushData>>(PushRegisterRaw(context));
     }
@@ -72,10 +68,6 @@ class pushGateway final {
      public:
       virtual ~experimental_async_interface() {}
       // client
-      // rpc UserLogin (LoginRequest) returns (LoginResponse);
-      // rpc UserLogout (LogoutRequest) returns (LogoutResponse);
-      // rpc UserJoinGroup (JoinGroupRequest) returns (JoinGroupResponse);
-      // rpc UserLeaveGroup (LeaveGroupRequest) returns (LeaveGroupResponse);
       virtual void PushRegister(::grpc::ClientContext* context, ::grpc::experimental::ClientBidiReactor< ::grpc::push::gateway::PushRegReq,::grpc::push::gateway::PushData>* reactor) = 0;
       // server
       virtual void PushDataToClient(::grpc::ClientContext* context, const ::grpc::push::gateway::PushToClientReq* request, ::grpc::push::gateway::PushToClientResp* response, std::function<void(::grpc::Status)>) = 0;
@@ -152,10 +144,6 @@ class pushGateway final {
     Service();
     virtual ~Service();
     // client
-    // rpc UserLogin (LoginRequest) returns (LoginResponse);
-    // rpc UserLogout (LogoutRequest) returns (LogoutResponse);
-    // rpc UserJoinGroup (JoinGroupRequest) returns (JoinGroupResponse);
-    // rpc UserLeaveGroup (LeaveGroupRequest) returns (LeaveGroupResponse);
     virtual ::grpc::Status PushRegister(::grpc::ServerContext* context, ::grpc::ServerReaderWriter< ::grpc::push::gateway::PushData, ::grpc::push::gateway::PushRegReq>* stream);
     // server
     virtual ::grpc::Status PushDataToClient(::grpc::ServerContext* context, const ::grpc::push::gateway::PushToClientReq* request, ::grpc::push::gateway::PushToClientResp* response);

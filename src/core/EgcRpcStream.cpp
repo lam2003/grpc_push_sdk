@@ -15,7 +15,7 @@ bool EgcChannel::Connect(EgcTrans::CredOptions* opts,
   urls_ = std::move(ips);
   if (channel_.get())
   {
-    // channel²»ĞèÒªÖØ¸´´´½¨
+    // channelä¸éœ€è¦é‡å¤åˆ›å»º
     SLOGE("Channel already initialized.");
     return true;
   }
@@ -34,7 +34,7 @@ bool EgcChannel::Connect(EgcTrans::CredOptions* opts,
     return true;
   }
   SLOGI("create grpc channel fail");
-  // channel´´½¨Ê§°Ü
+  // channelåˆ›å»ºå¤±è´¥
   return false;
 }
 
@@ -47,7 +47,7 @@ EgcIO::~EgcIO()
   if (egc_channel_)
   {
     SLOGW("=====EgcIO Destroy ,but not destroy EgcChannel");
-    //ÓÉMeshClient´´½¨ºÍÊÍ·ÅEgcChannel
+    //ç”±MeshClientåˆ›å»ºå’Œé‡Šæ”¾EgcChannel
   }
 }
 
@@ -71,7 +71,7 @@ std::shared_ptr<grpc::Channel> EgcIO::Transport()
 
 void EgcIO::SetChannel(EgcChannel* channel)
 {
-  // channel¸Ä±ä£¬×ö´¦Àí
+  // channelæ”¹å˜ï¼Œåšå¤„ç†
   if (egc_channel_ != channel)
   {
     if (egc_channel_)
@@ -104,7 +104,7 @@ bool RpcStream::Init()
 {
   if (Channel()->channel_)
   {
-    stub_ = pushGateway::NewStub(Transport());
+    stub_ = PushGateway::NewStub(Transport());
     if (stub_)
     {
       io_init_ = true;
@@ -137,7 +137,7 @@ void RpcStream::ShutdownCQ()
 {
 #if USE_SEND_SHUTDOWN
   sending_shutdown_ = {true};
-  //»á´¥·¢cqÍË³ö
+  //ä¼šè§¦å‘cqé€€å‡º
   context_->TryCancel();
 
   SLOGW("===>Request the shutdown of the queue ");
@@ -148,11 +148,11 @@ void RpcStream::ShutdownCQ()
 void RpcStream::Stop() const
 {
   SLOGW("RpcStream::Stop,joinThread");
-  //cq shutdown ´¥·¢exit_loop_ Îªtrue
+  //cq shutdown è§¦å‘exit_loop_ ä¸ºtrue
   //exit_loop_ = true;
   if (io_thread_->joinable())
   {
-    //ÍË³ö²»Ò»¶¨»á¹Ø±Õcq
+    //é€€å‡ºä¸ä¸€å®šä¼šå…³é—­cq
     // sending_shutdown_ = true;
     if (!exit_loop_)
     {
@@ -185,7 +185,7 @@ void RpcStream::io_loop()
       HandleCQTimeout(ok);
       break;
     case grpc::CompletionQueue::GOT_EVENT:
-      // cq³ö´íÊ±£¬ÅĞ¶ÏÊÇ·ñÒª¹Ø±Õcq,Õâ¸öÊ±ºò¿ÉÒÔÕıÈ·¹Ø±Õcq
+      // cqå‡ºé”™æ—¶ï¼Œåˆ¤æ–­æ˜¯å¦è¦å…³é—­cq,è¿™ä¸ªæ—¶å€™å¯ä»¥æ­£ç¡®å…³é—­cq
       if (!ok)
       {
         if (sending_shutdown_)
@@ -257,7 +257,7 @@ void RpcStream::HandleEvent(bool ok, void* tag)
 
 #if USE_SEND_SHUTDOWN
   // if (sending_shutdown_) {
-  ////ÕâÀï»áÓĞÎÊÌâ£¿£¿£¿£¿
+  ////è¿™é‡Œä¼šæœ‰é—®é¢˜ï¼Ÿï¼Ÿï¼Ÿï¼Ÿ
   ////SLOGI("cq err :connection shutdown");
   //std::cout << "cq err :connection shutdown=2=" << std::endl;
   //Cqueue()->Shutdown();
@@ -287,18 +287,18 @@ void RpcStream::HandleEvent(bool ok, void* tag)
     break;
   case ETagType::CONNECT:
     SLOGI("send CONNECT ok ,cq_ok {}", ok);
-    //×´Ì¬¿ÉĞ´
+    //çŠ¶æ€å¯å†™
     setWriteable("ETagType::CONNECT ok", true);
     if (ok)
     {
-      //ÏÈÈ·¶¨×´Ì¬£¬ÔÙ¶ÁĞ´
+      //å…ˆç¡®å®šçŠ¶æ€ï¼Œå†è¯»å†™
       stream_established_ = true;
       if (stream_reopen_)
       {
         if (link_ready_login_ok_)
         {
           SLOGE("stream_reopen_ , link_ready_login_ok_ is ok,relogin");
-          //ÒÑ¾­µÇÂ½¹ı£¬²¢ÇÒÊÇ³É¹¦µÄÇé¿öÏÂ£¬ĞèÒªÖØ½¨Á÷£¬²¢ÇÒÁ÷½¨Á¢³É¹¦£¬ĞèÒªÖØĞÂµÇÂ½
+          //å·²ç»ç™»é™†è¿‡ï¼Œå¹¶ä¸”æ˜¯æˆåŠŸçš„æƒ…å†µä¸‹ï¼Œéœ€è¦é‡å»ºæµï¼Œå¹¶ä¸”æµå»ºç«‹æˆåŠŸï¼Œéœ€è¦é‡æ–°ç™»é™†
           re_login_();
           setWriteable("stream_reopen_ relogin", false);
         }
@@ -320,13 +320,13 @@ void RpcStream::HandleEvent(bool ok, void* tag)
       ReadNext();
       onLinkStatus(SmsTransLinkStatus::E_LINK_CREATE_OK);
     }
-    else // cq err,ÓĞ¿ÉÄÜÊÇ·şÎñ¶ËÖ÷¶¯¶ÏÁ÷
+    else // cq err,æœ‰å¯èƒ½æ˜¯æœåŠ¡ç«¯ä¸»åŠ¨æ–­æµ
     {
       stream_established_ = false;
       net_status_ = NS_STREAM_ESTABLISH_FAIL;
-      //ÇåÀíÇëÇó¶ÓÁĞ£¬Í¨ÖªÓÃ»§£¬ÕâĞ©ÇëÇó¶¼·¢²»ÁËÁË¡£ TODO
+      //æ¸…ç†è¯·æ±‚é˜Ÿåˆ—ï¼Œé€šçŸ¥ç”¨æˆ·ï¼Œè¿™äº›è¯·æ±‚éƒ½å‘ä¸äº†äº†ã€‚ TODO
       // DrainRequestQueue();
-      //¼´Ê¹false£¬Ò²ÊÇÁ¬½ÓÖĞ
+      //å³ä½¿falseï¼Œä¹Ÿæ˜¯è¿æ¥ä¸­
       onLinkStatus(SmsTransLinkStatus::E_LINK_CREATE_RETRY);
     }
     break;
@@ -339,7 +339,7 @@ void RpcStream::HandleEvent(bool ok, void* tag)
       {
         net_status_ = NS_PUSHGW_CONNECTING;
       }
-      //µÇÂ½ÖĞ
+      //ç™»é™†ä¸­
       onLinkStatus(SmsTransLinkStatus::E_LINK_LOGINTING);
     }
     break;
@@ -396,7 +396,7 @@ void RpcStream::HandleEvent(bool ok, void* tag)
         {
           Reply reply;
           reply.reset(r);
-          //·Ö·¢ÏûÏ¢
+          //åˆ†å‘æ¶ˆæ¯
           // PushReply(reply);
 
           ParseReply(reply);
@@ -421,14 +421,14 @@ void RpcStream::HandleCQTimeout(bool ok)
 {
   if (!io_init_)
   {
-    // channel stubÃ»½¨Á¢
+    // channel stubæ²¡å»ºç«‹
     SLOGE("HandleCQTimeout not init io ok{}", ok);
     return;
   }
   // if (ok)
-  //²»¹ÜÊÇ·ñok£¬Á÷¶¼ĞèÒªÊ×´Î´´½¨
+  //ä¸ç®¡æ˜¯å¦okï¼Œæµéƒ½éœ€è¦é¦–æ¬¡åˆ›å»º
   {
-    // streamÃ»½¨Á¢
+    // streamæ²¡å»ºç«‹
     if (!stream_init_)
     {
       SLOGI("OpenStream");
@@ -455,17 +455,17 @@ void RpcStream::HandleCQTimeout(bool ok)
   }
   if (exit_loop_)
   {
-    //ÍË³öcqÏß³Ì£¬²»Ò»¶¨¾ÍÊÇÒªshutdown cq
+    //é€€å‡ºcqçº¿ç¨‹ï¼Œä¸ä¸€å®šå°±æ˜¯è¦shutdown cq
     // SLOGE("connection shutdown. seq {}", connect_sequence_num_);
     // Cqueue()->Shutdown();
 
-    //ÍË³öcqÑ­»·
+    //é€€å‡ºcqå¾ªç¯
     SLOGE("already exit_loop_");
     return;
   }
   else
   {
-    //·ÇÍË³öÑ­»·µÄfalseÇé¿ö£¬ÖØ½¨Á÷
+    //éé€€å‡ºå¾ªç¯çš„falseæƒ…å†µï¼Œé‡å»ºæµ
     if (!ok)
     {
       std::cout << "HandleCQTimeout cq err " << __LINE__ << std::endl;
@@ -497,12 +497,12 @@ bool RpcStream::OpenStream()
   context_.reset(new ClientContext());
   context_->AddMetadata("suid", std::to_string(suid_));
   connect_sequence_num_++;
-  //´´½¨Á÷
+  //åˆ›å»ºæµ
   stream_ = stub_->AsyncPushRegister(context_.get(), Cqueue(),
                                      GenerateConnectTag(connect_sequence_num_));
   if (stream_)
   {
-    net_status_ = NS_IDLE; //Á÷´´½¨ÁË£¬µ«ÊÇÉ¶Ò²Ã»×ö£¬¾ÍÊÇIDLE
+    net_status_ = NS_IDLE; //æµåˆ›å»ºäº†ï¼Œä½†æ˜¯å•¥ä¹Ÿæ²¡åšï¼Œå°±æ˜¯IDLE
     return true;
   }
   return false;
@@ -510,14 +510,14 @@ bool RpcStream::OpenStream()
 
 void RpcStream::RefreshWriteTimestamp()
 {
-  //Ë¢ĞÂĞ´Ê±¼ä´Á
+  //åˆ·æ–°å†™æ—¶é—´æˆ³
   last_write_timestamp_ = EgcCommon::getCurHaomiao();
 }
 
 bool RpcStream::ReOpenStream()
 {
   bool ret1 = CloseStream();
-  //¾Ü¾øÆäËûĞ´ÇëÇó
+  //æ‹’ç»å…¶ä»–å†™è¯·æ±‚
   setWriteable("ReOpenStream", false);
   bool ret2 = OpenStream();
   SLOGW("ReOpenStream: CLOSE {} OPEN {}", ret1, ret2);
@@ -572,11 +572,11 @@ bool RpcStream::PushHeartBeatRequest(std::uint64_t delta)
   evt->heartbeat.uid = uid_;
   evt->context_ = "inner_heartbeat_" + std::to_string(id) + "_" +
     std::to_string(EgcCommon::getCurHaomiao());
-  //×¢Òâ£¬ÕâÀï×ö²âÊÔÓÃ£¬¸Ä±äÏÂevtµÄÉú³ÉÊ±¼ä£¬·Ç²âÊÔ²»Òª´ò¿ª
+  //æ³¨æ„ï¼Œè¿™é‡Œåšæµ‹è¯•ç”¨ï¼Œæ”¹å˜ä¸‹evtçš„ç”Ÿæˆæ—¶é—´ï¼Œéæµ‹è¯•ä¸è¦æ‰“å¼€
 #if HB_TEST_AFTER_2_SECONDS
   evt->start_at_ = EgcCommon::getHaomiaoAfterSeconds(2);
 #endif
-  // TODO Ã»ÓĞĞÄÌø£¬Ç¿ÖÆÖØ½¨stream£¿
+  // TODO æ²¡æœ‰å¿ƒè·³ï¼Œå¼ºåˆ¶é‡å»ºstreamï¼Ÿ
   evt->setCallback([this](SmsTransCallErrType err, std::string ctx,
                           uint32_t errcode, std::string errdesc)
   {
@@ -588,7 +588,7 @@ bool RpcStream::PushHeartBeatRequest(std::uint64_t delta)
 
 RET_WRITE RpcStream::WriteRequest()
 {
-  //ÅĞ¶ÏÊÇ·ñÒª·¢ĞÄÌø
+  //åˆ¤æ–­æ˜¯å¦è¦å‘å¿ƒè·³
   RET_WRITE rr;
   rr.ret = true;
   rr.err = WRITE_ERR::WRITE_OK;
@@ -623,7 +623,7 @@ RET_WRITE RpcStream::WriteRequest()
     return rr;
   }
 
-  //ÊÇ·ñĞèÒª¸üĞ¡µÄËøÁ¦¶ÈÒÔÏß³Ì°²È«£¬ÏÈ½ûÓÃµô¿ÉĞ´£¬È»ºó¸øcq·¢Ğ´ÇëÇó
+  //æ˜¯å¦éœ€è¦æ›´å°çš„é”åŠ›åº¦ä»¥çº¿ç¨‹å®‰å…¨ï¼Œå…ˆç¦ç”¨æ‰å¯å†™ï¼Œç„¶åç»™cqå‘å†™è¯·æ±‚
   setWriteable("WriteRequest from evt", false);
   std::string ctx = evt->getCtx();
   switch (evt->event_code)
@@ -650,21 +650,21 @@ RET_WRITE RpcStream::WriteRequest()
     break;
   default:
     SLOGE("unkown evt ,not send request");
-    // EVENTÊÇSDKÄÚ²¿·â×°£¬Ó¦¸Ã²»´æÔÚÎ´ÖªÇé¿ö
+    // EVENTæ˜¯SDKå†…éƒ¨å°è£…ï¼Œåº”è¯¥ä¸å­˜åœ¨æœªçŸ¥æƒ…å†µ
     rr.err = WRITE_ERR::WRITE_UNKOWN_EVT;
     rr.ret = false;
-    //ÕâÖÖÇé¿öÒªÔÊĞíÆäËûÈË¿É¼ÌĞøĞ´
+    //è¿™ç§æƒ…å†µè¦å…è®¸å…¶ä»–äººå¯ç»§ç»­å†™
     setWriteable("WriteRequest from evt", true);
     goto done;
     // break;
   }
-  //ÇëÇóÈëmap
+  //è¯·æ±‚å…¥map
   {
     std::lock_guard<std::mutex> lk(reqmtx_);
     reqmap_[ctx] = evt;
   }
 done:
-  //×ö³¬Ê±¼ì²é
+  //åšè¶…æ—¶æ£€æŸ¥
   checkRequestTimeout();
   return rr;
 }
@@ -825,7 +825,7 @@ bool RpcStream::AsyncWriteNextMessage(StreamURI uri, std::string& reqData)
     return true;
   }
 #endif
-  //Íâ²¿ÏÈwritedone£¬È»ºóÔÙshutdown£¿
+  //å¤–éƒ¨å…ˆwritedoneï¼Œç„¶åå†shutdownï¼Ÿ
   // if (cmd == "quit") {
   //  push_bi_stream_->WritesDone(reinterpret_cast<void*>(Type::WRITES_DONE));
   //  return false;
@@ -849,7 +849,7 @@ RET_WRITE RpcStream::checkNextWrite()
     RET_WRITE rr = WriteRequest();
     return rr;
   }
-  //Á÷Ã»½¨Á¢Ê±£¬²»ĞèÒª·¢ÇëÇó
+  //æµæ²¡å»ºç«‹æ—¶ï¼Œä¸éœ€è¦å‘è¯·æ±‚
   RET_WRITE rr = {false, WRITE_STREAM_NO_ESTABLISH};
   return rr;
 }
@@ -863,7 +863,7 @@ RET_WRITE RpcStream::WriteNext()
     RET_WRITE rr = WriteRequest();
     return rr;
   }
-  //Á÷Ã»½¨Á¢Ê±£¬²»ĞèÒª·¢ÇëÇó
+  //æµæ²¡å»ºç«‹æ—¶ï¼Œä¸éœ€è¦å‘è¯·æ±‚
   RET_WRITE rr = {false, WRITE_STREAM_NO_ESTABLISH};
   return rr;
 }
@@ -886,18 +886,18 @@ RET_REPLY RpcStream::ParseReply(Reply reply)
       rr.name = "LOGIN_RES";
       LoginResponse res;
       auto ret = onResponse(reply, res);
-      //½âÎöÓ¦´ğ³É¹¦
+      //è§£æåº”ç­”æˆåŠŸ
       if (ret)
       {
         std::string ctx = res.context();
-        //·şÎñ¶ËÍ¨Öª´íÎó
+        //æœåŠ¡ç«¯é€šçŸ¥é”™è¯¯
         if (res.rescode() != RES_SUCCESS)
         {
           rr.err = onResponseCallback(
             ctx, rr.ret, res.rescode(),
             std::string("loginres err:") + std::to_string(res.rescode()));
         }
-        else //Ò»ÇĞÕı³£
+        else //ä¸€åˆ‡æ­£å¸¸
         {
           rr.err = onResponseCallback(ctx, rr.ret);
         }
@@ -908,7 +908,7 @@ RET_REPLY RpcStream::ParseReply(Reply reply)
           if (net_status_ == NS_PUSHGW_CONNECTING ||
             net_status_ == NS_PUSHGW_LOGOUTED)
           {
-            // LOGIN Res OK,µÇÂ½³É¹¦ÁË
+            // LOGIN Res OK,ç™»é™†æˆåŠŸäº†
             net_status_ = NS_PUSHGW_LOGINED;
           }
           onLinkStatus(SmsTransLinkStatus::E_LINK_LOGIN_OK);
@@ -921,7 +921,7 @@ RET_REPLY RpcStream::ParseReply(Reply reply)
       }
       else
       {
-        //½âÎö³ö´í£¬ÓÉ³¬Ê±À´´¦Àí
+        //è§£æå‡ºé”™ï¼Œç”±è¶…æ—¶æ¥å¤„ç†
         // SLOGE("onResponse ERR {}", rr.err);
         rr.err = REPLY_RES_PARSE_FAIL;
       }
@@ -937,33 +937,33 @@ RET_REPLY RpcStream::ParseReply(Reply reply)
         std::string ctx = res.context();
         if (res.rescode() != RES_SUCCESS)
         {
-          //ÓĞ´íÎóÓ¦´ğÂë
+          //æœ‰é”™è¯¯åº”ç­”ç 
           rr.err = onResponseCallback(
             ctx, rr.ret, res.rescode(),
             "logoutres err:" + std::to_string(res.rescode()));
         }
         else
         {
-          //Õı³£Ó¦´ğ
+          //æ­£å¸¸åº”ç­”
           rr.err = onResponseCallback(ctx, rr.ret);
         }
-        //ÅĞ¶Ï»Øµ÷Çé¿ö
+        //åˆ¤æ–­å›è°ƒæƒ…å†µ
         if (rr.ret)
         {
           link_ready_login_ok_ = false;
           onLinkStatus(SmsTransLinkStatus::E_LINK_LOGOUT_OK);
-          //ÓÃ»§µÇ³ö³É¹¦ÁË
+          //ç”¨æˆ·ç™»å‡ºæˆåŠŸäº†
           net_status_ = NetworkStatus::NS_PUSHGW_LOGOUTED;
         }
         else
         {
-          //µÇ³ö³ö´íÁË
+          //ç™»å‡ºå‡ºé”™äº†
           onLinkStatus(SmsTransLinkStatus::E_LINK_LOGOUT_FAIL);
         }
       }
       else
       {
-        //½âÎö³ö´íÁË
+        //è§£æå‡ºé”™äº†
         rr.err = REPLY_RES_PARSE_FAIL;
       }
     }
@@ -1038,7 +1038,7 @@ RET_REPLY RpcStream::ParseReply(Reply reply)
       msg.msgtype = msgtype;
       msg.uid = reply->uid();
       msg.suid = reply->suid();
-      //·şÎñ¶Ë´æÔÚ²»Ìîuid£¬Ö»ÌîsuidµÄÇé¿ö
+      //æœåŠ¡ç«¯å­˜åœ¨ä¸å¡«uidï¼Œåªå¡«suidçš„æƒ…å†µ
       if (msg.uid == 0)
       {
         if (msg.suid == suid_)
@@ -1117,7 +1117,7 @@ void RpcStream::checkRequestTimeout()
           SLOGW("event {} ctx {} timeout not find callback",
                 EgcTrans::evt_code2str(code), ctx);
         }
-        //ÇåÀí
+        //æ¸…ç†
         it = reqmap_.erase(it);
       }
       else
@@ -1130,12 +1130,12 @@ void RpcStream::checkRequestTimeout()
 
 bool RpcStream::checkUserRequestLogic(int requst_code)
 {
-  //ÄÚ²¿ÇëÇó£¬·ÅĞĞ¡£
+  //å†…éƒ¨è¯·æ±‚ï¼Œæ”¾è¡Œã€‚
   if (requst_code == EgcTrans::EGC_INTERNAL_EVENT_HEARTBEAT)
   {
     return true;
   }
-  //Ö»ÔÊĞíLOGINÇëÇóÍ¨ĞĞ
+  //åªå…è®¸LOGINè¯·æ±‚é€šè¡Œ
   if (net_status_ == NS_STREAM_ESTABLISHED)
   {
     if (requst_code == EgcTrans::EGC_INTERNAL_EVENT_LOGIN)
@@ -1144,25 +1144,25 @@ bool RpcStream::checkUserRequestLogic(int requst_code)
     }
     return false;
   }
-  //ÓÃ»§ÒÑ¾­·¢ÁËJOINÇÒµ«ÊÇLOGIN
-  //·¢ËÍ³É¹¦£¬Õâ¸öÊ±ºò»¹ÊÇÒªµÈLOGINRES»ØÀ´£¬²ÅÄÜ·¢ÆäËûµÄ
+  //ç”¨æˆ·å·²ç»å‘äº†JOINä¸”ä½†æ˜¯LOGIN
+  //å‘é€æˆåŠŸï¼Œè¿™ä¸ªæ—¶å€™è¿˜æ˜¯è¦ç­‰LOGINRESå›æ¥ï¼Œæ‰èƒ½å‘å…¶ä»–çš„
   if (net_status_ == NS_PUSHGW_CONNECTING)
   {
-    //»¹ÊÇ¿ÉÒÔÖØ¸´·¢LOGINÇëÇóµÄ£¬ÆäËûµÄ¶¼²»ĞĞ
+    //è¿˜æ˜¯å¯ä»¥é‡å¤å‘LOGINè¯·æ±‚çš„ï¼Œå…¶ä»–çš„éƒ½ä¸è¡Œ
     if (requst_code == EgcTrans::EGC_INTERNAL_EVENT_LOGIN)
     {
       return true;
     }
     return false;
   }
-  //ÒÑ¾­·¢ËÍµÇÂ¼ÇÒÊÕµ½ÁËÓ¦´ğÁË¡£
+  //å·²ç»å‘é€ç™»å½•ä¸”æ”¶åˆ°äº†åº”ç­”äº†ã€‚
   if (net_status_ == NS_PUSHGW_LOGINED)
   {
     return true;
   }
   if (net_status_ == NS_PUSHGW_LOGOUTED)
   {
-    //ÒÑ¾­·¢ËÍµÇ³ö£¬²¢ÇÒÊÕµ½ÁËÓ¦´ğ£¬¿ÉÒÔÔÊĞíloginÇëÇó
+    //å·²ç»å‘é€ç™»å‡ºï¼Œå¹¶ä¸”æ”¶åˆ°äº†åº”ç­”ï¼Œå¯ä»¥å…è®¸loginè¯·æ±‚
     if (requst_code == EgcTrans::EGC_INTERNAL_EVENT_LOGIN)
     {
       return true;
@@ -1172,7 +1172,7 @@ bool RpcStream::checkUserRequestLogic(int requst_code)
   return false;
 }
 
-//ÊÕµ½Ó¦´ğÊ±£¬Ö÷¶¯¶ÔUSERÇëÇóµÄÓ¦´ğÏûÏ¢×ö¼ì²é²¢»Øµ÷
+//æ”¶åˆ°åº”ç­”æ—¶ï¼Œä¸»åŠ¨å¯¹USERè¯·æ±‚çš„åº”ç­”æ¶ˆæ¯åšæ£€æŸ¥å¹¶å›è°ƒ
 ReplyErr RpcStream::onResponseCallback(std::string ctx, bool& ret,
                                        uint32_t resCode, std::string errDesc)
 {
@@ -1187,18 +1187,18 @@ ReplyErr RpcStream::onResponseCallback(std::string ctx, bool& ret,
     {
       SLOGE(
         "{} not in reqmap !!! "
-        "ÒÑ¾­ÒòÎª³¬Ê±±»ÇåÀíµôÁË£¿»òÕß·şÎñ¶ËÒì³££¿",
+        "å·²ç»å› ä¸ºè¶…æ—¶è¢«æ¸…ç†æ‰äº†ï¼Ÿæˆ–è€…æœåŠ¡ç«¯å¼‚å¸¸ï¼Ÿ",
         ctx);
       ret = false;
       err = REPLY_RES_NOT_FIND;
     }
     else
     {
-      //ÕÒµ½ÁË
+      //æ‰¾åˆ°äº†
       EgcTrans::IEgcInnerEvt evt = (*itr).second;
       if (evt.get())
       {
-        // ÄÚ²¿´«µİ£¬ÕâÖÖÇé¿öÓ¦¸Ã²»´æÔÚ
+        // å†…éƒ¨ä¼ é€’ï¼Œè¿™ç§æƒ…å†µåº”è¯¥ä¸å­˜åœ¨
         if (!evt->evtclk_)
         {
           ret = false;
@@ -1209,14 +1209,14 @@ ReplyErr RpcStream::onResponseCallback(std::string ctx, bool& ret,
         SLOGW("CTX {} res callback delta {}", ctx, delta);
         if (delta > kConnectionTimeoutInHaomiao)
         {
-          //³¬Ê±ÁË
+          //è¶…æ—¶äº†
           evt->evtclk_(SmsTransCallErrType::CALL_TIMEOUT, ctx, RES_TIMEOUT,
                        "onResponseCallback think timeout");
           err = REPLY_RES_CLK_TIMEOUT;
         }
         else
         {
-          //µ÷ÓÃ³É¹¦
+          //è°ƒç”¨æˆåŠŸ
           if (resCode == RES_SUCCESS)
           {
             evt->evtclk_(SmsTransCallErrType::CALL_OK, ctx, RES_SUCCESS,
@@ -1235,18 +1235,18 @@ ReplyErr RpcStream::onResponseCallback(std::string ctx, bool& ret,
       else
       {
         SLOGE("ERROR !!!JOIN EVT IS NULL !!!");
-        //ÕâÖÖÇé¿öÓ¦¸Ã²»´æÔÚ
+        //è¿™ç§æƒ…å†µåº”è¯¥ä¸å­˜åœ¨
         ret = false;
         err = REPLY_RES_EVT_NULL;
       }
-      //ÇåÀí
+      //æ¸…ç†
       reqmap_.erase(itr);
     }
   }
   else
   {
-    SLOGE("REQ MAP IS EMPTY !!!!À´ÍíÁË£¬»òÕßÊÇ·şÎñÆ÷µÄÒì³££¿");
-    //Õâ¸ö°üÓ¦¸ÃÊÇÀ´ÍíÁË£¬»òÕßÊÇ·şÎñÆ÷µÄÒì³££¿£¿
+    SLOGE("REQ MAP IS EMPTY !!!!æ¥æ™šäº†ï¼Œæˆ–è€…æ˜¯æœåŠ¡å™¨çš„å¼‚å¸¸ï¼Ÿ");
+    //è¿™ä¸ªåŒ…åº”è¯¥æ˜¯æ¥æ™šäº†ï¼Œæˆ–è€…æ˜¯æœåŠ¡å™¨çš„å¼‚å¸¸ï¼Ÿï¼Ÿ
     err = REPLY_RES_MAP_EMPTY;
   }
   return err;

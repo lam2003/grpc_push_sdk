@@ -37,6 +37,7 @@ print('Libs path:', libs_path)
 cmake_cmd = [
     'cmake',
     '-B', BUILD_DIR,
+    '-DBUILD_MODE'.join(BUILD_MODE),
     '../..'
 ]
 

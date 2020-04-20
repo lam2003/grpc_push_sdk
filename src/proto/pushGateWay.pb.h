@@ -146,16 +146,13 @@ namespace gateway {
 enum UserTerminalType {
   UTT_UNKNOWN = 0,
   UTT_DESKTOP = 1,
-  UTT_MOBILEPHONE = 2,
-  UTT_WEBYY = 3,
-  UTT_WEBYYXL = 4,
-  UTT_PIP = 5,
-  UTT_EDU = 6,
-  UTT_IPAD = 7,
-  UTT_APAD = 8,
-  UTT_MKBA = 9,
-  UTT_TIANLAI = 10,
-  UTT_WEBYYH5 = 11,
+  UTT_WEB = 2,
+  UTT_EDU = 3,
+  UTT_IPAD = 4,
+  UTT_APAD = 5,
+  UTT_WEBYYH5 = 6,
+  UTT_IPHONE = 7,
+  UTT_ANDROID = 8,
   UTT_SERVER = 65535,
   UserTerminalType_INT_MIN_SENTINEL_DO_NOT_USE_ = ::google::protobuf::kint32min,
   UserTerminalType_INT_MAX_SENTINEL_DO_NOT_USE_ = ::google::protobuf::kint32max
@@ -642,6 +639,20 @@ class LoginResponse : public ::google::protobuf::Message /* @@protoc_insertion_p
   ::std::string* release_context();
   void set_allocated_context(::std::string* context);
 
+  // string errMsg = 12;
+  void clear_errmsg();
+  static const int kErrMsgFieldNumber = 12;
+  const ::std::string& errmsg() const;
+  void set_errmsg(const ::std::string& value);
+  #if LANG_CXX11
+  void set_errmsg(::std::string&& value);
+  #endif
+  void set_errmsg(const char* value);
+  void set_errmsg(const char* value, size_t size);
+  ::std::string* mutable_errmsg();
+  ::std::string* release_errmsg();
+  void set_allocated_errmsg(::std::string* errmsg);
+
   // uint32 resCode = 1;
   void clear_rescode();
   static const int kResCodeFieldNumber = 1;
@@ -677,6 +688,7 @@ class LoginResponse : public ::google::protobuf::Message /* @@protoc_insertion_p
 
   ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
   ::google::protobuf::internal::ArenaStringPtr context_;
+  ::google::protobuf::internal::ArenaStringPtr errmsg_;
   ::google::protobuf::uint32 rescode_;
   ::google::protobuf::uint32 uid_;
   ::google::protobuf::uint64 suid_;
@@ -942,6 +954,20 @@ class LogoutResponse : public ::google::protobuf::Message /* @@protoc_insertion_
   ::std::string* release_context();
   void set_allocated_context(::std::string* context);
 
+  // string errMsg = 12;
+  void clear_errmsg();
+  static const int kErrMsgFieldNumber = 12;
+  const ::std::string& errmsg() const;
+  void set_errmsg(const ::std::string& value);
+  #if LANG_CXX11
+  void set_errmsg(::std::string&& value);
+  #endif
+  void set_errmsg(const char* value);
+  void set_errmsg(const char* value, size_t size);
+  ::std::string* mutable_errmsg();
+  ::std::string* release_errmsg();
+  void set_allocated_errmsg(::std::string* errmsg);
+
   // uint32 resCode = 1;
   void clear_rescode();
   static const int kResCodeFieldNumber = 1;
@@ -977,6 +1003,7 @@ class LogoutResponse : public ::google::protobuf::Message /* @@protoc_insertion_
 
   ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
   ::google::protobuf::internal::ArenaStringPtr context_;
+  ::google::protobuf::internal::ArenaStringPtr errmsg_;
   ::google::protobuf::uint32 rescode_;
   ::google::protobuf::uint32 uid_;
   ::google::protobuf::uint64 suid_;
@@ -1238,6 +1265,20 @@ class JoinGroupResponse : public ::google::protobuf::Message /* @@protoc_inserti
   ::std::string* release_context();
   void set_allocated_context(::std::string* context);
 
+  // string errMsg = 12;
+  void clear_errmsg();
+  static const int kErrMsgFieldNumber = 12;
+  const ::std::string& errmsg() const;
+  void set_errmsg(const ::std::string& value);
+  #if LANG_CXX11
+  void set_errmsg(::std::string&& value);
+  #endif
+  void set_errmsg(const char* value);
+  void set_errmsg(const char* value, size_t size);
+  ::std::string* mutable_errmsg();
+  ::std::string* release_errmsg();
+  void set_allocated_errmsg(::std::string* errmsg);
+
   // uint64 suid = 2;
   void clear_suid();
   static const int kSuidFieldNumber = 2;
@@ -1274,6 +1315,7 @@ class JoinGroupResponse : public ::google::protobuf::Message /* @@protoc_inserti
   ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
   ::google::protobuf::RepeatedPtrField< ::grpc::push::gateway::UserGroup > usergroupset_;
   ::google::protobuf::internal::ArenaStringPtr context_;
+  ::google::protobuf::internal::ArenaStringPtr errmsg_;
   ::google::protobuf::uint64 suid_;
   ::google::protobuf::uint32 uid_;
   ::google::protobuf::uint32 rescode_;
@@ -1535,6 +1577,20 @@ class LeaveGroupResponse : public ::google::protobuf::Message /* @@protoc_insert
   ::std::string* release_context();
   void set_allocated_context(::std::string* context);
 
+  // string errMsg = 12;
+  void clear_errmsg();
+  static const int kErrMsgFieldNumber = 12;
+  const ::std::string& errmsg() const;
+  void set_errmsg(const ::std::string& value);
+  #if LANG_CXX11
+  void set_errmsg(::std::string&& value);
+  #endif
+  void set_errmsg(const char* value);
+  void set_errmsg(const char* value, size_t size);
+  ::std::string* mutable_errmsg();
+  ::std::string* release_errmsg();
+  void set_allocated_errmsg(::std::string* errmsg);
+
   // uint64 suid = 2;
   void clear_suid();
   static const int kSuidFieldNumber = 2;
@@ -1571,6 +1627,7 @@ class LeaveGroupResponse : public ::google::protobuf::Message /* @@protoc_insert
   ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
   ::google::protobuf::RepeatedPtrField< ::grpc::push::gateway::UserGroup > usergroupset_;
   ::google::protobuf::internal::ArenaStringPtr context_;
+  ::google::protobuf::internal::ArenaStringPtr errmsg_;
   ::google::protobuf::uint64 suid_;
   ::google::protobuf::uint32 uid_;
   ::google::protobuf::uint32 rescode_;
@@ -2159,6 +2216,12 @@ class PushData : public ::google::protobuf::Message /* @@protoc_insertion_point(
   ::google::protobuf::uint64 seqnum() const;
   void set_seqnum(::google::protobuf::uint64 value);
 
+  // uint32 originalURI = 11;
+  void clear_originaluri();
+  static const int kOriginalURIFieldNumber = 11;
+  ::google::protobuf::uint32 originaluri() const;
+  void set_originaluri(::google::protobuf::uint32 value);
+
   // @@protoc_insertion_point(class_scope:grpc.push.gateway.PushData)
  private:
 
@@ -2178,6 +2241,7 @@ class PushData : public ::google::protobuf::Message /* @@protoc_insertion_point(
   ::google::protobuf::uint32 uid_;
   int uri_;
   ::google::protobuf::uint64 seqnum_;
+  ::google::protobuf::uint32 originaluri_;
   mutable ::google::protobuf::internal::CachedSize _cached_size_;
   friend struct ::protobuf_pushGateWay_2eproto::TableStruct;
 };
@@ -2381,6 +2445,12 @@ class PushToClientReq : public ::google::protobuf::Message /* @@protoc_insertion
   ::google::protobuf::uint64 seqid() const;
   void set_seqid(::google::protobuf::uint64 value);
 
+  // uint32 originalURI = 12;
+  void clear_originaluri();
+  static const int kOriginalURIFieldNumber = 12;
+  ::google::protobuf::uint32 originaluri() const;
+  void set_originaluri(::google::protobuf::uint32 value);
+
   // @@protoc_insertion_point(class_scope:grpc.push.gateway.PushToClientReq)
  private:
 
@@ -2399,6 +2469,7 @@ class PushToClientReq : public ::google::protobuf::Message /* @@protoc_insertion
   ::google::protobuf::uint32 uid_;
   ::google::protobuf::uint32 fromuid_;
   ::google::protobuf::uint64 seqid_;
+  ::google::protobuf::uint32 originaluri_;
   mutable ::google::protobuf::internal::CachedSize _cached_size_;
   friend struct ::protobuf_pushGateWay_2eproto::TableStruct;
 };
@@ -2721,6 +2792,12 @@ class PushToGroupReq : public ::google::protobuf::Message /* @@protoc_insertion_
   ::google::protobuf::uint32 fromuid() const;
   void set_fromuid(::google::protobuf::uint32 value);
 
+  // uint32 originalURI = 12;
+  void clear_originaluri();
+  static const int kOriginalURIFieldNumber = 12;
+  ::google::protobuf::uint32 originaluri() const;
+  void set_originaluri(::google::protobuf::uint32 value);
+
   // uint64 seqid = 11;
   void clear_seqid();
   static const int kSeqidFieldNumber = 11;
@@ -2744,6 +2821,7 @@ class PushToGroupReq : public ::google::protobuf::Message /* @@protoc_insertion_
   ::google::protobuf::uint64 grouptype_;
   ::google::protobuf::uint64 groupid_;
   ::google::protobuf::uint32 fromuid_;
+  ::google::protobuf::uint32 originaluri_;
   ::google::protobuf::uint64 seqid_;
   mutable ::google::protobuf::internal::CachedSize _cached_size_;
   friend struct ::protobuf_pushGateWay_2eproto::TableStruct;
@@ -3431,6 +3509,59 @@ inline void LoginResponse::set_pushgwport(::google::protobuf::uint32 value) {
   // @@protoc_insertion_point(field_set:grpc.push.gateway.LoginResponse.pushgwPort)
 }
 
+// string errMsg = 12;
+inline void LoginResponse::clear_errmsg() {
+  errmsg_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline const ::std::string& LoginResponse::errmsg() const {
+  // @@protoc_insertion_point(field_get:grpc.push.gateway.LoginResponse.errMsg)
+  return errmsg_.GetNoArena();
+}
+inline void LoginResponse::set_errmsg(const ::std::string& value) {
+  
+  errmsg_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
+  // @@protoc_insertion_point(field_set:grpc.push.gateway.LoginResponse.errMsg)
+}
+#if LANG_CXX11
+inline void LoginResponse::set_errmsg(::std::string&& value) {
+  
+  errmsg_.SetNoArena(
+    &::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
+  // @@protoc_insertion_point(field_set_rvalue:grpc.push.gateway.LoginResponse.errMsg)
+}
+#endif
+inline void LoginResponse::set_errmsg(const char* value) {
+  GOOGLE_DCHECK(value != NULL);
+  
+  errmsg_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
+  // @@protoc_insertion_point(field_set_char:grpc.push.gateway.LoginResponse.errMsg)
+}
+inline void LoginResponse::set_errmsg(const char* value, size_t size) {
+  
+  errmsg_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
+      ::std::string(reinterpret_cast<const char*>(value), size));
+  // @@protoc_insertion_point(field_set_pointer:grpc.push.gateway.LoginResponse.errMsg)
+}
+inline ::std::string* LoginResponse::mutable_errmsg() {
+  
+  // @@protoc_insertion_point(field_mutable:grpc.push.gateway.LoginResponse.errMsg)
+  return errmsg_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline ::std::string* LoginResponse::release_errmsg() {
+  // @@protoc_insertion_point(field_release:grpc.push.gateway.LoginResponse.errMsg)
+  
+  return errmsg_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline void LoginResponse::set_allocated_errmsg(::std::string* errmsg) {
+  if (errmsg != NULL) {
+    
+  } else {
+    
+  }
+  errmsg_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), errmsg);
+  // @@protoc_insertion_point(field_set_allocated:grpc.push.gateway.LoginResponse.errMsg)
+}
+
 // -------------------------------------------------------------------
 
 // LogoutRequest
@@ -3724,6 +3855,59 @@ inline void LogoutResponse::set_pushgwport(::google::protobuf::uint32 value) {
   // @@protoc_insertion_point(field_set:grpc.push.gateway.LogoutResponse.pushgwPort)
 }
 
+// string errMsg = 12;
+inline void LogoutResponse::clear_errmsg() {
+  errmsg_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline const ::std::string& LogoutResponse::errmsg() const {
+  // @@protoc_insertion_point(field_get:grpc.push.gateway.LogoutResponse.errMsg)
+  return errmsg_.GetNoArena();
+}
+inline void LogoutResponse::set_errmsg(const ::std::string& value) {
+  
+  errmsg_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
+  // @@protoc_insertion_point(field_set:grpc.push.gateway.LogoutResponse.errMsg)
+}
+#if LANG_CXX11
+inline void LogoutResponse::set_errmsg(::std::string&& value) {
+  
+  errmsg_.SetNoArena(
+    &::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
+  // @@protoc_insertion_point(field_set_rvalue:grpc.push.gateway.LogoutResponse.errMsg)
+}
+#endif
+inline void LogoutResponse::set_errmsg(const char* value) {
+  GOOGLE_DCHECK(value != NULL);
+  
+  errmsg_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
+  // @@protoc_insertion_point(field_set_char:grpc.push.gateway.LogoutResponse.errMsg)
+}
+inline void LogoutResponse::set_errmsg(const char* value, size_t size) {
+  
+  errmsg_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
+      ::std::string(reinterpret_cast<const char*>(value), size));
+  // @@protoc_insertion_point(field_set_pointer:grpc.push.gateway.LogoutResponse.errMsg)
+}
+inline ::std::string* LogoutResponse::mutable_errmsg() {
+  
+  // @@protoc_insertion_point(field_mutable:grpc.push.gateway.LogoutResponse.errMsg)
+  return errmsg_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline ::std::string* LogoutResponse::release_errmsg() {
+  // @@protoc_insertion_point(field_release:grpc.push.gateway.LogoutResponse.errMsg)
+  
+  return errmsg_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline void LogoutResponse::set_allocated_errmsg(::std::string* errmsg) {
+  if (errmsg != NULL) {
+    
+  } else {
+    
+  }
+  errmsg_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), errmsg);
+  // @@protoc_insertion_point(field_set_allocated:grpc.push.gateway.LogoutResponse.errMsg)
+}
+
 // -------------------------------------------------------------------
 
 // JoinGroupRequest
@@ -3996,6 +4180,59 @@ JoinGroupResponse::usergroupset() const {
   return usergroupset_;
 }
 
+// string errMsg = 12;
+inline void JoinGroupResponse::clear_errmsg() {
+  errmsg_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline const ::std::string& JoinGroupResponse::errmsg() const {
+  // @@protoc_insertion_point(field_get:grpc.push.gateway.JoinGroupResponse.errMsg)
+  return errmsg_.GetNoArena();
+}
+inline void JoinGroupResponse::set_errmsg(const ::std::string& value) {
+  
+  errmsg_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
+  // @@protoc_insertion_point(field_set:grpc.push.gateway.JoinGroupResponse.errMsg)
+}
+#if LANG_CXX11
+inline void JoinGroupResponse::set_errmsg(::std::string&& value) {
+  
+  errmsg_.SetNoArena(
+    &::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
+  // @@protoc_insertion_point(field_set_rvalue:grpc.push.gateway.JoinGroupResponse.errMsg)
+}
+#endif
+inline void JoinGroupResponse::set_errmsg(const char* value) {
+  GOOGLE_DCHECK(value != NULL);
+  
+  errmsg_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
+  // @@protoc_insertion_point(field_set_char:grpc.push.gateway.JoinGroupResponse.errMsg)
+}
+inline void JoinGroupResponse::set_errmsg(const char* value, size_t size) {
+  
+  errmsg_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
+      ::std::string(reinterpret_cast<const char*>(value), size));
+  // @@protoc_insertion_point(field_set_pointer:grpc.push.gateway.JoinGroupResponse.errMsg)
+}
+inline ::std::string* JoinGroupResponse::mutable_errmsg() {
+  
+  // @@protoc_insertion_point(field_mutable:grpc.push.gateway.JoinGroupResponse.errMsg)
+  return errmsg_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline ::std::string* JoinGroupResponse::release_errmsg() {
+  // @@protoc_insertion_point(field_release:grpc.push.gateway.JoinGroupResponse.errMsg)
+  
+  return errmsg_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline void JoinGroupResponse::set_allocated_errmsg(::std::string* errmsg) {
+  if (errmsg != NULL) {
+    
+  } else {
+    
+  }
+  errmsg_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), errmsg);
+  // @@protoc_insertion_point(field_set_allocated:grpc.push.gateway.JoinGroupResponse.errMsg)
+}
+
 // -------------------------------------------------------------------
 
 // LeaveGroupRequest
@@ -4266,6 +4503,59 @@ inline const ::google::protobuf::RepeatedPtrField< ::grpc::push::gateway::UserGr
 LeaveGroupResponse::usergroupset() const {
   // @@protoc_insertion_point(field_list:grpc.push.gateway.LeaveGroupResponse.userGroupSet)
   return usergroupset_;
+}
+
+// string errMsg = 12;
+inline void LeaveGroupResponse::clear_errmsg() {
+  errmsg_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline const ::std::string& LeaveGroupResponse::errmsg() const {
+  // @@protoc_insertion_point(field_get:grpc.push.gateway.LeaveGroupResponse.errMsg)
+  return errmsg_.GetNoArena();
+}
+inline void LeaveGroupResponse::set_errmsg(const ::std::string& value) {
+  
+  errmsg_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
+  // @@protoc_insertion_point(field_set:grpc.push.gateway.LeaveGroupResponse.errMsg)
+}
+#if LANG_CXX11
+inline void LeaveGroupResponse::set_errmsg(::std::string&& value) {
+  
+  errmsg_.SetNoArena(
+    &::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
+  // @@protoc_insertion_point(field_set_rvalue:grpc.push.gateway.LeaveGroupResponse.errMsg)
+}
+#endif
+inline void LeaveGroupResponse::set_errmsg(const char* value) {
+  GOOGLE_DCHECK(value != NULL);
+  
+  errmsg_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
+  // @@protoc_insertion_point(field_set_char:grpc.push.gateway.LeaveGroupResponse.errMsg)
+}
+inline void LeaveGroupResponse::set_errmsg(const char* value, size_t size) {
+  
+  errmsg_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
+      ::std::string(reinterpret_cast<const char*>(value), size));
+  // @@protoc_insertion_point(field_set_pointer:grpc.push.gateway.LeaveGroupResponse.errMsg)
+}
+inline ::std::string* LeaveGroupResponse::mutable_errmsg() {
+  
+  // @@protoc_insertion_point(field_mutable:grpc.push.gateway.LeaveGroupResponse.errMsg)
+  return errmsg_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline ::std::string* LeaveGroupResponse::release_errmsg() {
+  // @@protoc_insertion_point(field_release:grpc.push.gateway.LeaveGroupResponse.errMsg)
+  
+  return errmsg_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline void LeaveGroupResponse::set_allocated_errmsg(::std::string* errmsg) {
+  if (errmsg != NULL) {
+    
+  } else {
+    
+  }
+  errmsg_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), errmsg);
+  // @@protoc_insertion_point(field_set_allocated:grpc.push.gateway.LeaveGroupResponse.errMsg)
 }
 
 // -------------------------------------------------------------------
@@ -4804,6 +5094,20 @@ PushData::mutable_key2exstr() {
   return key2exstr_.MutableMap();
 }
 
+// uint32 originalURI = 11;
+inline void PushData::clear_originaluri() {
+  originaluri_ = 0u;
+}
+inline ::google::protobuf::uint32 PushData::originaluri() const {
+  // @@protoc_insertion_point(field_get:grpc.push.gateway.PushData.originalURI)
+  return originaluri_;
+}
+inline void PushData::set_originaluri(::google::protobuf::uint32 value) {
+  
+  originaluri_ = value;
+  // @@protoc_insertion_point(field_set:grpc.push.gateway.PushData.originalURI)
+}
+
 // -------------------------------------------------------------------
 
 // -------------------------------------------------------------------
@@ -5094,6 +5398,20 @@ inline void PushToClientReq::set_seqid(::google::protobuf::uint64 value) {
   
   seqid_ = value;
   // @@protoc_insertion_point(field_set:grpc.push.gateway.PushToClientReq.seqid)
+}
+
+// uint32 originalURI = 12;
+inline void PushToClientReq::clear_originaluri() {
+  originaluri_ = 0u;
+}
+inline ::google::protobuf::uint32 PushToClientReq::originaluri() const {
+  // @@protoc_insertion_point(field_get:grpc.push.gateway.PushToClientReq.originalURI)
+  return originaluri_;
+}
+inline void PushToClientReq::set_originaluri(::google::protobuf::uint32 value) {
+  
+  originaluri_ = value;
+  // @@protoc_insertion_point(field_set:grpc.push.gateway.PushToClientReq.originalURI)
 }
 
 // -------------------------------------------------------------------
@@ -5471,6 +5789,20 @@ inline void PushToGroupReq::set_seqid(::google::protobuf::uint64 value) {
   
   seqid_ = value;
   // @@protoc_insertion_point(field_set:grpc.push.gateway.PushToGroupReq.seqid)
+}
+
+// uint32 originalURI = 12;
+inline void PushToGroupReq::clear_originaluri() {
+  originaluri_ = 0u;
+}
+inline ::google::protobuf::uint32 PushToGroupReq::originaluri() const {
+  // @@protoc_insertion_point(field_get:grpc.push.gateway.PushToGroupReq.originalURI)
+  return originaluri_;
+}
+inline void PushToGroupReq::set_originaluri(::google::protobuf::uint32 value) {
+  
+  originaluri_ = value;
+  // @@protoc_insertion_point(field_set:grpc.push.gateway.PushToGroupReq.originalURI)
 }
 
 // -------------------------------------------------------------------

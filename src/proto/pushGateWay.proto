@@ -4,18 +4,15 @@ package grpc.push.gateway;
 
 enum UserTerminalType {
     UTT_UNKNOWN = 0;
-    UTT_DESKTOP = 1; //PC YY
-    UTT_MOBILEPHONE = 2; //手机YY
-    UTT_WEBYY = 3; //web yy
-    UTT_WEBYYXL = 4; //web yy迅雷版
-    UTT_PIP = 5; //LOL盒子杀人夜等
-    UTT_EDU = 6; //教育
-    UTT_IPAD = 7; //iPad平板
-    UTT_APAD = 8; //Android平板
-    UTT_MKBA = 9; //快播手机Android版
-    UTT_TIANLAI = 10; //天籁智能电视客户端
-    UTT_WEBYYH5 = 11; //h5
-    UTT_SERVER = 65535; //来自server, 某些模拟客户端直接通过s2s发消息给SDK端口
+    UTT_DESKTOP = 1; //PC
+    UTT_WEB = 2; //web
+    UTT_EDU = 3; //教育
+    UTT_IPAD = 4; //iPad平板
+    UTT_APAD = 5; //Android平板
+    UTT_WEBYYH5 = 6; //h5
+    UTT_IPHONE = 7; //iphone
+    UTT_ANDROID = 8; //android
+    UTT_SERVER = 65535; //来自server
 };
 
 
@@ -66,6 +63,7 @@ message LoginResponse {
     bytes context = 4; //客户端上下文
     uint64 pushgwIp = 5; //pushgateway ip
     uint32 pushgwPort = 6; //pushgateway port
+    string errMsg = 12;
 }
 
 message LogoutRequest {
@@ -85,6 +83,7 @@ message LogoutResponse {
     bytes context = 4; //客户端上下文
     uint64 pushgwIp = 5; //pushgateway ip
     uint32 pushgwPort = 6; //pushgateway port
+    string errMsg = 12;
 }
 
 message JoinGroupRequest {
@@ -103,6 +102,7 @@ message JoinGroupResponse {
     uint64 pushgwIp = 5; //pushgateway ip
     uint32 pushgwPort = 6; //pushgateway port
     repeated UserGroup userGroupSet = 7; //replace userGroupIdSet
+    string errMsg = 12;
 }
 
 message LeaveGroupRequest {
@@ -121,6 +121,7 @@ message LeaveGroupResponse {
     uint64 pushgwIp = 5; //pushgateway ip
     uint32 pushgwPort = 6; //pushgateway port
     repeated UserGroup userGroupSet = 7; //replace userGroupIdSet
+    string errMsg = 12;
 }
 
 
@@ -156,6 +157,7 @@ message PushData {
     uint64 seqNum = 8;
     string serverId = 9;
     map<uint32, string> key2Exstr = 10;
+    uint32 originalURI = 11;
 
 }
 
@@ -170,6 +172,7 @@ message PushToClientReq {
     bytes data = 9;
     map<uint32, string> key2Exstr = 10;
     uint64 seqid = 11;
+    uint32 originalURI = 12;
 
 }
 
@@ -191,6 +194,7 @@ message PushToGroupReq {
     bytes data = 9;
     map<uint32, string> key2Exstr = 10;
     uint64 seqid = 11;
+    uint32 originalURI = 12;
 
 }
 
@@ -202,12 +206,8 @@ message PushToGroupResp {
 }
 
 
-service pushGateway {
+service PushGateway {
     //client
-    //rpc UserLogin (LoginRequest) returns (LoginResponse);
-    //rpc UserLogout (LogoutRequest) returns (LogoutResponse);
-    //rpc UserJoinGroup (JoinGroupRequest) returns (JoinGroupResponse);
-    //rpc UserLeaveGroup (LeaveGroupRequest) returns (LeaveGroupResponse);
     rpc PushRegister (stream PushRegReq) returns (stream PushData);
     //server
     rpc PushDataToClient (PushToClientReq) returns (PushToClientResp);

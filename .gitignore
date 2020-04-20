@@ -1,4 +1,4 @@
 out/
 .vscode/
-
-build/linux/Release_x64/
+build/linux/Debug_x64
+build/linux/Release_x64

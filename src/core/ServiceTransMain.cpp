@@ -11,7 +11,7 @@ ServiceTransMain::ServiceTransMain()
   : stc_loginout_(stc_login_, stc_logout_), taskQueue_()
 {
   EgcTrans::PinLibrary();
-  //³õÊ¼»¯grpc¿â
+  //åˆå§‹åŒ–grpcåº“
   g_gli_initializer.summon();
 }
 
@@ -38,7 +38,7 @@ SmsTransReturnCode ServiceTransMain::Start(uint64_t appid, uint64_t uid, uint64_
   appid_ = appid;
   SLOGI("ServiceTransMain start with appid {} appkey {} pushsvr {} uid {} ", appid, appKey, pushsvr, uid);
   EgcTrans::CredOptions opts;
-  //´´½¨³É¹¦ºóÁ¢¼´×¢²á
+  //åˆ›å»ºæˆåŠŸåç«‹å³æ³¨å†Œ
   register_handler();
   return EgcTrans::RPC::instance()->Start(CreateCred(opts) ? &opts : nullptr, {{pushsvr}});
 }
@@ -55,7 +55,7 @@ bool ServiceTransMain::PrepareLogin(EgcTrans::EgcUser user, SmsTransReturnCode& 
     code = SmsTransReturnCode::E_RETURN_SUCCESS;
     return true;
   }
-  //ÒÑ¾­µÇÂ½
+  //å·²ç»ç™»é™†
   code = SmsTransReturnCode::E_RETURN_ALREADYLOGINED;
   return false;
 }
@@ -70,25 +70,25 @@ bool ServiceTransMain::PrepareLogout(EgcTrans::EgcUser user,
     code = E_RETURN_NOTLOGINED;
     return false;
   }
-  //ÒÑ¾­µÇÂ½£¬ºÏ·¨
+  //å·²ç»ç™»é™†ï¼Œåˆæ³•
   code = E_RETURN_SUCCESS;
   return true;
 }
 
 SmsTransReturnCode ServiceTransMain::UserLogin(SmsTransUserInfo info)
 {
-  // login»òÕßlogout ÖÁÉÙÓĞÒ»¸öÕıÔÚ´¦ÀíÖĞ
+  // loginæˆ–è€…logout è‡³å°‘æœ‰ä¸€ä¸ªæ­£åœ¨å¤„ç†ä¸­
   TRUE_RETURN_RESULT(stc_loginout_.isWork(), E_RETURN_CALL_MUTEX);
-  //´¦ÀíloginÖĞ
+  //å¤„ç†loginä¸­
   stc_loginout_.setWork1();
   if (info.uid == 0)
   {
-    //²ÎÊı´íÎó
+    //å‚æ•°é”™è¯¯
     return E_RETURN_TRANS_ERR_ARG;
   }
-  //¼ÇÂ¼UID
+  //è®°å½•UID
   EgcTrans::EgcParam::instance()->SetUid(info.uid);
-  //µÇÂ½Ê±£¬ÊÕ¼¯ÓÃ»§ĞÅÏ¢
+  //ç™»é™†æ—¶ï¼Œæ”¶é›†ç”¨æˆ·ä¿¡æ¯
   static EgcTrans::EgcUser user;
   user.appid_ = appid_;
   // user.appkey_ = appkey_;
@@ -174,7 +174,7 @@ bool ServiceTransMain::ProcessLogin(EgcTrans::EgcUser user)
       {
         this->login_result_clk_.success();
         this->stc_loginout_.setDone1();
-        //³É¹¦²Å×ö±£´æ
+        //æˆåŠŸæ‰åšä¿å­˜
         EgcTrans::EgcParam::instance()->SetUser(user.account_, user.passwd_,
                                                 user.token_);
       }
@@ -194,7 +194,7 @@ bool ServiceTransMain::requestLogout_(EgcTrans::EgcUser info,
   SLOGW("requestLogout_");
   EgcTrans::IEgcInnerEvt ptr = std::make_shared<EgcTrans::EgcInternalEvent>();
   ptr->event_code = EgcTrans::EGC_INTERNAL_EVENT_LOGOUT;
-  // appkeyÖ±½Ó´Óparam»ñÈ¡
+  // appkeyç›´æ¥ä»paramè·å–
   ptr->logout.appid_ = info.appid_;
   ptr->logout.uid_ = info.uid_;
   ptr->setCtx("logout" + genCtx());
@@ -283,7 +283,7 @@ void ServiceTransMain::register_handler()
       ok = false;
       break;
     }
-    //Ò»¶¨Òª×¢Òâ£¬mainÒªÔÚclientÖ®ºóÏú»Ù£¬±£Ö¤thisÓĞĞ§
+    //ä¸€å®šè¦æ³¨æ„ï¼Œmainè¦åœ¨clientä¹‹åé”€æ¯ï¼Œä¿è¯thisæœ‰æ•ˆ
     if (ok)
     {
       sslis_.Dispatch(status);

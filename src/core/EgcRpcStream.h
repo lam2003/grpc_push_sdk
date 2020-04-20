@@ -38,7 +38,7 @@ protected:
   grpc::CompletionQueue* Cqueue();
   std::shared_ptr<grpc::Channel> Transport(); 
   EgcChannel* egc_channel_;
-  std::unique_ptr<pushGateway::Stub> stub_;
+  std::unique_ptr<PushGateway::Stub> stub_;
   std::atomic_bool io_init_{false};
 };
 

@@ -18,15 +18,15 @@ UserTerminalType getProtoTT() {
     case EgcCommon::E_TT_WINDOWS_64:
       tt = UTT_DESKTOP;
       break;
-    case EgcCommon::E_TT_IOS:
-      tt = UTT_MOBILEPHONE;
-      break;
-    case EgcCommon::E_TT_ANDROID:
-      tt = UTT_MOBILEPHONE;
-      break;
-    case EgcCommon::E_TT_IOS_SIMULATOR:
-      tt = UTT_MOBILEPHONE;
-      break;
+    // case EgcCommon::E_TT_IOS:
+    //   tt = UTT_MOBILEPHONE;
+    //   break;
+    // case EgcCommon::E_TT_ANDROID:
+    //   tt = UTT_MOBILEPHONE;
+    //   break;
+    // case EgcCommon::E_TT_IOS_SIMULATOR:
+    //   tt = UTT_MOBILEPHONE;
+    //   break;
     case EgcCommon::E_TT_LINUX:
       tt = UTT_SERVER;
       break;
@@ -123,7 +123,7 @@ CQTag Uri2Type(StreamURI uri) {
       desc = "LOGOUT_REQUEST";
       break;
     default:
-      //ËäÈ»ÊÇÎ´Öª£¬µ«ÊÇÊ¹ÓÃWRITE±ê¼Ç
+      //ï¿½ï¿½È»ï¿½ï¿½Î´Öªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¹ï¿½ï¿½WRITEï¿½ï¿½ï¿½
       type = ETagType::WRITE;
       desc = "unkown uri:" + std::to_string((int)uri);
       break;

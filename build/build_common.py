@@ -37,8 +37,8 @@ def init_common(build_common_path, target_platform):
         build_common_path, '..', 'out', 'include'))
 
     # 复制源码目录的头文件到输出目录
-    copy_file(src_include+'/EduPushIf.h', dest_include)
-    copy_folder(os.path.join(src_third_party, 'nonstd'), dest_include)
+    makedirs(dest_include)
+    copy_file(src_include+'/ServiceTransPushIf.h', dest_include)
 
 
 def call(command, shell=False):

@@ -13,4 +13,4 @@ MAC_RPATH_ENABLE = False
 
 
 #Misc
-BUILD_MODE = 'Release'
+BUILD_MODE = 'Debug'

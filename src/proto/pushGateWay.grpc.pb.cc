@@ -20,107 +20,107 @@ namespace grpc {
 namespace push {
 namespace gateway {
 
-static const char* pushGateway_method_names[] = {
-  "/grpc.push.gateway.pushGateway/PushRegister",
-  "/grpc.push.gateway.pushGateway/PushDataToClient",
-  "/grpc.push.gateway.pushGateway/PushDataToGroup",
+static const char* PushGateway_method_names[] = {
+  "/grpc.push.gateway.PushGateway/PushRegister",
+  "/grpc.push.gateway.PushGateway/PushDataToClient",
+  "/grpc.push.gateway.PushGateway/PushDataToGroup",
 };
 
-std::unique_ptr< pushGateway::Stub> pushGateway::NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options) {
+std::unique_ptr< PushGateway::Stub> PushGateway::NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options) {
   (void)options;
-  std::unique_ptr< pushGateway::Stub> stub(new pushGateway::Stub(channel));
+  std::unique_ptr< PushGateway::Stub> stub(new PushGateway::Stub(channel));
   return stub;
 }
 
-pushGateway::Stub::Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel)
-  : channel_(channel), rpcmethod_PushRegister_(pushGateway_method_names[0], ::grpc::internal::RpcMethod::BIDI_STREAMING, channel)
-  , rpcmethod_PushDataToClient_(pushGateway_method_names[1], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_PushDataToGroup_(pushGateway_method_names[2], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+PushGateway::Stub::Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel)
+  : channel_(channel), rpcmethod_PushRegister_(PushGateway_method_names[0], ::grpc::internal::RpcMethod::BIDI_STREAMING, channel)
+  , rpcmethod_PushDataToClient_(PushGateway_method_names[1], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  , rpcmethod_PushDataToGroup_(PushGateway_method_names[2], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
   {}
 
-::grpc::ClientReaderWriter< ::grpc::push::gateway::PushRegReq, ::grpc::push::gateway::PushData>* pushGateway::Stub::PushRegisterRaw(::grpc::ClientContext* context) {
+::grpc::ClientReaderWriter< ::grpc::push::gateway::PushRegReq, ::grpc::push::gateway::PushData>* PushGateway::Stub::PushRegisterRaw(::grpc::ClientContext* context) {
   return ::grpc::internal::ClientReaderWriterFactory< ::grpc::push::gateway::PushRegReq, ::grpc::push::gateway::PushData>::Create(channel_.get(), rpcmethod_PushRegister_, context);
 }
 
-void pushGateway::Stub::experimental_async::PushRegister(::grpc::ClientContext* context, ::grpc::experimental::ClientBidiReactor< ::grpc::push::gateway::PushRegReq,::grpc::push::gateway::PushData>* reactor) {
+void PushGateway::Stub::experimental_async::PushRegister(::grpc::ClientContext* context, ::grpc::experimental::ClientBidiReactor< ::grpc::push::gateway::PushRegReq,::grpc::push::gateway::PushData>* reactor) {
   ::grpc::internal::ClientCallbackReaderWriterFactory< ::grpc::push::gateway::PushRegReq,::grpc::push::gateway::PushData>::Create(stub_->channel_.get(), stub_->rpcmethod_PushRegister_, context, reactor);
 }
 
-::grpc::ClientAsyncReaderWriter< ::grpc::push::gateway::PushRegReq, ::grpc::push::gateway::PushData>* pushGateway::Stub::AsyncPushRegisterRaw(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq, void* tag) {
+::grpc::ClientAsyncReaderWriter< ::grpc::push::gateway::PushRegReq, ::grpc::push::gateway::PushData>* PushGateway::Stub::AsyncPushRegisterRaw(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq, void* tag) {
   return ::grpc::internal::ClientAsyncReaderWriterFactory< ::grpc::push::gateway::PushRegReq, ::grpc::push::gateway::PushData>::Create(channel_.get(), cq, rpcmethod_PushRegister_, context, true, tag);
 }
 
-::grpc::ClientAsyncReaderWriter< ::grpc::push::gateway::PushRegReq, ::grpc::push::gateway::PushData>* pushGateway::Stub::PrepareAsyncPushRegisterRaw(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq) {
+::grpc::ClientAsyncReaderWriter< ::grpc::push::gateway::PushRegReq, ::grpc::push::gateway::PushData>* PushGateway::Stub::PrepareAsyncPushRegisterRaw(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq) {
   return ::grpc::internal::ClientAsyncReaderWriterFactory< ::grpc::push::gateway::PushRegReq, ::grpc::push::gateway::PushData>::Create(channel_.get(), cq, rpcmethod_PushRegister_, context, false, nullptr);
 }
 
-::grpc::Status pushGateway::Stub::PushDataToClient(::grpc::ClientContext* context, const ::grpc::push::gateway::PushToClientReq& request, ::grpc::push::gateway::PushToClientResp* response) {
+::grpc::Status PushGateway::Stub::PushDataToClient(::grpc::ClientContext* context, const ::grpc::push::gateway::PushToClientReq& request, ::grpc::push::gateway::PushToClientResp* response) {
   return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_PushDataToClient_, context, request, response);
 }
 
-void pushGateway::Stub::experimental_async::PushDataToClient(::grpc::ClientContext* context, const ::grpc::push::gateway::PushToClientReq* request, ::grpc::push::gateway::PushToClientResp* response, std::function<void(::grpc::Status)> f) {
+void PushGateway::Stub::experimental_async::PushDataToClient(::grpc::ClientContext* context, const ::grpc::push::gateway::PushToClientReq* request, ::grpc::push::gateway::PushToClientResp* response, std::function<void(::grpc::Status)> f) {
   return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_PushDataToClient_, context, request, response, std::move(f));
 }
 
-::grpc::ClientAsyncResponseReader< ::grpc::push::gateway::PushToClientResp>* pushGateway::Stub::AsyncPushDataToClientRaw(::grpc::ClientContext* context, const ::grpc::push::gateway::PushToClientReq& request, ::grpc::CompletionQueue* cq) {
+::grpc::ClientAsyncResponseReader< ::grpc::push::gateway::PushToClientResp>* PushGateway::Stub::AsyncPushDataToClientRaw(::grpc::ClientContext* context, const ::grpc::push::gateway::PushToClientReq& request, ::grpc::CompletionQueue* cq) {
   return ::grpc::internal::ClientAsyncResponseReaderFactory< ::grpc::push::gateway::PushToClientResp>::Create(channel_.get(), cq, rpcmethod_PushDataToClient_, context, request, true);
 }
 
-::grpc::ClientAsyncResponseReader< ::grpc::push::gateway::PushToClientResp>* pushGateway::Stub::PrepareAsyncPushDataToClientRaw(::grpc::ClientContext* context, const ::grpc::push::gateway::PushToClientReq& request, ::grpc::CompletionQueue* cq) {
+::grpc::ClientAsyncResponseReader< ::grpc::push::gateway::PushToClientResp>* PushGateway::Stub::PrepareAsyncPushDataToClientRaw(::grpc::ClientContext* context, const ::grpc::push::gateway::PushToClientReq& request, ::grpc::CompletionQueue* cq) {
   return ::grpc::internal::ClientAsyncResponseReaderFactory< ::grpc::push::gateway::PushToClientResp>::Create(channel_.get(), cq, rpcmethod_PushDataToClient_, context, request, false);
 }
 
-::grpc::Status pushGateway::Stub::PushDataToGroup(::grpc::ClientContext* context, const ::grpc::push::gateway::PushToGroupReq& request, ::grpc::push::gateway::PushToGroupResp* response) {
+::grpc::Status PushGateway::Stub::PushDataToGroup(::grpc::ClientContext* context, const ::grpc::push::gateway::PushToGroupReq& request, ::grpc::push::gateway::PushToGroupResp* response) {
   return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_PushDataToGroup_, context, request, response);
 }
 
-void pushGateway::Stub::experimental_async::PushDataToGroup(::grpc::ClientContext* context, const ::grpc::push::gateway::PushToGroupReq* request, ::grpc::push::gateway::PushToGroupResp* response, std::function<void(::grpc::Status)> f) {
+void PushGateway::Stub::experimental_async::PushDataToGroup(::grpc::ClientContext* context, const ::grpc::push::gateway::PushToGroupReq* request, ::grpc::push::gateway::PushToGroupResp* response, std::function<void(::grpc::Status)> f) {
   return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_PushDataToGroup_, context, request, response, std::move(f));
 }
 
-::grpc::ClientAsyncResponseReader< ::grpc::push::gateway::PushToGroupResp>* pushGateway::Stub::AsyncPushDataToGroupRaw(::grpc::ClientContext* context, const ::grpc::push::gateway::PushToGroupReq& request, ::grpc::CompletionQueue* cq) {
+::grpc::ClientAsyncResponseReader< ::grpc::push::gateway::PushToGroupResp>* PushGateway::Stub::AsyncPushDataToGroupRaw(::grpc::ClientContext* context, const ::grpc::push::gateway::PushToGroupReq& request, ::grpc::CompletionQueue* cq) {
   return ::grpc::internal::ClientAsyncResponseReaderFactory< ::grpc::push::gateway::PushToGroupResp>::Create(channel_.get(), cq, rpcmethod_PushDataToGroup_, context, request, true);
 }
 
-::grpc::ClientAsyncResponseReader< ::grpc::push::gateway::PushToGroupResp>* pushGateway::Stub::PrepareAsyncPushDataToGroupRaw(::grpc::ClientContext* context, const ::grpc::push::gateway::PushToGroupReq& request, ::grpc::CompletionQueue* cq) {
+::grpc::ClientAsyncResponseReader< ::grpc::push::gateway::PushToGroupResp>* PushGateway::Stub::PrepareAsyncPushDataToGroupRaw(::grpc::ClientContext* context, const ::grpc::push::gateway::PushToGroupReq& request, ::grpc::CompletionQueue* cq) {
   return ::grpc::internal::ClientAsyncResponseReaderFactory< ::grpc::push::gateway::PushToGroupResp>::Create(channel_.get(), cq, rpcmethod_PushDataToGroup_, context, request, false);
 }
 
-pushGateway::Service::Service() {
+PushGateway::Service::Service() {
   AddMethod(new ::grpc::internal::RpcServiceMethod(
-      pushGateway_method_names[0],
+      PushGateway_method_names[0],
       ::grpc::internal::RpcMethod::BIDI_STREAMING,
-      new ::grpc::internal::BidiStreamingHandler< pushGateway::Service, ::grpc::push::gateway::PushRegReq, ::grpc::push::gateway::PushData>(
-          std::mem_fn(&pushGateway::Service::PushRegister), this)));
+      new ::grpc::internal::BidiStreamingHandler< PushGateway::Service, ::grpc::push::gateway::PushRegReq, ::grpc::push::gateway::PushData>(
+          std::mem_fn(&PushGateway::Service::PushRegister), this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
-      pushGateway_method_names[1],
+      PushGateway_method_names[1],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< pushGateway::Service, ::grpc::push::gateway::PushToClientReq, ::grpc::push::gateway::PushToClientResp>(
-          std::mem_fn(&pushGateway::Service::PushDataToClient), this)));
+      new ::grpc::internal::RpcMethodHandler< PushGateway::Service, ::grpc::push::gateway::PushToClientReq, ::grpc::push::gateway::PushToClientResp>(
+          std::mem_fn(&PushGateway::Service::PushDataToClient), this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
-      pushGateway_method_names[2],
+      PushGateway_method_names[2],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< pushGateway::Service, ::grpc::push::gateway::PushToGroupReq, ::grpc::push::gateway::PushToGroupResp>(
-          std::mem_fn(&pushGateway::Service::PushDataToGroup), this)));
+      new ::grpc::internal::RpcMethodHandler< PushGateway::Service, ::grpc::push::gateway::PushToGroupReq, ::grpc::push::gateway::PushToGroupResp>(
+          std::mem_fn(&PushGateway::Service::PushDataToGroup), this)));
 }
 
-pushGateway::Service::~Service() {
+PushGateway::Service::~Service() {
 }
 
-::grpc::Status pushGateway::Service::PushRegister(::grpc::ServerContext* context, ::grpc::ServerReaderWriter< ::grpc::push::gateway::PushData, ::grpc::push::gateway::PushRegReq>* stream) {
+::grpc::Status PushGateway::Service::PushRegister(::grpc::ServerContext* context, ::grpc::ServerReaderWriter< ::grpc::push::gateway::PushData, ::grpc::push::gateway::PushRegReq>* stream) {
   (void) context;
   (void) stream;
   return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
 }
 
-::grpc::Status pushGateway::Service::PushDataToClient(::grpc::ServerContext* context, const ::grpc::push::gateway::PushToClientReq* request, ::grpc::push::gateway::PushToClientResp* response) {
+::grpc::Status PushGateway::Service::PushDataToClient(::grpc::ServerContext* context, const ::grpc::push::gateway::PushToClientReq* request, ::grpc::push::gateway::PushToClientResp* response) {
   (void) context;
   (void) request;
   (void) response;
   return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
 }
 
-::grpc::Status pushGateway::Service::PushDataToGroup(::grpc::ServerContext* context, const ::grpc::push::gateway::PushToGroupReq* request, ::grpc::push::gateway::PushToGroupResp* response) {
+::grpc::Status PushGateway::Service::PushDataToGroup(::grpc::ServerContext* context, const ::grpc::push::gateway::PushToGroupReq* request, ::grpc::push::gateway::PushToGroupResp* response) {
   (void) context;
   (void) request;
   (void) response;
