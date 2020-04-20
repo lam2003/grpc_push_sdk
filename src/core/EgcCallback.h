@@ -23,14 +23,14 @@ struct ParamCallback : public IEgcCallback {
     context_ = 0;
     clk_ = 0;
   }
-  //设置监听回调
+  //璁剧疆鐩戝惉鍥炶皟
   void set(T cb, void* data, std::string name) {
     clk_ = cb;
     context_ = data;
     name_ = name;
   }
   T clk(void) { return clk_; }
-  std::string context() { return context_; }
+  std::string context() { return dynamic_cast<std::string>(context_); }
   bool isExist() { return clk_ ? true : false; }
   template <class... ARGS>
   void call(ARGS... args) {
@@ -57,7 +57,7 @@ struct ResultCallback : public IEgcCallback {
     err_ = err;
     name_ = name;
   }
-  // TODO 异步线程中回调通知
+  // TODO 寮傛绾跨▼涓洖璋冮�氱煡
   void success() {
     CHECK(suc_);
     try {

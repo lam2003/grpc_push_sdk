@@ -36,6 +36,7 @@ set(THIRD_PARTY_DIR ${PROJECT_SOURCE_DIR}/3rdparty)
 
 set(CMAKE_FOLDER 3rdparty)
 add_subdirectory(${THIRD_PARTY_DIR}/grpc)
+add_subdirectory(${THIRD_PARTY_DIR}/spdlog)
 set(CMAKE_FOLDER)
 
 add_subdirectory(src)

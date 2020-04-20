@@ -44,6 +44,7 @@ call(cmake_cmd)
 build('grpc_cpp_plugin')
 build('protoc')
 build('grpc++')
+build("spdlog")
 build('service-mesh-cpp')
 
 

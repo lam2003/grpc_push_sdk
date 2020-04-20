@@ -30,16 +30,17 @@ endif()
 
 target_compile_features(service-mesh-cpp PUBLIC cxx_std_11)
 
-target_link_libraries(service-mesh-cpp PUBLIC grpc++)
-target_link_libraries(service-mesh-cpp PUBLIC ssl crypto)
-target_link_libraries(service-mesh-cpp PUBLIC libprotobuf)
-
+target_link_libraries(service-mesh-cpp PUBLIC libgrpc++.a)
+target_link_libraries(service-mesh-cpp PUBLIC libssl crypto.a)
+target_link_libraries(service-mesh-cpp PUBLIC libprotobuf.a)
+target_link_libraries(service-mesh-cpp PUBLIC libspdlog.a)
 
 target_include_directories(service-mesh-cpp
     PUBLIC ${THIRD_PARTY_DIR}
     PUBLIC ${PUBLIC_INCLUDE_DIR}
     PRIVATE .
     PRIVATE core
+    PRIVATE ${THIRD_PARTY_DIR}/spdlog/include
     PRIVATE ${THIRD_PARTY_DIR}/grpc/third_party/protobuf/src 
 )
 

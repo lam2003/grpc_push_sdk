@@ -3,18 +3,18 @@
 #include "EgcInit.h"
 #include "ServiceTransMain.h"
 #include "common/SLog.h"
-#include "resolver/EgcResolver.h"
+// #include "resolver/EgcResolver.h"
 
 
 SmsTransReturnCode SmsTrans_RegisterOnce(const char* logpath)
 {
-  bool ret = EduPcResolver::RegisterOnce(logpath);
+  // bool ret = EduPcResolver::RegisterOnce(logpath);
 
 
   std::string logpathstr = std::string(logpath);
   try
   {
-    //ÏÈ³õÊ¼»¯ÈÕÖ¾¿â  
+    //å…ˆåˆå§‹åŒ–æ—¥å¿—åº“  
     EgcCommon::SLog::Init(logpathstr);
   }
   catch (std::exception* e)
@@ -24,8 +24,8 @@ SmsTransReturnCode SmsTrans_RegisterOnce(const char* logpath)
   }
   SLOGI("RegisterOnce with logpath ok {}", logpathstr);
   EgcTrans::ConfigureGrpc();
-  if (!ret)
-    SLOGI("EduPcResolver with logpath fail {}", logpathstr);
+  // if (!ret)
+  //   SLOGI("EduPcResolver with logpath fail {}", logpathstr);
   return E_RETURN_SUCCESS;
 }
 
@@ -47,7 +47,7 @@ SmsTransReturnCode SmsTrans_UserLogout(SmsTransUserInfo user, SmsTrans_SucCallba
 
 SmsTransReturnCode SmsTrans_Start(egc_uid_t uid, uint64_t appid, uint64_t appkey)
 {
-  //²ÉÓÃÄ¬ÈÏÖµ
+  //é‡‡ç”¨é»˜è®¤å€¼
   if (appid == 0 || appkey == 0)
   {
     EgcTrans::EgcParam::instance()->SetAppid(ENUM_APP_SESSION);
@@ -57,7 +57,7 @@ SmsTransReturnCode SmsTrans_Start(egc_uid_t uid, uint64_t appid, uint64_t appkey
   {
     return E_RETURN_UID_ZERO;
   }
-  //¼ÆËãsuid
+  //è®¡ç®—suid
   uint64_t suid = EgcTrans::genSuid(uid, uint16_t(EgcTrans::getProtoTT()));
   EgcTrans::EgcParam::instance()->SetUid(uid);
   EgcTrans::EgcParam::instance()->SetSUid(suid);
