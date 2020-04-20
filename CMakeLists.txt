@@ -37,6 +37,8 @@ set(THIRD_PARTY_DIR ${PROJECT_SOURCE_DIR}/3rdparty)
 if(BUILD_MODE MATCHES "Debug")
     message("##################BUILD DEBUG##################")
     set(CMAKE_CXX_FLAGS "-g ${CMAKE_CXX_FLAGS}")
+elseif()
+    message("##################BUILD Release##################")
 endif()
 
 set(CMAKE_FOLDER 3rdparty)
