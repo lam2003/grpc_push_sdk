@@ -8,7 +8,8 @@ import subprocess
 import multiprocessing
 
 BUILD_DIR = ''
-TARGET_PLATFORM = '' # mac, ios, android, windows, linux
+TARGET_PLATFORM = ''  # mac, ios, android, windows, linux
+
 
 def init_common(build_common_path, target_platform):
     if build_common_path.find(' ') >= 0:
@@ -22,21 +23,23 @@ def init_common(build_common_path, target_platform):
     else:
         exec(compile(open(filename, "rb").read(), filename, 'exec'), globals())
 
-    #保存平台类型
-    global  TARGET_PLATFORM
+    # 保存平台类型
+    global TARGET_PLATFORM
     TARGET_PLATFORM = target_platform
 
-    #定义源码目录
-    src_include = os.path.realpath(os.path.join(build_common_path, '..', 'include'))
-    src_third_party = os.path.realpath(os.path.join(build_common_path, '..', '3rdparty'))
+    # 定义源码目录
+    src_include = os.path.realpath(
+        os.path.join(build_common_path, '..', 'include'))
+    src_third_party = os.path.realpath(
+        os.path.join(build_common_path, '..', '3rdparty'))
     # 定义输出目录
-    dest_include = os.path.realpath(os.path.join(build_common_path, '..', 'out','service-mesh-sdk', 'include'))
-    
-    #复制源码目录的头文件到输出目录
-    copy_folder(os.path.join(src_include, 'service-mesh-cpp'), dest_include)
+    dest_include = os.path.realpath(os.path.join(
+        build_common_path, '..', 'out', 'include'))
+
+    # 复制源码目录的头文件到输出目录
+    copy_file(src_include+'/EduPushIf.h', dest_include)
     copy_folder(os.path.join(src_third_party, 'nonstd'), dest_include)
-    copy_folder(os.path.join(src_include, 'service-mesh-c'), dest_include)
-    copy_folder(os.path.join(src_include, 'service-mesh-c-wrapper'), dest_include)
+
 
 def call(command, shell=False):
     print('calling:', str(command))
@@ -48,20 +51,23 @@ def call(command, shell=False):
 #     import platform
 #     return platform.system() == 'Windows'
 
+
 def set_build_folder_name(name):
     global BUILD_DIR
     BUILD_DIR = os.path.abspath(name)
     makedirs(BUILD_DIR)
 
+
 def build(target):
     print()
     print('building ' + target + '...')
     call(['cmake',
-        '--build', BUILD_DIR,
-        '--target', target,
-        '--config', BUILD_MODE,
-        '--parallel', str(multiprocessing.cpu_count())
-    ], shell=False)
+          '--build', BUILD_DIR,
+          '--target', target,
+          '--config', BUILD_MODE,
+          '--parallel', str(multiprocessing.cpu_count())
+          ], shell=False)
+
 
 def makedirs(dir):
     if not os.path.isdir(dir):
@@ -79,15 +85,18 @@ def makedirs(dir):
 #         return os.environ[name]
 #     return ''
 
+
 def bool2cmake(bVal):
     if bVal:
         return 'ON'
     else:
         return 'OFF'
 
+
 def copy_file(src, dest):
     shutil.copy(src, dest)
     print('copied', os.path.basename(src))
+
 
 def copy_folder(src, dest, replace=True):
     folder_name = os.path.basename(src)
@@ -99,12 +108,14 @@ def copy_folder(src, dest, replace=True):
     shutil.copytree(src, dest_full_path)
     print('copied', os.path.basename(src))
 
+
 def copy_libs():
     print
     print('copying to release folder...')
     copy_protobuf_lib()
     copy_ssl_lib()
     copy_grpc_lib()
+    copy_service_mesh_lib()
 
 # def set_install_name(dylib_path):
 #     if (IOS_RPATH_ENABLE and TARGET_PLATFORM == 'ios') or (MAC_RPATH_ENABLE and TARGET_PLATFORM == 'mac'):

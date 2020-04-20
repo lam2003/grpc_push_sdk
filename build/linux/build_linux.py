@@ -26,7 +26,7 @@ else:
 # 生成构建文件夹
 set_build_folder_name(BUILD_MODE + '_' + ARCH)
 
-libs_path = os.path.abspath(os.path.join('../../out/service-mesh-sdk/lib/'))
+libs_path = os.path.abspath(os.path.join('../../out/lib/'))
 
 print('Architecture:', ARCH)
 print('Build mode  :', BUILD_MODE)
@@ -61,6 +61,9 @@ def copy_grpc_lib():
     copy_file(BUILD_DIR + '/3rdparty/grpc/libgrpc.a', libs_path)
     copy_file(BUILD_DIR + '/3rdparty/grpc/third_party/cares/cares/lib/libcares.a', libs_path)
     copy_file(BUILD_DIR + '/3rdparty/grpc/third_party/zlib/libz.a', libs_path)
+
+def copy_service_mesh_lib():
+    copy_file(BUILD_DIR + '/src/libservice-mesh-cpp.a', libs_path)
 
 makedirs(libs_path)
 copy_libs()
