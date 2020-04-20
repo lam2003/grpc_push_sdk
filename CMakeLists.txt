@@ -38,3 +38,5 @@ set(CMAKE_FOLDER 3rdparty)
 add_subdirectory(${THIRD_PARTY_DIR}/grpc)
 set(CMAKE_FOLDER)
 
+add_subdirectory(src)
+

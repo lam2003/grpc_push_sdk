@@ -44,6 +44,7 @@ call(cmake_cmd)
 build('grpc_cpp_plugin')
 build('protoc')
 build('grpc++')
+build('service-mesh-cpp')
 
 
 def copy_protobuf_lib():

@@ -18,80 +18,26 @@ file(
     "${_include_root_path}/*.h*"
 )
 
-if(NAKAMA_SHARED_LIBRARY)
-    set(CMAKE_MACOSX_RPATH ON)
-
-    add_library(nakama-cpp SHARED ${_source_list} ${_public_headers_list})
-
-    target_compile_definitions(nakama-cpp PRIVATE NAKAMA_SHARED_LIBRARY)
-    target_compile_definitions(nakama-cpp PRIVATE NAKAMA_SHARED_LIBRARY_EXPORTS)
-
-    if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
-        # disable C4251 warnings
-        target_compile_options(nakama-cpp PRIVATE /wd4251)
-    endif()
-
-else()
-    # static lib
-    add_library(nakama-cpp STATIC ${_source_list} ${_public_headers_list})
-endif()
+add_library(service-mesh-cpp STATIC ${_source_list} ${_public_headers_list})
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
-    target_compile_options(nakama-cpp PRIVATE /MP)
+    target_compile_options(service-mesh-cpp PRIVATE /MP)
 elseif(CMAKE_COMPILER_IS_GNUCC)
-    target_compile_options(nakama-cpp PRIVATE -Wno-attributes)
+    target_compile_options(service-mesh-cpp PRIVATE -Wno-attributes)
     # disable warnings
-    target_compile_options(nakama-cpp PRIVATE -Wno-conversion -Wno-pedantic -Wno-cast-qual -Wno-sign-compare)
+    target_compile_options(service-mesh-cpp PRIVATE -Wno-conversion -Wno-pedantic -Wno-cast-qual -Wno-sign-compare)
 endif()
 
-target_compile_features(nakama-cpp PUBLIC cxx_std_11)
+target_compile_features(service-mesh-cpp PUBLIC cxx_std_11)
 
-if(LOGS_ENABLED)
-    target_compile_definitions(nakama-cpp PRIVATE NLOGS_ENABLED)
-endif(LOGS_ENABLED)
+target_link_libraries(service-mesh-cpp PUBLIC grpc++)
+target_link_libraries(service-mesh-cpp PUBLIC ssl crypto)
+target_link_libraries(service-mesh-cpp PUBLIC libprotobuf)
 
-if(BUILD_WEBSOCKET_CPPREST)
-    target_compile_definitions(nakama-cpp PRIVATE BUILD_WEBSOCKET_CPPREST)
-endif(BUILD_WEBSOCKET_CPPREST)
 
-if(BUILD_HTTP_CPPREST)
-    target_compile_definitions(nakama-cpp PRIVATE BUILD_HTTP_CPPREST)
-endif(BUILD_HTTP_CPPREST)
-
-if(BUILD_REST_CLIENT)
-    target_compile_definitions(nakama-cpp PRIVATE BUILD_REST_CLIENT)
-endif(BUILD_REST_CLIENT)
-
-if(BUILD_HTTP_CPPREST OR BUILD_WEBSOCKET_CPPREST)
-    target_link_libraries(nakama-cpp PUBLIC cpprest)
-    target_compile_definitions(nakama-cpp PRIVATE _TURN_OFF_PLATFORM_STRING)
-endif()
-
-if(BUILD_GRPC_CLIENT)
-    target_link_libraries(nakama-cpp PUBLIC grpc++)
-    target_compile_definitions(nakama-cpp PRIVATE BUILD_GRPC_CLIENT)
-endif()
-
-if((BUILD_GRPC_CLIENT AND NAKAMA_SSL_ENABLED) OR BUILD_HTTP_CPPREST OR BUILD_WEBSOCKET_CPPREST)
-    target_compile_definitions(nakama-cpp PRIVATE NAKAMA_SSL_ENABLED)
-    target_include_directories(nakama-cpp PRIVATE ${THIRD_PARTY_DIR}/grpc/third_party/boringssl/include)
-    target_link_libraries(nakama-cpp PUBLIC ssl crypto)
-endif()
-
-if(BUILD_C_API)
-    target_compile_definitions(nakama-cpp PRIVATE BUILD_C_API)
-endif()
-
-target_link_libraries(nakama-cpp PUBLIC libprotobuf)
-
-if(ANDROID)
-    target_link_libraries(nakama-cpp PUBLIC log)
-endif()
-
-target_include_directories(nakama-cpp
+target_include_directories(service-mesh-cpp
     PUBLIC ${THIRD_PARTY_DIR}
     PUBLIC ${PUBLIC_INCLUDE_DIR}
-    PRIVATE api
     PRIVATE .
     PRIVATE ${THIRD_PARTY_DIR}/grpc/third_party/protobuf/src
 )
