@@ -62,10 +62,6 @@ void pushGateway::Stub::experimental_async::PushDataToClient(::grpc::ClientConte
   return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_PushDataToClient_, context, request, response, std::move(f));
 }
 
-void pushGateway::Stub::experimental_async::PushDataToClient(::grpc::ClientContext* context, const ::grpc::ByteBuffer* request, ::grpc::push::gateway::PushToClientResp* response, std::function<void(::grpc::Status)> f) {
-  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_PushDataToClient_, context, request, response, std::move(f));
-}
-
 ::grpc::ClientAsyncResponseReader< ::grpc::push::gateway::PushToClientResp>* pushGateway::Stub::AsyncPushDataToClientRaw(::grpc::ClientContext* context, const ::grpc::push::gateway::PushToClientReq& request, ::grpc::CompletionQueue* cq) {
   return ::grpc::internal::ClientAsyncResponseReaderFactory< ::grpc::push::gateway::PushToClientResp>::Create(channel_.get(), cq, rpcmethod_PushDataToClient_, context, request, true);
 }
@@ -79,10 +75,6 @@ void pushGateway::Stub::experimental_async::PushDataToClient(::grpc::ClientConte
 }
 
 void pushGateway::Stub::experimental_async::PushDataToGroup(::grpc::ClientContext* context, const ::grpc::push::gateway::PushToGroupReq* request, ::grpc::push::gateway::PushToGroupResp* response, std::function<void(::grpc::Status)> f) {
-  return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_PushDataToGroup_, context, request, response, std::move(f));
-}
-
-void pushGateway::Stub::experimental_async::PushDataToGroup(::grpc::ClientContext* context, const ::grpc::ByteBuffer* request, ::grpc::push::gateway::PushToGroupResp* response, std::function<void(::grpc::Status)> f) {
   return ::grpc::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_PushDataToGroup_, context, request, response, std::move(f));
 }
 

@@ -79,9 +79,7 @@ class pushGateway final {
       virtual void PushRegister(::grpc::ClientContext* context, ::grpc::experimental::ClientBidiReactor< ::grpc::push::gateway::PushRegReq,::grpc::push::gateway::PushData>* reactor) = 0;
       // server
       virtual void PushDataToClient(::grpc::ClientContext* context, const ::grpc::push::gateway::PushToClientReq* request, ::grpc::push::gateway::PushToClientResp* response, std::function<void(::grpc::Status)>) = 0;
-      virtual void PushDataToClient(::grpc::ClientContext* context, const ::grpc::ByteBuffer* request, ::grpc::push::gateway::PushToClientResp* response, std::function<void(::grpc::Status)>) = 0;
       virtual void PushDataToGroup(::grpc::ClientContext* context, const ::grpc::push::gateway::PushToGroupReq* request, ::grpc::push::gateway::PushToGroupResp* response, std::function<void(::grpc::Status)>) = 0;
-      virtual void PushDataToGroup(::grpc::ClientContext* context, const ::grpc::ByteBuffer* request, ::grpc::push::gateway::PushToGroupResp* response, std::function<void(::grpc::Status)>) = 0;
     };
     virtual class experimental_async_interface* experimental_async() { return nullptr; }
   private:
@@ -124,9 +122,7 @@ class pushGateway final {
      public:
       void PushRegister(::grpc::ClientContext* context, ::grpc::experimental::ClientBidiReactor< ::grpc::push::gateway::PushRegReq,::grpc::push::gateway::PushData>* reactor) override;
       void PushDataToClient(::grpc::ClientContext* context, const ::grpc::push::gateway::PushToClientReq* request, ::grpc::push::gateway::PushToClientResp* response, std::function<void(::grpc::Status)>) override;
-      void PushDataToClient(::grpc::ClientContext* context, const ::grpc::ByteBuffer* request, ::grpc::push::gateway::PushToClientResp* response, std::function<void(::grpc::Status)>) override;
       void PushDataToGroup(::grpc::ClientContext* context, const ::grpc::push::gateway::PushToGroupReq* request, ::grpc::push::gateway::PushToGroupResp* response, std::function<void(::grpc::Status)>) override;
-      void PushDataToGroup(::grpc::ClientContext* context, const ::grpc::ByteBuffer* request, ::grpc::push::gateway::PushToGroupResp* response, std::function<void(::grpc::Status)>) override;
      private:
       friend class Stub;
       explicit experimental_async(Stub* stub): stub_(stub) { }
