@@ -2,7 +2,3 @@
 	path = 3rdparty/grpc
 	url = https://github.com/grpc/grpc
 	branch = v1.19.x
-[submodule "build/linux/spdlog"]
-	path = build/linux/spdlog
-	url = https://github.com/gabime/spdlog
-	branch = v1.x
