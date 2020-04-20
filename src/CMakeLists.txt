@@ -39,7 +39,8 @@ target_include_directories(service-mesh-cpp
     PUBLIC ${THIRD_PARTY_DIR}
     PUBLIC ${PUBLIC_INCLUDE_DIR}
     PRIVATE .
-    PRIVATE ${THIRD_PARTY_DIR}/grpc/third_party/protobuf/src
+    PRIVATE core
+    PRIVATE ${THIRD_PARTY_DIR}/grpc/third_party/protobuf/src 
 )
 
 foreach(_source IN ITEMS ${_source_list})
