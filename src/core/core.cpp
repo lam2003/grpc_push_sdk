@@ -13,6 +13,8 @@ static void init_logger()
 {
     _sdk_logger = std::make_shared<Log>(SDK_LOGGER_NAME);
     _sdk_logger->LogOnConsole(true);
+    _sdk_logger->SetLogLevel(LOG_LEVEL::ERROR);
+    _sdk_logger->SetOutputDir("./log/");
     _sdk_logger->Initialize();
 }
 

@@ -26,7 +26,7 @@ class Log final {
     ~Log();
 
   public:
-    //需要在初始化之前调用
+    // 需要在初始化之前调用
     void LogOnConsole(bool v);
     void SetOutputDir(const std::string& dir);
     void SetFormat(const std::string& format);

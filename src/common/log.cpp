@@ -68,6 +68,7 @@ int Log::Initialize()
     }
 
     if (dir_ != "") {
+        //统一使用unix风格的路径(/home/xxx/log/)
         std::ostringstream oss;
         oss << dir_ << "/" << Utils::GetSystemTime("%Y-%m-%d") << ".log";
         file_logger_ =
