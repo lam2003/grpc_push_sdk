@@ -123,3 +123,17 @@ def copy_libs():
 #     else:
 #         path = '@executable_path'
 #     call(['install_name_tool', '-id', path + '/libnakama-cpp.dylib', dylib_path])
+
+# for ios
+def create_universal_lib(libs):
+    if len(libs) == 0:
+        return
+
+    name = os.path.basename(libs[0])
+    print('creating universal library', name + ' ...')
+    lipo_commands = ['lipo', '-create']
+    for lib in libs:
+        lipo_commands.append(lib)
+    lipo_commands.append('-output')
+    lipo_commands.append(release_libs_dir + '/' + name)
+    call(lipo_commands)
