@@ -1,7 +1,9 @@
 #include <ServiceTransPushIf.h>
+#include <core/core.h>
 
 SmsTransReturnCode SmsTrans_RegisterOnce(const char* logpath)
-{
+{    
+    edu::ServiceMeshSDK::Instance()->Initialize();
     return E_RETURN_SUCCESS;
 }
 
