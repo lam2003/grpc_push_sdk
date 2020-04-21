@@ -3,7 +3,7 @@
 
 #include <sstream>
 
-#include <ServiceTransPushIf.h>
+#include <smsif.h>
 
 #define DEFAULT_FORMAT "[%Y-%m-%d %H:%M:%S.%e][%t][%l]%v%$"
 
@@ -59,7 +59,7 @@ int Log::Initialize()
         console_logger_ = spdlog::stdout_color_mt(
             logger_name_, spdlog::color_mode::automatic);
         if (!console_logger_) {
-            return E_RETURN_INITLOG_FAIL;
+            return ERR_SMS_INIT_LOG;
         }
         console_logger_->set_level(
             static_cast<spdlog::level::level_enum>(log_level_));
@@ -76,7 +76,7 @@ int Log::Initialize()
                                        1024 * 1024 * 5,  // 5MB
                                        10);
         if (!file_logger_) {
-            return E_RETURN_INITLOG_FAIL;
+            return ERR_SMS_INIT_LOG;
         }
         file_logger_->set_level(
             static_cast<spdlog::level::level_enum>(log_level_));
@@ -84,7 +84,7 @@ int Log::Initialize()
         file_logger_->set_pattern(format_);
     }
 
-    return E_RETURN_SUCCESS;
+    return ERR_SMS_SUCCESS;
 }
 
 }  // namespace edu

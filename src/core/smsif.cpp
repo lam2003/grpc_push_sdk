@@ -1,10 +1,10 @@
-#include <ServiceTransPushIf.h>
+#include <smsif.h>
 #include <core/core.h>
 
 SmsTransReturnCode SmsTrans_RegisterOnce(const char* logpath)
 {    
     edu::ServiceMeshSDK::Instance()->Initialize();
-    return E_RETURN_SUCCESS;
+    return ERR_SMS_SUCCESS;
 }
 
 SmsTransReturnCode SmsTrans_UserLogin(SmsTransUserInfo     info,
@@ -12,7 +12,7 @@ SmsTransReturnCode SmsTrans_UserLogin(SmsTransUserInfo     info,
                                       SmsTrans_ErrCallback err,
                                       void*                data)
 {
-    return E_RETURN_SUCCESS;
+    return ERR_SMS_SUCCESS;
 }
 
 SmsTransReturnCode SmsTrans_UserLogout(SmsTransUserInfo     user,
@@ -20,13 +20,13 @@ SmsTransReturnCode SmsTrans_UserLogout(SmsTransUserInfo     user,
                                        SmsTrans_ErrCallback err,
                                        void*                data)
 {
-    return E_RETURN_SUCCESS;
+    return ERR_SMS_SUCCESS;
 }
 
 SmsTransReturnCode
 SmsTrans_Start(egc_uid_t uid, uint64_t appid, uint64_t appkey)
 {
-    return E_RETURN_SUCCESS;
+    return ERR_SMS_SUCCESS;
 }
 
 SmsTransReturnCode SmsTrans_UserJoinGroup(SmsTransUserGroup    group,
@@ -34,7 +34,7 @@ SmsTransReturnCode SmsTrans_UserJoinGroup(SmsTransUserGroup    group,
                                           SmsTrans_ErrCallback err,
                                           void*                data)
 {
-    return E_RETURN_SUCCESS;
+    return ERR_SMS_SUCCESS;
 }
 
 SmsTransReturnCode SmsTrans_UserLeaveGroup(SmsTransUserGroup    group,
@@ -42,7 +42,7 @@ SmsTransReturnCode SmsTrans_UserLeaveGroup(SmsTransUserGroup    group,
                                            SmsTrans_ErrCallback err,
                                            void*                data)
 {
-    return E_RETURN_SUCCESS;
+    return ERR_SMS_SUCCESS;
 }
 
 egc_handler_t

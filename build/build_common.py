@@ -38,7 +38,7 @@ def init_common(build_common_path, target_platform):
 
     # 复制源码目录的头文件到输出目录
     makedirs(dest_include)
-    copy_file(src_include+'/ServiceTransPushIf.h', dest_include)
+    copy_file(src_include+'/smsif.h', dest_include)
 
 
 def call(command, shell=False):
