@@ -97,7 +97,7 @@ def copy_libs():
     copy_service_mesh_lib()
 
 # for ios
-def create_universal_lib(libs):
+def create_universal_lib(libs,release_libs_dir):
     if len(libs) == 0:
         return
 
