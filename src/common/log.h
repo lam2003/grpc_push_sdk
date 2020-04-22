@@ -4,6 +4,10 @@
 #include <memory>
 #include <string>
 
+//不使用threadlocal, 否则ios工具链无法编译
+#ifndef SPDLOG_NO_TLS
+#    define SPDLOG_NO_TLS
+#endif
 #include <spdlog/sinks/rotating_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
@@ -94,7 +98,7 @@ class Log final {
 
 extern std::shared_ptr<edu::Log> _sdk_logger;
 extern std::shared_ptr<edu::Log> _grpc_logger;
-extern int                  init_logger(const std::string& log_dir);
+extern int                       init_logger(const std::string& log_dir);
 
 #if SMS_DEBUG
 #    define log_e(msg, ...)                                                    \
