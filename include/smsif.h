@@ -21,7 +21,7 @@ enum SmsTransCallErrType {
 };
 
 //返回码
-enum SmsTransReturnCode {
+enum SmsTransErrCode {
     ERR_SMS_SUCCESS  = 0,   //接口调用正常
     ERR_SMS_INIT_LOG = 10,  //日志初始化失败
 };
@@ -30,7 +30,7 @@ enum SmsTransReturnCode {
 @brief 通用成功回调
 @param [in] data 自定义指针
 */
-typedef void (*SmsTrans_SucCallback)(void* data);
+typedef void (*SmsTransSucCallback)(void* data);
 
 /**
 @brief 通用失败回调
@@ -38,9 +38,9 @@ typedef void (*SmsTrans_SucCallback)(void* data);
 @param [in] desc 错误描述
 @param [in] data 自定义指针
 */
-typedef void (*SmsTrans_ErrCallback)(SmsTransCallErrType code,
-                                     const char*         desc,
-                                     void*               data);
+typedef void (*SmsTransErrCallback)(SmsTransCallErrType code,
+                                    const char*         desc,
+                                    void*               data);
 
 struct SmsTransUserGroup
 {
@@ -82,54 +82,52 @@ typedef enum {
 } SmsTransPushMsgType;
 
 typedef uint32_t egc_handler_t;
-typedef void (*SmsTrans_Linkstatus_Callback)(SmsTransLinkStatus status,
-                                             void*              arg);
-typedef void (*SmsTrans_Pushmsg_Callback)(const char* data,
-                                          uint32_t    size,
-                                          void*       arg);
+typedef void (*SmsTransLinkstatus_Callback)(SmsTransLinkStatus status,
+                                            void*              arg);
+typedef void (*SmsTransPushmsg_Callback)(const char* data,
+                                         uint32_t    size,
+                                         void*       arg);
 extern "C" egc_handler_t
-SmsTrans_AddLinkStatusListener(SmsTrans_Linkstatus_Callback link_cb, void* arg);
+SmsTransAddLinkStatusListener(SmsTransLinkstatus_Callback link_cb, void* arg);
 extern "C" egc_handler_t
-SmsTrans_AddUidMessageListener(std::string               servicename,
-                               uint64_t                  uid,
-                               SmsTrans_Pushmsg_Callback msg_cb,
-                               void*                     arg);
+SmsTransAddUidMessageListener(std::string              servicename,
+                              uint64_t                 uid,
+                              SmsTransPushmsg_Callback msg_cb,
+                              void*                    arg);
 extern "C" egc_handler_t
-                SmsTrans_AddGroupMessageListener(std::string               servicename,
-                                                 uint64_t                  grouptype,
-                                                 uint64_t                  groupid,
-                                                 SmsTrans_Pushmsg_Callback msg_cb,
-                                                 void*                     arg);
-extern "C" bool SmsTrans_RemoveLinkStatusListener(egc_handler_t);
-extern "C" bool SmsTrans_RemoveUidMessageListener(egc_handler_t);
-extern "C" bool SmsTrans_RemoveGroupMessageListener(egc_handler_t);
+                SmsTransAddGroupMessageListener(std::string              servicename,
+                                                uint64_t                 grouptype,
+                                                uint64_t                 groupid,
+                                                SmsTransPushmsg_Callback msg_cb,
+                                                void*                    arg);
+extern "C" bool SmsTransRemoveLinkStatusListener(egc_handler_t);
+extern "C" bool SmsTransRemoveUidMessageListener(egc_handler_t);
+extern "C" bool SmsTransRemoveGroupMessageListener(egc_handler_t);
 
-extern "C" ITRANS_API SmsTransReturnCode
-SmsTrans_RegisterOnce(const char* logpath);
+extern "C" ITRANS_API SmsTransErrCode SmsTransRegisterOnce(const char* logpath);
 
-extern "C" ITRANS_API SmsTransReturnCode SmsTrans_Start(egc_uid_t uid,
-                                                        uint64_t  appid  = 0,
-                                                        uint64_t  appkey = 0);
-extern "C" ITRANS_API SmsTransReturnCode
-SmsTrans_UserLogin(SmsTransUserInfo     user,
-                   SmsTrans_SucCallback suc,
-                   SmsTrans_ErrCallback err,
-                   void*                data);
-extern "C" ITRANS_API SmsTransReturnCode
-SmsTrans_UserJoinGroup(SmsTransUserGroup    group,
-                       SmsTrans_SucCallback suc,
-                       SmsTrans_ErrCallback err,
-                       void*                data);
-extern "C" ITRANS_API SmsTransReturnCode
-SmsTrans_UserLeaveGroup(SmsTransUserGroup    group,
-                        SmsTrans_SucCallback suc,
-                        SmsTrans_ErrCallback err,
-                        void*                data);
-extern "C" ITRANS_API SmsTransReturnCode
-SmsTrans_UserLogout(SmsTransUserInfo     user,
-                    SmsTrans_SucCallback suc,
-                    SmsTrans_ErrCallback err,
-                    void*                data);
+extern "C" ITRANS_API SmsTransErrCode SmsTransStart(egc_uid_t uid,
+                                                    uint64_t  appid  = 0,
+                                                    uint64_t  appkey = 0);
+extern "C" ITRANS_API SmsTransErrCode SmsTransUserLogin(SmsTransUserInfo user,
+                                                        SmsTransSucCallback suc,
+                                                        SmsTransErrCallback err,
+                                                        void* data);
+extern "C" ITRANS_API SmsTransErrCode
+SmsTransUserJoinGroup(SmsTransUserGroup   group,
+                      SmsTransSucCallback suc,
+                      SmsTransErrCallback err,
+                      void*               data);
+extern "C" ITRANS_API SmsTransErrCode
+SmsTransUserLeaveGroup(SmsTransUserGroup   group,
+                       SmsTransSucCallback suc,
+                       SmsTransErrCallback err,
+                       void*               data);
+extern "C" ITRANS_API SmsTransErrCode
+SmsTransUserLogout(SmsTransUserInfo    user,
+                   SmsTransSucCallback suc,
+                   SmsTransErrCallback err,
+                   void*               data);
 
 #ifdef __cplusplus
 }

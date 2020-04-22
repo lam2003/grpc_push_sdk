@@ -1,11 +1,18 @@
+#include <common/config.h>
 #include <common/log.h>
 #include <common/utils.h>
+#include <smsif.h>
 
 #include <sstream>
 
-#include <smsif.h>
+#include <grpc/grpc.h>
+#include <grpc/impl/codegen/log.h>
 
 #define DEFAULT_FORMAT "[%Y-%m-%d %H:%M:%S.%e][%t][%l]%v%$"
+#define SDK_LOGGER_NAME "push_sdk"
+#define GRPC_LOGGER_NAME "grpc"
+#define GRPC_LOG_PREFIX ": {}"
+#define GRPC_LOG_PREFIX_DEBUG "[{}:{}]: {}"
 
 namespace edu {
 
@@ -43,11 +50,6 @@ void Log::SetOutputDir(const std::string& dir)
     dir_ = dir;
 }
 
-void Log::SetFormat(const std::string& format)
-{
-    format_ = format;
-}
-
 void Log::SetLogLevel(LOG_LEVEL level)
 {
     log_level_ = level;
@@ -68,7 +70,6 @@ int Log::Initialize()
     }
 
     if (dir_ != "") {
-        //统一使用unix风格的路径(/home/xxx/log/)
         std::ostringstream oss;
         oss << dir_ << "/" << Utils::GetSystemTime("%Y-%m-%d") << ".log";
         file_logger_ =
@@ -85,6 +86,91 @@ int Log::Initialize()
     }
 
     return ERR_SMS_SUCCESS;
+}
+
+std::shared_ptr<Log> _sdk_logger  = nullptr;
+std::shared_ptr<Log> _grpc_logger = nullptr;
+
+static void grpc_log_func(gpr_log_func_args* args)
+{
+#if SMS_DEBUG
+    switch (args->severity) {
+        case GPR_LOG_SEVERITY_DEBUG:
+            _grpc_logger->Debug(GRPC_LOG_PREFIX_DEBUG, args->file, args->line,
+                                args->message);
+            break;
+        case GPR_LOG_SEVERITY_INFO:
+            _grpc_logger->Info(GRPC_LOG_PREFIX_DEBUG, args->file, args->line,
+                               args->message);
+            break;
+        case GPR_LOG_SEVERITY_ERROR:
+            _grpc_logger->Error(GRPC_LOG_PREFIX_DEBUG, args->file, args->line,
+                                args->message);
+            break;
+    }
+#else
+    switch (args->severity) {
+        case GPR_LOG_SEVERITY_DEBUG:
+            _grpc_logger->Debug(GRPC_LOG_PREFIX, args->message);
+            break;
+        case GPR_LOG_SEVERITY_INFO:
+            _grpc_logger->Info(GRPC_LOG_PREFIX, args->message);
+            break;
+        case GPR_LOG_SEVERITY_ERROR:
+            _grpc_logger->Error(GRPC_LOG_PREFIX, args->message);
+            break;
+    }
+#endif
+}
+
+int init_logger()
+{
+    int ret = ERR_SMS_SUCCESS;
+
+    // initializing sdk logger
+    _sdk_logger = std::make_shared<Log>(SDK_LOGGER_NAME);
+    _sdk_logger->LogOnConsole(Config::Instance()->sdk_log_on_console);
+    _sdk_logger->SetOutputDir(Config::Instance()->sdk_log_dir);
+    _sdk_logger->SetLogLevel(
+        Utils::StrToLogLevel(Config::Instance()->sdk_log_level));
+    if ((ret = _sdk_logger->Initialize()) != ERR_SMS_SUCCESS) {
+        return ret;
+    }
+
+    // initializing grpc logger
+    _grpc_logger = std::make_shared<Log>(GRPC_LOGGER_NAME);
+    _grpc_logger->LogOnConsole(Config::Instance()->grpc_log_on_console);
+    _grpc_logger->SetOutputDir(Config::Instance()->grpc_log_dir);
+    _grpc_logger->SetLogLevel(
+        Utils::StrToLogLevel(Config::Instance()->grpc_log_level));
+    if ((ret = _grpc_logger->Initialize()) != ERR_SMS_SUCCESS) {
+        return ret;
+    }
+
+    // 让grpc输出最低等级日志,用日志函数进行过滤
+    gpr_set_log_verbosity(GPR_LOG_SEVERITY_DEBUG);
+    gpr_log_verbosity_init();
+    gpr_set_log_function(&grpc_log_func);
+
+    // grpc_tracer_set_enabled("subchannel", 1);
+    // grpc_tracer_set_enabled("client_channel_routing", 1);
+    // grpc_tracer_set_enabled("client_channel_call", 1);
+    // grpc_tracer_set_enabled("connectivity_state", 1);
+    // grpc_tracer_set_enabled("call_error", 1);
+    // grpc_tracer_set_enabled("pick_first", 1);
+    // grpc_tracer_set_enabled("channel", 1);
+    // grpc_tracer_set_enabled("op_failure", 1);
+
+    // grpc_tracer_set_enabled("resolver_refcount", 1);
+    // grpc_tracer_set_enabled("flowctl", 1);
+    // grpc_tracer_set_enabled("list_tracers", 1);
+    // grpc_tracer_set_enabled("http2_stream_state", 1);
+    // grpc_tracer_set_enabled("bdp_estimator", 1);
+    // grpc_tracer_set_enabled("cares_resolver", 1);
+    // grpc_tracer_set_enabled("cares_address_sorting", 1);
+    // grpc_tracer_set_enabled("round_robin", 1);
+
+    return ret;
 }
 
 }  // namespace edu

@@ -8,6 +8,9 @@
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
 
+#define SDK_LOG_PREFIX ": "
+#define SDK_LOG_PREFIX_DEBUG "[{}:{}][{}]: "
+
 namespace edu {
 
 enum class LOG_LEVEL {
@@ -29,7 +32,6 @@ class Log final {
     // 需要在初始化之前调用
     void LogOnConsole(bool v);
     void SetOutputDir(const std::string& dir);
-    void SetFormat(const std::string& format);
     void SetLogLevel(LOG_LEVEL level);
 
     int Initialize();
@@ -78,11 +80,6 @@ class Log final {
             file_logger_->critical(fmt, std::forward<ARGS>(args)...);
     }
 
-    std::shared_ptr<spdlog::logger> GetConsoleLogger()
-    {
-        return console_logger_;
-    }
-
   private:
     std::shared_ptr<spdlog::logger> file_logger_;
     std::shared_ptr<spdlog::logger> console_logger_;
@@ -95,12 +92,13 @@ class Log final {
 
 extern std::shared_ptr<Log> _sdk_logger;
 extern std::shared_ptr<Log> _grpc_logger;
+extern int                  init_logger();
 
 #if SMS_DEBUG
 #    define log_e(msg, ...)                                                    \
         do {                                                                   \
             if (_sdk_logger) {                                                 \
-                _sdk_logger->Error("[{}:{}][{}]: " + std::string(msg),         \
+                _sdk_logger->Error(SDK_LOG_PREFIX_DEBUG + std::string(msg),    \
                                    __FILE__, __LINE__, __FUNCTION__,           \
                                    ##__VA_ARGS__);                             \
             }                                                                  \
@@ -108,7 +106,7 @@ extern std::shared_ptr<Log> _grpc_logger;
 #    define log_t(msg, ...)                                                    \
         do {                                                                   \
             if (_sdk_logger) {                                                 \
-                _sdk_logger->Trace("[{}:{}][{}]: " + std::string(msg),         \
+                _sdk_logger->Trace(SDK_LOG_PREFIX_DEBUG + std::string(msg),    \
                                    __FILE__, __LINE__, __FUNCTION__,           \
                                    ##__VA_ARGS__);                             \
             }                                                                  \
@@ -116,7 +114,7 @@ extern std::shared_ptr<Log> _grpc_logger;
 #    define log_i(msg, ...)                                                    \
         do {                                                                   \
             if (_sdk_logger) {                                                 \
-                _sdk_logger->Info("[{}:{}][{}]: " + std::string(msg),          \
+                _sdk_logger->Info(SDK_LOG_PREFIX_DEBUG + std::string(msg),     \
                                   __FILE__, __LINE__, __FUNCTION__,            \
                                   ##__VA_ARGS__);                              \
             }                                                                  \
@@ -124,7 +122,7 @@ extern std::shared_ptr<Log> _grpc_logger;
 #    define log_w(msg, ...)                                                    \
         do {                                                                   \
             if (_sdk_logger) {                                                 \
-                _sdk_logger->Warn("[{}:{}][{}]: " + std::string(msg),          \
+                _sdk_logger->Warn(SDK_LOG_PREFIX_DEBUG + std::string(msg),     \
                                   __FILE__, __LINE__, __FUNCTION__,            \
                                   ##__VA_ARGS__);                              \
             }                                                                  \
@@ -132,7 +130,7 @@ extern std::shared_ptr<Log> _grpc_logger;
 #    define log_c(msg, ...)                                                    \
         do {                                                                   \
             if (_sdk_logger) {                                                 \
-                _sdk_logger->Critical("[{}:{}][{}]: " + std::string(msg),      \
+                _sdk_logger->Critical(SDK_LOG_PREFIX_DEBUG + std::string(msg), \
                                       __FILE__, __LINE__, __FUNCTION__,        \
                                       ##__VA_ARGS__);                          \
             }                                                                  \
@@ -140,7 +138,7 @@ extern std::shared_ptr<Log> _grpc_logger;
 #    define log_d(msg, ...)                                                    \
         do {                                                                   \
             if (_sdk_logger) {                                                 \
-                _sdk_logger->Debug("[{}:{}][{}]: " + std::string(msg),         \
+                _sdk_logger->Debug(SDK_LOG_PREFIX_DEBUG + std::string(msg),    \
                                    __FILE__, __LINE__, __FUNCTION__,           \
                                    ##__VA_ARGS__);                             \
             }                                                                  \
@@ -149,37 +147,43 @@ extern std::shared_ptr<Log> _grpc_logger;
 #    define log_e(msg, ...)                                                    \
         do {                                                                   \
             if (_sdk_logger) {                                                 \
-                _sdk_logger->Error(": " + std::string(msg), ##__VA_ARGS__);    \
+                _sdk_logger->Error(SDK_LOG_PREFIX + std::string(msg),          \
+                                   ##__VA_ARGS__);                             \
             }                                                                  \
         } while (0)
 #    define log_t(msg, ...)                                                    \
         do {                                                                   \
             if (_sdk_logger) {                                                 \
-                _sdk_logger->Trace(": " + std::string(msg), ##__VA_ARGS__);    \
+                _sdk_logger->Trace(SDK_LOG_PREFIX + std::string(msg),          \
+                                   ##__VA_ARGS__);                             \
             }                                                                  \
         } while (0)
 #    define log_i(msg, ...)                                                    \
         do {                                                                   \
             if (_sdk_logger) {                                                 \
-                _sdk_logger->Info(": " + std::string(msg), ##__VA_ARGS__);     \
+                _sdk_logger->Info(SDK_LOG_PREFIX + std::string(msg),           \
+                                  ##__VA_ARGS__);                              \
             }                                                                  \
         } while (0)
 #    define log_w(msg, ...)                                                    \
         do {                                                                   \
             if (_sdk_logger) {                                                 \
-                _sdk_logger->Warn(": " + std::string(msg), ##__VA_ARGS__);     \
+                _sdk_logger->Warn(SDK_LOG_PREFIX + std::string(msg),           \
+                                  ##__VA_ARGS__);                              \
             }                                                                  \
         } while (0)
 #    define log_c(msg, ...)                                                    \
         do {                                                                   \
             if (_sdk_logger) {                                                 \
-                _sdk_logger->Critical(": " + std::string(msg), ##__VA_ARGS__); \
+                _sdk_logger->Critical(SDK_LOG_PREFIX + std::string(msg),       \
+                                      ##__VA_ARGS__);                          \
             }                                                                  \
         } while (0)
 #    define log_d(msg, ...)                                                    \
         do {                                                                   \
             if (_sdk_logger) {                                                 \
-                _sdk_logger->Debug(": " + std::string(msg), ##__VA_ARGS__);    \
+                _sdk_logger->Debug(SDK_LOG_PREFIX + std::string(msg),          \
+                                   ##__VA_ARGS__);                             \
             }                                                                  \
         } while (0)
 #endif

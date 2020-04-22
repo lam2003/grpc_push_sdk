@@ -1,84 +1,89 @@
+#include <common/log.h>
 #include <smsif.h>
-#include <core/core.h>
 
-SmsTransReturnCode SmsTrans_RegisterOnce(const char* logpath)
-{    
-    edu::ServiceMeshSDK::Instance()->Initialize();
-    return ERR_SMS_SUCCESS;
+SmsTransErrCode SmsTransRegisterOnce(const char* logpath)
+{
+    SmsTransErrCode ret = ERR_SMS_SUCCESS;
+
+    if ((ret = static_cast<SmsTransErrCode>(edu::init_logger())) !=
+        ERR_SMS_SUCCESS) {
+        return ret;
+    }
+
+    return ret;
 }
 
-SmsTransReturnCode SmsTrans_UserLogin(SmsTransUserInfo     info,
-                                      SmsTrans_SucCallback suc,
-                                      SmsTrans_ErrCallback err,
-                                      void*                data)
+SmsTransErrCode SmsTransUserLogin(SmsTransUserInfo    info,
+                                  SmsTransSucCallback suc,
+                                  SmsTransErrCallback err,
+                                  void*               data)
 {
     return ERR_SMS_SUCCESS;
 }
 
-SmsTransReturnCode SmsTrans_UserLogout(SmsTransUserInfo     user,
-                                       SmsTrans_SucCallback suc,
-                                       SmsTrans_ErrCallback err,
-                                       void*                data)
+SmsTransErrCode SmsTransUserLogout(SmsTransUserInfo    user,
+                                   SmsTransSucCallback suc,
+                                   SmsTransErrCallback err,
+                                   void*               data)
 {
     return ERR_SMS_SUCCESS;
 }
 
-SmsTransReturnCode
-SmsTrans_Start(egc_uid_t uid, uint64_t appid, uint64_t appkey)
+SmsTransErrCode SmsTransStart(egc_uid_t uid, uint64_t appid, uint64_t appkey)
 {
     return ERR_SMS_SUCCESS;
 }
 
-SmsTransReturnCode SmsTrans_UserJoinGroup(SmsTransUserGroup    group,
-                                          SmsTrans_SucCallback suc,
-                                          SmsTrans_ErrCallback err,
-                                          void*                data)
+SmsTransErrCode SmsTransUserJoinGroup(SmsTransUserGroup   group,
+                                      SmsTransSucCallback suc,
+                                      SmsTransErrCallback err,
+                                      void*               data)
 {
     return ERR_SMS_SUCCESS;
 }
 
-SmsTransReturnCode SmsTrans_UserLeaveGroup(SmsTransUserGroup    group,
-                                           SmsTrans_SucCallback suc,
-                                           SmsTrans_ErrCallback err,
-                                           void*                data)
+SmsTransErrCode SmsTransUserLeaveGroup(SmsTransUserGroup   group,
+                                       SmsTransSucCallback suc,
+                                       SmsTransErrCallback err,
+                                       void*               data)
 {
     return ERR_SMS_SUCCESS;
 }
 
-egc_handler_t
-SmsTrans_AddLinkStatusListener(SmsTrans_Linkstatus_Callback link_cb, void* arg)
+egc_handler_t SmsTransAddLinkStatusListener(SmsTransLinkstatus_Callback link_cb,
+                                            void*                       arg)
 {
     return 0;
 }
 
-egc_handler_t SmsTrans_AddUidMessageListener(std::string servicename,
-                                             uint64_t    uid,
-                                             SmsTrans_Pushmsg_Callback msg_cb,
-                                             void*                     arg)
+egc_handler_t SmsTransAddUidMessageListener(std::string servicename,
+                                            uint64_t    uid,
+                                            SmsTransPushmsg_Callback msg_cb,
+                                            void*                    arg)
 {
     return 0;
 }
 
-egc_handler_t SmsTrans_AddGroupMessageListener(std::string servicename,
-                                               uint64_t    grouptype,
-                                               uint64_t    groupid,
-                                               SmsTrans_Pushmsg_Callback msg_cb,
-                                               void*                     arg)
+egc_handler_t SmsTransAddGroupMessageListener(std::string servicename,
+                                              uint64_t    grouptype,
+                                              uint64_t    groupid,
+                                              SmsTransPushmsg_Callback msg_cb,
+                                              void*                    arg)
 {
     return 0;
 }
 
-bool SmsTrans_RemoveGroupMessageListener(egc_handler_t id)
+bool SmsTransRemoveGroupMessageListener(egc_handler_t id)
 {
     return false;
 }
 
-bool SmsTrans_RemoveLinkStatusListener(egc_handler_t id)
+bool SmsTransRemoveLinkStatusListener(egc_handler_t id)
 {
     return false;
 }
 
-bool SmsTrans_RemoveUidMessageListener(egc_handler_t id)
+bool SmsTransRemoveUidMessageListener(egc_handler_t id)
 {
     return false;
 }
