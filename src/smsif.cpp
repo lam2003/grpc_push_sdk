@@ -1,14 +1,25 @@
 #include <common/log.h>
+#include <core/core.h>
 #include <smsif.h>
 
-SmsTransErrCode SmsTransRegisterOnce(const char* logpath)
+#include <atomic>
+
+std::atomic_flag once_flag = ATOMIC_FLAG_INIT;
+volatile bool    registed  = false;
+
+SmsTransErrCode  SmsTransRegisterOnce(const char* logpath)
 {
     SmsTransErrCode ret = ERR_SMS_SUCCESS;
 
-    if ((ret = static_cast<SmsTransErrCode>(edu::init_logger())) !=
-        ERR_SMS_SUCCESS) {
-        return ret;
+    if (!once_flag.test_and_set()) {
+        if ((ret = static_cast<SmsTransErrCode>(init_logger(logpath))) !=
+            ERR_SMS_SUCCESS) {
+            return ret;
+        }
+        registed = true;
     }
+
+    while (!registed) {}
 
     return ret;
 }
@@ -31,6 +42,14 @@ SmsTransErrCode SmsTransUserLogout(SmsTransUserInfo    user,
 
 SmsTransErrCode SmsTransStart(egc_uid_t uid, uint64_t appid, uint64_t appkey)
 {
+    SmsTransErrCode ret;
+
+    if ((ret = static_cast<SmsTransErrCode>(
+             edu::ServiceMeshSDK::Instance()->Initialize())) !=
+        ERR_SMS_SUCCESS) {
+        return ret;
+    }
+
     return ERR_SMS_SUCCESS;
 }
 

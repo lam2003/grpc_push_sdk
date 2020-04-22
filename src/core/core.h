@@ -14,9 +14,6 @@ class ServiceMeshSDK : public Singleton<ServiceMeshSDK> {
 
   protected:
     ServiceMeshSDK();
-
-  public:
-    void SayHello();
 };
 
 }  // namespace edu

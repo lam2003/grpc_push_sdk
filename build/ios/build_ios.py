@@ -55,7 +55,7 @@ for arch in arch_list:
         cmake_cmd.append('-DCMAKE_OSX_SYSROOT=iphonesimulator')
 
     call(cmake_cmd)
-    
+
     build('service-mesh-cpp')
 
     service_mesh_cpp_libs     .append(

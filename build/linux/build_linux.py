@@ -14,7 +14,6 @@ else:
     exec(compile(open(filename, "rb").read(), filename, 'exec'))
 init_common(os.path.abspath('..'), 'linux')
 
-# 获取平台相关的参数
 bits, linkage = platform.architecture()
 if bits == '64bit':
     arch = 'x64'
@@ -23,7 +22,6 @@ elif bits == '32bit':
 else:
     arch = bits
 
-# 生成构建文件夹
 set_build_folder_name(BUILD_MODE + '_' + arch)
 
 libs_path = os.path.abspath(os.path.join(
@@ -33,8 +31,6 @@ print('Architecture:', arch)
 print('Build mode:', BUILD_MODE)
 print('Libs path:', libs_path)
 
-
-# cmake初始化
 cmake_cmd = [
     'cmake',
     '-B', BUILD_DIR,

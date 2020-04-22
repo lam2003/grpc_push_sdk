@@ -23,20 +23,16 @@ def init_common(build_common_path, target_platform):
     else:
         exec(compile(open(filename, "rb").read(), filename, 'exec'), globals())
 
-    # 保存平台类型
     global TARGET_PLATFORM
     TARGET_PLATFORM = target_platform
 
-    # 定义源码目录
     src_include = os.path.realpath(
         os.path.join(build_common_path, '..', 'include'))
     src_third_party = os.path.realpath(
         os.path.join(build_common_path, '..', '3rdparty'))
-    # 定义输出目录
     dest_include = os.path.realpath(os.path.join(
         build_common_path, '..', 'out', 'include'))
 
-    # 复制源码目录的头文件到输出目录
     makedirs(dest_include)
     copy_file(src_include+'/smsif.h', dest_include)
 
@@ -46,10 +42,6 @@ def call(command, shell=False):
     res = subprocess.call(command, shell=shell)
     if res != 0:
         sys.exit(-1)
-
-# def is_windows():
-#     import platform
-#     return platform.system() == 'Windows'
 
 
 def set_build_folder_name(name):
@@ -72,19 +64,6 @@ def build(target):
 def makedirs(dir):
     if not os.path.isdir(dir):
         os.makedirs(dir)
-
-# def mklink(link, target):
-#     if not os.path.exists(link):
-#         if is_windows():
-#             call(['mklink', link, target], shell=True)
-#         else:
-#             call(['ln', '-s', target, link], shell=False)
-
-# def getEnvVar(name):
-#     if name in os.environ:
-#         return os.environ[name]
-#     return ''
-
 
 def bool2cmake(bVal):
     if bVal:
@@ -116,13 +95,6 @@ def copy_libs():
     copy_ssl_lib()
     copy_grpc_lib()
     copy_service_mesh_lib()
-
-# def set_install_name(dylib_path):
-#     if (IOS_RPATH_ENABLE and TARGET_PLATFORM == 'ios') or (MAC_RPATH_ENABLE and TARGET_PLATFORM == 'mac'):
-#         path = '@rpath'
-#     else:
-#         path = '@executable_path'
-#     call(['install_name_tool', '-id', path + '/libnakama-cpp.dylib', dylib_path])
 
 # for ios
 def create_universal_lib(libs):

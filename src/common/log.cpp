@@ -88,8 +88,10 @@ int Log::Initialize()
     return ERR_SMS_SUCCESS;
 }
 
-std::shared_ptr<Log> _sdk_logger  = nullptr;
-std::shared_ptr<Log> _grpc_logger = nullptr;
+}  // namespace edu
+
+std::shared_ptr<edu::Log> _sdk_logger  = nullptr;
+std::shared_ptr<edu::Log> _grpc_logger = nullptr;
 
 static void grpc_log_func(gpr_log_func_args* args)
 {
@@ -123,26 +125,29 @@ static void grpc_log_func(gpr_log_func_args* args)
 #endif
 }
 
-int init_logger()
+int init_logger(const std::string& log_dir)
 {
     int ret = ERR_SMS_SUCCESS;
 
+    std::string grpc_log_dir = log_dir + "/grpc/";
+    std::string sdk_log_dir  = log_dir + "/sms/";
+
     // initializing sdk logger
-    _sdk_logger = std::make_shared<Log>(SDK_LOGGER_NAME);
-    _sdk_logger->LogOnConsole(Config::Instance()->sdk_log_on_console);
-    _sdk_logger->SetOutputDir(Config::Instance()->sdk_log_dir);
+    _sdk_logger = std::make_shared<edu::Log>(SDK_LOGGER_NAME);
+    _sdk_logger->LogOnConsole(edu::Config::Instance()->sdk_log_on_console);
+    _sdk_logger->SetOutputDir(sdk_log_dir);
     _sdk_logger->SetLogLevel(
-        Utils::StrToLogLevel(Config::Instance()->sdk_log_level));
+        edu::Utils::StrToLogLevel(edu::Config::Instance()->sdk_log_level));
     if ((ret = _sdk_logger->Initialize()) != ERR_SMS_SUCCESS) {
         return ret;
     }
 
     // initializing grpc logger
-    _grpc_logger = std::make_shared<Log>(GRPC_LOGGER_NAME);
-    _grpc_logger->LogOnConsole(Config::Instance()->grpc_log_on_console);
-    _grpc_logger->SetOutputDir(Config::Instance()->grpc_log_dir);
+    _grpc_logger = std::make_shared<edu::Log>(GRPC_LOGGER_NAME);
+    _grpc_logger->LogOnConsole(edu::Config::Instance()->grpc_log_on_console);
+    _grpc_logger->SetOutputDir(grpc_log_dir);
     _grpc_logger->SetLogLevel(
-        Utils::StrToLogLevel(Config::Instance()->grpc_log_level));
+        edu::Utils::StrToLogLevel(edu::Config::Instance()->grpc_log_level));
     if ((ret = _grpc_logger->Initialize()) != ERR_SMS_SUCCESS) {
         return ret;
     }
@@ -172,5 +177,3 @@ int init_logger()
 
     return ret;
 }
-
-}  // namespace edu

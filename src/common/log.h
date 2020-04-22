@@ -90,9 +90,11 @@ class Log final {
     std::string                     logger_name_;
 };
 
-extern std::shared_ptr<Log> _sdk_logger;
-extern std::shared_ptr<Log> _grpc_logger;
-extern int                  init_logger();
+}  // namespace edu
+
+extern std::shared_ptr<edu::Log> _sdk_logger;
+extern std::shared_ptr<edu::Log> _grpc_logger;
+extern int                  init_logger(const std::string& log_dir);
 
 #if SMS_DEBUG
 #    define log_e(msg, ...)                                                    \
@@ -187,5 +189,5 @@ extern int                  init_logger();
             }                                                                  \
         } while (0)
 #endif
-}  // namespace edu
+
 #endif
