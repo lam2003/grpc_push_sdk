@@ -47,8 +47,12 @@ void Log::LogOnConsole(bool v)
 
 void Log::SetOutputDir(const std::string& dir)
 {
+    if (dir.empty()) {
+        return;
+    }
+
     std::string s;
-    if (!dir.empty() && dir.find_last_of('/') == dir.length() - 1) {
+    if (dir != "" && dir.find_last_of('/') == dir.length() - 1) {
         s = dir.substr(0, dir.length() - 1);
     }
     else {
@@ -181,7 +185,7 @@ int init_logger(const std::string& log_dir)
         // grpc_tracer_set_enabled("cares_address_sorting", 1);
         // grpc_tracer_set_enabled("round_robin", 1);
     }
-    catch (std::exception* e) {
+    catch (std::exception& e) {
         ret = ERR_SMS_INIT_LOG;
         return ret;
     }
