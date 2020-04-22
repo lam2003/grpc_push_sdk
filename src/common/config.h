@@ -3,6 +3,8 @@
 
 #include <common/singleton.h>
 
+#include <string>
+
 namespace edu {
 class Config : public Singleton<Config> {
     friend Singleton<Config>;
@@ -11,29 +13,18 @@ class Config : public Singleton<Config> {
     virtual ~Config() {}
 
   protected:
-    Config()
-    {
-        // grpc日志输出到控制台开关
-        grpc_log_on_console = true;
-        // grpc日志等级
-        grpc_log_level = "debug";
-
-        // sdk日志输出到控制台开关
-        sdk_log_on_console = true;
-        // sdl日志等级
-        sdk_log_level = "debug";
-    }
+    Config() {}
 
   public:
     // grpc日志输出到控制台开关
-    bool grpc_log_on_console;
+    bool grpc_log_on_console = true;
     // grpc日志等级
-    std::string grpc_log_level;
+    std::string grpc_log_level = "debug";
 
     // sdk日志输出到控制台开关
-    bool sdk_log_on_console;
+    bool sdk_log_on_console = true;
     // sdl日志等级
-    std::string sdk_log_level;
+    std::string sdk_log_level = "debug";
 };
 
 }  // namespace edu
