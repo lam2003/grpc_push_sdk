@@ -47,7 +47,14 @@ void Log::LogOnConsole(bool v)
 
 void Log::SetOutputDir(const std::string& dir)
 {
-    dir_ = dir;
+    std::string s;
+    if (!dir.empty() && dir.find_last_of('/') == dir.length() - 1) {
+        s = dir.substr(0, dir.length() - 1);
+    }
+    else {
+        s = dir;
+    }
+    dir_ = s + "/" + logger_name_;
 }
 
 void Log::SetLogLevel(LOG_LEVEL level)
@@ -129,51 +136,54 @@ int init_logger(const std::string& log_dir)
 {
     int ret = ERR_SMS_SUCCESS;
 
-    std::string grpc_log_dir = log_dir + "/grpc/";
-    std::string sdk_log_dir  = log_dir + "/sms/";
+    try {
+        // initializing sdk logger
+        _sdk_logger = std::make_shared<edu::Log>(SDK_LOGGER_NAME);
+        _sdk_logger->LogOnConsole(edu::Config::Instance()->sdk_log_on_console);
+        _sdk_logger->SetOutputDir(log_dir);
+        _sdk_logger->SetLogLevel(
+            edu::Utils::StrToLogLevel(edu::Config::Instance()->sdk_log_level));
+        if ((ret = _sdk_logger->Initialize()) != ERR_SMS_SUCCESS) {
+            return ret;
+        }
 
-    // initializing sdk logger
-    _sdk_logger = std::make_shared<edu::Log>(SDK_LOGGER_NAME);
-    _sdk_logger->LogOnConsole(edu::Config::Instance()->sdk_log_on_console);
-    _sdk_logger->SetOutputDir(sdk_log_dir);
-    _sdk_logger->SetLogLevel(
-        edu::Utils::StrToLogLevel(edu::Config::Instance()->sdk_log_level));
-    if ((ret = _sdk_logger->Initialize()) != ERR_SMS_SUCCESS) {
+        // initializing grpc logger
+        _grpc_logger = std::make_shared<edu::Log>(GRPC_LOGGER_NAME);
+        _grpc_logger->LogOnConsole(
+            edu::Config::Instance()->grpc_log_on_console);
+        _grpc_logger->SetOutputDir(log_dir);
+        _grpc_logger->SetLogLevel(
+            edu::Utils::StrToLogLevel(edu::Config::Instance()->grpc_log_level));
+        if ((ret = _grpc_logger->Initialize()) != ERR_SMS_SUCCESS) {
+            return ret;
+        }
+
+        // 让grpc输出最低等级日志,用日志函数进行过滤
+        gpr_set_log_verbosity(GPR_LOG_SEVERITY_DEBUG);
+        gpr_log_verbosity_init();
+        gpr_set_log_function(&grpc_log_func);
+
+        // grpc_tracer_set_enabled("subchannel", 1);
+        // grpc_tracer_set_enabled("client_channel_routing", 1);
+        // grpc_tracer_set_enabled("client_channel_call", 1);
+        // grpc_tracer_set_enabled("connectivity_state", 1);
+        // grpc_tracer_set_enabled("call_error", 1);
+        // grpc_tracer_set_enabled("pick_first", 1);
+        // grpc_tracer_set_enabled("channel", 1);
+        // grpc_tracer_set_enabled("op_failure", 1);
+
+        // grpc_tracer_set_enabled("resolver_refcount", 1);
+        // grpc_tracer_set_enabled("flowctl", 1);
+        // grpc_tracer_set_enabled("list_tracers", 1);
+        // grpc_tracer_set_enabled("http2_stream_state", 1);
+        // grpc_tracer_set_enabled("bdp_estimator", 1);
+        // grpc_tracer_set_enabled("cares_resolver", 1);
+        // grpc_tracer_set_enabled("cares_address_sorting", 1);
+        // grpc_tracer_set_enabled("round_robin", 1);
+    }
+    catch (std::exception* e) {
+        ret = ERR_SMS_INIT_LOG;
         return ret;
     }
-
-    // initializing grpc logger
-    _grpc_logger = std::make_shared<edu::Log>(GRPC_LOGGER_NAME);
-    _grpc_logger->LogOnConsole(edu::Config::Instance()->grpc_log_on_console);
-    _grpc_logger->SetOutputDir(grpc_log_dir);
-    _grpc_logger->SetLogLevel(
-        edu::Utils::StrToLogLevel(edu::Config::Instance()->grpc_log_level));
-    if ((ret = _grpc_logger->Initialize()) != ERR_SMS_SUCCESS) {
-        return ret;
-    }
-
-    // 让grpc输出最低等级日志,用日志函数进行过滤
-    gpr_set_log_verbosity(GPR_LOG_SEVERITY_DEBUG);
-    gpr_log_verbosity_init();
-    gpr_set_log_function(&grpc_log_func);
-
-    // grpc_tracer_set_enabled("subchannel", 1);
-    // grpc_tracer_set_enabled("client_channel_routing", 1);
-    // grpc_tracer_set_enabled("client_channel_call", 1);
-    // grpc_tracer_set_enabled("connectivity_state", 1);
-    // grpc_tracer_set_enabled("call_error", 1);
-    // grpc_tracer_set_enabled("pick_first", 1);
-    // grpc_tracer_set_enabled("channel", 1);
-    // grpc_tracer_set_enabled("op_failure", 1);
-
-    // grpc_tracer_set_enabled("resolver_refcount", 1);
-    // grpc_tracer_set_enabled("flowctl", 1);
-    // grpc_tracer_set_enabled("list_tracers", 1);
-    // grpc_tracer_set_enabled("http2_stream_state", 1);
-    // grpc_tracer_set_enabled("bdp_estimator", 1);
-    // grpc_tracer_set_enabled("cares_resolver", 1);
-    // grpc_tracer_set_enabled("cares_address_sorting", 1);
-    // grpc_tracer_set_enabled("round_robin", 1);
-
     return ret;
 }
