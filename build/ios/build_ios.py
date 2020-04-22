@@ -48,6 +48,7 @@ for arch in arch_list:
                  '-DCARES_INSTALL=OFF',
                  '-DENABLE_BITCODE=FALSE',
                  '-DENABLE_ARC=TRUE',
+                 '-DBUILD_MODE=' + BUILD_MODE,
                  '-G' + generator,
                  '../..'
                  ]
@@ -108,4 +109,4 @@ for arch in arch_list:
     copy_libs()
 
     for libs_list in make_universal_list:
-        create_universal_lib(libs_list,libs_dir)
+        create_universal_lib(libs_list, libs_dir)
