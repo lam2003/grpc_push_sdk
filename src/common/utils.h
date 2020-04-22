@@ -1,5 +1,5 @@
-#ifndef EDU_SERVICE_MESH_UTILS_H
-#define EDU_SERVICE_MESH_UTILS_H
+#ifndef EDU_PUSH_SDK_UTILS_H
+#define EDU_PUSH_SDK_UTILS_H
 
 #include <string>
 

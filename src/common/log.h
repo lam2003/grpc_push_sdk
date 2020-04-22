@@ -1,5 +1,5 @@
-#ifndef EDU_SERVICE_MESH_LOG_H
-#define EDU_SERVICE_MESH_LOG_H
+#ifndef EDU_PUSH_SDK_LOG_H
+#define EDU_PUSH_SDK_LOG_H
 
 #include <memory>
 #include <string>

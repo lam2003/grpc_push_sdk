@@ -1,7 +1,7 @@
 #include <common/config.h>
 #include <common/log.h>
 #include <common/utils.h>
-#include <smsif.h>
+#include <push_sdk.h>
 
 #include <sstream>
 
@@ -72,7 +72,7 @@ int Log::Initialize()
         console_logger_ = spdlog::stdout_color_mt(
             logger_name_, spdlog::color_mode::automatic);
         if (!console_logger_) {
-            return ERR_SMS_INIT_LOG;
+            return PS_RET_INIT_LOG;
         }
         console_logger_->set_level(
             static_cast<spdlog::level::level_enum>(log_level_));
@@ -88,7 +88,7 @@ int Log::Initialize()
                                        1024 * 1024 * 5,  // 5MB
                                        10);
         if (!file_logger_) {
-            return ERR_SMS_INIT_LOG;
+            return PS_RET_INIT_LOG;
         }
         file_logger_->set_level(
             static_cast<spdlog::level::level_enum>(log_level_));
@@ -96,7 +96,7 @@ int Log::Initialize()
         file_logger_->set_pattern(format_);
     }
 
-    return ERR_SMS_SUCCESS;
+    return PS_RET_SUCCESS;
 }
 
 }  // namespace edu
@@ -138,7 +138,7 @@ static void grpc_log_func(gpr_log_func_args* args)
 
 int init_logger(const std::string& log_dir)
 {
-    int ret = ERR_SMS_SUCCESS;
+    int ret = PS_RET_SUCCESS;
 
     try {
         // initializing sdk logger
@@ -147,7 +147,7 @@ int init_logger(const std::string& log_dir)
         _sdk_logger->SetOutputDir(log_dir);
         _sdk_logger->SetLogLevel(
             edu::Utils::StrToLogLevel(edu::Config::Instance()->sdk_log_level));
-        if ((ret = _sdk_logger->Initialize()) != ERR_SMS_SUCCESS) {
+        if ((ret = _sdk_logger->Initialize()) != PS_RET_SUCCESS) {
             return ret;
         }
 
@@ -158,7 +158,7 @@ int init_logger(const std::string& log_dir)
         _grpc_logger->SetOutputDir(log_dir);
         _grpc_logger->SetLogLevel(
             edu::Utils::StrToLogLevel(edu::Config::Instance()->grpc_log_level));
-        if ((ret = _grpc_logger->Initialize()) != ERR_SMS_SUCCESS) {
+        if ((ret = _grpc_logger->Initialize()) != PS_RET_SUCCESS) {
             return ret;
         }
 
@@ -186,7 +186,7 @@ int init_logger(const std::string& log_dir)
         // grpc_tracer_set_enabled("round_robin", 1);
     }
     catch (std::exception& e) {
-        ret = ERR_SMS_INIT_LOG;
+        ret = PS_RET_INIT_LOG;
         return ret;
     }
     return ret;

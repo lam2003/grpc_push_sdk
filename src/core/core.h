@@ -1,19 +1,25 @@
-#ifndef EDU_SERVICE_MESH_CORE_H
-#define EDU_SERVICE_MESH_CORE_H
+#ifndef EDU_PUSH_SDK_CORE_H
+#define EDU_PUSH_SDK_CORE_H
 
 #include <common/singleton.h>
 
 namespace edu {
 
-class ServiceMeshSDK : public Singleton<ServiceMeshSDK> {
-    friend class Singleton<ServiceMeshSDK>;
+class PushSDK : public Singleton<PushSDK> {
+    friend class Singleton<PushSDK>;
 
   public:
-    virtual ~ServiceMeshSDK();
+    virtual ~PushSDK();
     virtual int Initialize();
 
   protected:
-    ServiceMeshSDK();
+    PushSDK();
+
+  private:
+    uint64_t appid_;
+    uint64_t uid_;
+    uint64_t app_key_;
+    bool     init_;
 };
 
 }  // namespace edu

@@ -34,7 +34,7 @@ def init_common(build_common_path, target_platform):
         build_common_path, '..', 'out', 'include'))
 
     makedirs(dest_include)
-    copy_file(src_include+'/smsif.h', dest_include)
+    copy_file(src_include+'/push_sdk.h', dest_include)
 
 
 def call(command, shell=False):

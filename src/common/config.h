@@ -1,5 +1,5 @@
-#ifndef EDU_SERVICE_MESH
-#define EDU_SERVICE_MESH
+#ifndef EDU_PUSH_SDK
+#define EDU_PUSH_SDK
 
 #include <common/singleton.h>
 

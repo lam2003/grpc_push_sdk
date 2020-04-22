@@ -1,5 +1,5 @@
-#ifndef EDU_SERVICE_MESH_SINGLETON_H
-#define EDU_SERVICE_MESH_SINGLETON_H
+#ifndef EDU_PUSH_SDK_SINGLETON_H
+#define EDU_PUSH_SDK_SINGLETON_H
 
 #include <atomic>
 #include <memory>

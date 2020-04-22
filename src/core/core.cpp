@@ -1,16 +1,29 @@
 
 #include <common/log.h>
 #include <core/core.h>
+#include <push_sdk.h>
 
 namespace edu {
 
-ServiceMeshSDK::ServiceMeshSDK() {}
-
-int ServiceMeshSDK::Initialize()
+PushSDK::PushSDK()
 {
-    log_i("sms initialized");
+    appid_   = 0;
+    uid_     = 0;
+    app_key_ = 0;
+    init_    = false;
+}
+
+int PushSDK::Initialize()
+{
+    if (init_) {
+        log_w("push_sdk already initialized");
+        return PS_RET_ALREADY_INIT;
+    }
+
+    log_i("push_sdk initialize successfully");
+    init_ = true;
     return 0;
 }
 
-ServiceMeshSDK::~ServiceMeshSDK() {}
+PushSDK::~PushSDK() {}
 }  // namespace edu
