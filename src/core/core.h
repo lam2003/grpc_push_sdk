@@ -5,21 +5,23 @@
 
 namespace edu {
 
+class Client;
+
 class PushSDK : public Singleton<PushSDK> {
     friend class Singleton<PushSDK>;
 
   public:
     virtual ~PushSDK();
-    virtual int Initialize();
+    virtual int  Initialize();
+    virtual void Destroy();
 
   protected:
     PushSDK();
 
   private:
-    uint64_t appid_;
-    uint64_t uid_;
-    uint64_t app_key_;
-    bool     init_;
+    bool init_;
+
+    std::shared_ptr<Client> client_;
 };
 
 }  // namespace edu

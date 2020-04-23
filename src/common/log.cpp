@@ -72,7 +72,7 @@ int Log::Initialize()
         console_logger_ = spdlog::stdout_color_mt(
             logger_name_, spdlog::color_mode::automatic);
         if (!console_logger_) {
-            return PS_RET_INIT_LOG;
+            return PS_RET_INIT_LOG_FAILED;
         }
         console_logger_->set_level(
             static_cast<spdlog::level::level_enum>(log_level_));
@@ -88,7 +88,7 @@ int Log::Initialize()
                                        1024 * 1024 * 5,  // 5MB
                                        10);
         if (!file_logger_) {
-            return PS_RET_INIT_LOG;
+            return PS_RET_INIT_LOG_FAILED;
         }
         file_logger_->set_level(
             static_cast<spdlog::level::level_enum>(log_level_));
@@ -186,7 +186,7 @@ int init_logger(const std::string& log_dir)
         // grpc_tracer_set_enabled("round_robin", 1);
     }
     catch (std::exception& e) {
-        ret = PS_RET_INIT_LOG;
+        ret = PS_RET_INIT_LOG_FAILED;
         return ret;
     }
     return ret;
