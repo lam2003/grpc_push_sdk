@@ -23,6 +23,17 @@ std::string channel_state_to_string(ChannelState state)
     }
 }
 
+std::string client_status_to_string(ClientStatus status)
+{
+    switch (status) {
+        case ClientStatus::FINISHED: return "FINISHED";
+        case ClientStatus::READY_TO_WRITE: return "READY_TO_WRITE";
+        case ClientStatus::WAIT_CONNECT: return "WAIT_CONNECT";
+        case ClientStatus::WAIT_WRITE_DONE: return "WAIT_WRITE_DONE";
+        default: return "UNKNOW";
+    }
+}
+
 static std::string client_event_to_string(ClientEvent event)
 {
     switch (event) {
@@ -51,9 +62,10 @@ Client::Client()
     uid_                  = "";
     front_envoy_port_idx_ = 0;
     last_heartbeat_ts_    = -1;
-    status_               = ClientStatus::WAIT_CONNECT;
+    status_               = ClientStatus::FINISHED;
     channel_state_        = ChannelState::DISCONNECTED;
     state_listener_       = nullptr;
+    status_listener_      = nullptr;
     cq_ = std::unique_ptr<grpc::CompletionQueue>(new grpc::CompletionQueue);
     channel_ = nullptr;
     stub_    = nullptr;
@@ -73,6 +85,12 @@ void Client::SetChannelStateListener(
     std::shared_ptr<ChannelStateListener> listener)
 {
     state_listener_ = listener;
+}
+
+void Client::SetClientStatusListener(
+    std::shared_ptr<ClientStatusListener> listener)
+{
+    status_listener_ = listener;
 }
 
 static grpc::ChannelArguments get_channel_args()
@@ -114,15 +132,11 @@ void Client::create_channel()
 
 void Client::destroy_channel()
 {
-    if (stub_) {
-        stub_.release();
-        stub_ = nullptr;
-    }
+    stub_.release();
+    stub_ = nullptr;
 
-    if (channel_) {
-        channel_.reset();
-        channel_ = nullptr;
-    }
+    channel_.reset();
+    channel_ = nullptr;
 
     if (channel_state_ != ChannelState::DISCONNECTED && state_listener_) {
         state_listener_->OnChannelStateChange(ChannelState::DISCONNECTED);
@@ -139,6 +153,9 @@ void Client::create_stream()
     stream_ = stub_->AsyncPushRegister(
         ctx_.get(), cq_.get(), reinterpret_cast<void*>(ClientEvent::CONNECTED));
     status_ = ClientStatus::WAIT_CONNECT;
+    if (state_listener_) {
+        status_listener_->OnClientStatusChange(status_);
+    }
 
     last_heartbeat_ts_ = Utils::GetSteayMilliSeconds();
 }
@@ -150,9 +167,12 @@ void Client::destroy_stream()
         ctx_.release();
         ctx_ = nullptr;
     }
-    if (stream_) {
-        stream_.release();
-        stream_ = nullptr;
+
+    stream_.release();
+    stream_ = nullptr;
+    status_ = ClientStatus::FINISHED;
+    if (state_listener_) {
+        status_listener_->OnClientStatusChange(status_);
     }
 }
 
@@ -173,9 +193,15 @@ void Client::handle_event(ClientEvent event)
                     *req, reinterpret_cast<void*>(ClientEvent::WRITE_DONE));
 
                 status_ = ClientStatus::WAIT_WRITE_DONE;
+                if (state_listener_) {
+                    status_listener_->OnClientStatusChange(status_);
+                }
             }
             else {
                 status_ = ClientStatus::READY_TO_WRITE;
+                if (state_listener_) {
+                    status_listener_->OnClientStatusChange(status_);
+                }
             }
 
             break;
@@ -189,9 +215,15 @@ void Client::handle_event(ClientEvent event)
                     *req, reinterpret_cast<void*>(ClientEvent::WRITE_DONE));
 
                 status_ = ClientStatus::WAIT_WRITE_DONE;
+                if (state_listener_) {
+                    status_listener_->OnClientStatusChange(status_);
+                }
             }
             else {
                 status_ = ClientStatus::READY_TO_WRITE;
+                if (state_listener_) {
+                    status_listener_->OnClientStatusChange(status_);
+                }
             }
 
             break;
@@ -339,15 +371,14 @@ void Client::Destroy()
         thread_ = nullptr;
     }
 
-    if (cq_) {
-        cq_.release();
-        cq_ = nullptr;
-    }
+    cq_.release();
+    cq_ = nullptr;
 
-    if (state_listener_) {
-        state_listener_.reset();
-        state_listener_ = nullptr;
-    }
+    state_listener_.reset();
+    state_listener_ = nullptr;
+
+    status_listener_.reset();
+    status_listener_ = nullptr;
 
     init_ = false;
 }

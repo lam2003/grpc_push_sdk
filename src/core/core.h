@@ -10,6 +10,7 @@ namespace edu {
 
 class PushSDK : public Singleton<PushSDK>,
                 public ChannelStateListener,
+                public ClientStatusListener,
                 public std::enable_shared_from_this<PushSDK> {
     friend class Singleton<PushSDK>;
 
@@ -23,6 +24,7 @@ class PushSDK : public Singleton<PushSDK>,
     virtual int  Initialize(uint32_t uid);
     virtual void Destroy();
     virtual void OnChannelStateChange(ChannelState state) override;
+    virtual void OnClientStatusChange(ClientStatus status) override;
 
   private:
     bool init_;

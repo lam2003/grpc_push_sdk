@@ -21,7 +21,7 @@ int PushSDK::Initialize(uint32_t uid)
     }
 
     client_->SetChannelStateListener(this->shared_from_this());
-
+    client_->SetClientStatusListener(this->shared_from_this());
     if ((ret = client_->Initialize(uid)) != PS_RET_SUCCESS) {
         log_e("client create channel failed. ret=%d", PS_RET_SUCCESS);
         return ret;
@@ -33,7 +33,12 @@ int PushSDK::Initialize(uint32_t uid)
 
 void PushSDK::OnChannelStateChange(ChannelState state)
 {
-    log_d("client channel change to {}", channel_state_to_string(state));
+    log_d("channel state change to {}", channel_state_to_string(state));
+}
+
+void PushSDK::OnClientStatusChange(ClientStatus status)
+{
+    log_d("client status change to {}", client_status_to_string(status));
 }
 
 void PushSDK::Destroy()

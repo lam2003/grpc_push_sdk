@@ -29,7 +29,7 @@ class Config : public Singleton<Config> {
 
     // front_envoy 域名
     std::string      front_envoy_host  = "front.100.com";
-    std::vector<int> front_envoy_ports = {14000, 15000};
+    std::vector<int> front_envoy_ports = {15000, 14000, 5000, 1500, 500};
 
     // 与PushGateway心跳间隔(ms)
     int64_t heart_beat_interval = 3 * 1000;

@@ -32,13 +32,13 @@ enum class ClientStatus {
     WAIT_CONNECT    = 100,
     READY_TO_WRITE  = 101,
     WAIT_WRITE_DONE = 102,
-    WAIT_READ_DONE  = 103,
-    FINISHED        = 104
+    FINISHED        = 103
 };
 
 enum class ChannelState { CONNECTED, DISCONNECTED };
 
 extern std::string channel_state_to_string(ChannelState state);
+extern std::string client_status_to_string(ClientStatus status);
 
 class ChannelStateListener {
   public:
@@ -47,6 +47,15 @@ class ChannelStateListener {
 
   public:
     virtual void OnChannelStateChange(ChannelState state) = 0;
+};
+
+class ClientStatusListener {
+  public:
+    ClientStatusListener() {}
+    ~ClientStatusListener() {}
+
+  public:
+    virtual void OnClientStatusChange(ClientStatus statue) = 0;
 };
 
 class Client {
@@ -59,6 +68,9 @@ class Client {
 
     virtual void
     SetChannelStateListener(std::shared_ptr<ChannelStateListener> listener);
+
+    virtual void
+    SetClientStatusListener(std::shared_ptr<ClientStatusListener> listener);
 
   private:
     void create_channel();
@@ -78,6 +90,7 @@ class Client {
     ClientStatus                            status_;
     ChannelState                            channel_state_;
     std::shared_ptr<ChannelStateListener>   state_listener_;
+    std::shared_ptr<ClientStatusListener>   status_listener_;
     std::queue<std::shared_ptr<PushRegReq>> queue_;
     std::unique_ptr<grpc::CompletionQueue>  cq_;
     std::shared_ptr<grpc::Channel>          channel_;
