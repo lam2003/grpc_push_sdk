@@ -1,3 +1,4 @@
+#include <chrono>
 #include <common/utils.h>
 
 namespace edu {
@@ -35,6 +36,13 @@ LOG_LEVEL Utils::StrToLogLevel(const std::string& s)
         // unknow level, default debug
         return LOG_LEVEL::DEBUG;
     }
+}
+
+int64_t Utils::GetSteayMilliSeconds()
+{
+    using namespace std::chrono;
+    steady_clock::time_point now = steady_clock::now();
+    return duration_cast<milliseconds>(now.time_since_epoch()).count();
 }
 
 }  // namespace edu

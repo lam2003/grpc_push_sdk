@@ -1,5 +1,6 @@
 #include <common/config.h>
 #include <common/log.h>
+#include <common/utils.h>
 #include <core/client.h>
 #include <push_sdk.h>
 
@@ -9,14 +10,25 @@
 #include <sstream>
 
 #define CQ_WAIT_TIME 50  // ms
+#define HASH_HEADER_KEY "suid"
 
 namespace edu {
+
+std::string channel_state_to_string(ChannelState state)
+{
+    switch (state) {
+        case ChannelState::CONNECTED: return "CONNECTED";
+        case ChannelState::DISCONNECTED: return "DISCONNECTED";
+        case ChannelState::UNKNOW:
+        default: return "UNKNOW";
+    }
+}
 
 static std::string client_event_to_string(ClientEvent event)
 {
     switch (event) {
         case ClientEvent::CONNECTED: return "CONNECTED";
-        case ClientEvent::FINISH: return "FINISH";
+        case ClientEvent::FINISHED: return "FINISHED";
         case ClientEvent::READ_DONE: return "READ_DONE";
         case ClientEvent::WRITE_DONE: return "WRITE_DONE";
         default: return "UNKNOW";
@@ -39,6 +51,9 @@ Client::Client()
 {
     front_envoy_port_idx_ = 0;
     last_heartbeat_ts_    = -1;
+    status_               = ClientStatus::WAIT_CONNECT;
+    channel_state_        = ChannelState::UNKNOW;
+    state_listener_       = nullptr;
     cq_ = std::unique_ptr<grpc::CompletionQueue>(new grpc::CompletionQueue);
     channel_ = nullptr;
     stub_    = nullptr;
@@ -53,6 +68,29 @@ Client ::~Client()
     Destroy();
 }
 
+void Client::SetChannelStateListener(
+    std::shared_ptr<ChannelStateListener> listener)
+{
+    state_listener_ = listener;
+}
+
+static grpc::ChannelArguments get_channel_args()
+{
+    grpc::ChannelArguments args;
+    // GRPC心跳间隔
+    args.SetInt(GRPC_ARG_KEEPALIVE_TIME_MS, 1000);
+    // GRPC心跳超时时间
+    args.SetInt(GRPC_ARG_KEEPALIVE_TIMEOUT_MS, 5000);
+    // 没有GRPC调用时也强制发送心跳
+    args.SetInt(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS, 1);
+    // 在发送数据帧前，可以发送多少个心跳？不限制
+    args.SetInt(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA, 0);
+    // 发送连续的ping帧而不接收任何数据之间的最短时间
+    args.SetInt(GRPC_ARG_HTTP2_MIN_SENT_PING_INTERVAL_WITHOUT_DATA_MS, 1000);
+
+    return args;
+}
+
 void Client::create_channel()
 {
     std::ostringstream oss;
@@ -62,21 +100,27 @@ void Client::create_channel()
                 Config::Instance()->front_envoy_ports.size()];
     front_envoy_port_idx_++;
 
-    log_d("create channel with {}", oss.str());
-    channel_ =
-        grpc::CreateChannel(oss.str(), grpc::InsecureChannelCredentials());
+    log_i("create channel with {}", oss.str());
+    channel_ = grpc::CreateCustomChannel(
+        oss.str(), grpc::InsecureChannelCredentials(), get_channel_args());
     stub_ = PushGateway::NewStub(channel_);
 }
 
 void Client::destroy_channel()
 {
     if (stub_) {
-        stub_.reset(nullptr);
+        stub_.release();
+        stub_ = nullptr;
     }
 
     if (channel_) {
         channel_.reset();
         channel_ = nullptr;
+    }
+
+    if (channel_state_ != ChannelState::DISCONNECTED && state_listener_) {
+        state_listener_->OnChannelStateChange(ChannelState::DISCONNECTED);
+        channel_state_ = ChannelState::UNKNOW;
     }
 }
 
@@ -84,57 +128,126 @@ void Client::create_stream()
 {
     ctx_.reset(new grpc::ClientContext());
     // 填入路由所需header kv
-    ctx_->AddMetadata(Config::Instance()->route_hash_key,
-                      Config::Instance()->route_hash_value);
+    ctx_->AddMetadata(HASH_HEADER_KEY, "");
 
     stream_ = stub_->AsyncPushRegister(
         ctx_.get(), cq_.get(), reinterpret_cast<void*>(ClientEvent::CONNECTED));
+    status_ = ClientStatus::WAIT_CONNECT;
+
+    last_heartbeat_ts_ = Utils::GetSteayMilliSeconds();
 }
 
 void Client::destroy_stream()
 {
     if (ctx_) {
         ctx_->TryCancel();
-        ctx_.reset(nullptr);
+        ctx_.release();
+        ctx_ = nullptr;
     }
     if (stream_) {
-        stream_.reset(nullptr);
+        stream_.release();
+        stream_ = nullptr;
     }
 }
 
-void Client::handle_event(bool ok, ClientEvent event) {}
+static PushData data;
 
-void Client::handle_cq_error()
+void Client::handle_event(ClientEvent event)
+{
+    switch (event) {
+        case ClientEvent::CONNECTED: {
+            stream_->Read(&data,
+                          reinterpret_cast<void*>(ClientEvent::READ_DONE));
+
+            if (!queue_.empty()) {
+                std::shared_ptr<PushRegReq> req = queue_.front();
+                queue_.pop();
+
+                stream_->Write(
+                    *req, reinterpret_cast<void*>(ClientEvent::WRITE_DONE));
+
+                status_ = ClientStatus::WAIT_WRITE_DONE;
+            }
+            else {
+                status_ = ClientStatus::READY_TO_WRITE;
+            }
+
+            break;
+        }
+        case ClientEvent::WRITE_DONE: {
+            if (!queue_.empty()) {
+                std::shared_ptr<PushRegReq> req = queue_.front();
+                queue_.pop();
+
+                stream_->Write(
+                    *req, reinterpret_cast<void*>(ClientEvent::WRITE_DONE));
+
+                status_ = ClientStatus::WAIT_WRITE_DONE;
+            }
+            else {
+                status_ = ClientStatus::READY_TO_WRITE;
+            }
+
+            break;
+        }
+        case ClientEvent::READ_DONE: {
+            stream_->Read(&data,
+                          reinterpret_cast<void*>(ClientEvent::READ_DONE));
+            break;
+        }
+    }
+}
+
+void Client::check_channel_and_stream(bool ok)
 {
     grpc_connectivity_state state = channel_->GetState(true);
-    log_e("completion queue error. grpc channel state={}",
-          grpc_channel_state_to_string(state));
+
+    ChannelState now_channel_state;
+    if (state == GRPC_CHANNEL_READY) {
+        now_channel_state = ChannelState::CONNECTED;
+    }
+    else {
+        now_channel_state = ChannelState::DISCONNECTED;
+    }
+
+    if (now_channel_state != channel_state_ && state_listener_) {
+        state_listener_->OnChannelStateChange(now_channel_state);
+        channel_state_ = now_channel_state;
+    }
 
     if (state == GRPC_CHANNEL_TRANSIENT_FAILURE ||
-        state == GRPC_CHANNEL_CONNECTING || GRPC_CHANNEL_SHUTDOWN) {
+        state == GRPC_CHANNEL_SHUTDOWN) {
         // 使用其他端口重连,避免某些端口被封
-        log_d("going to rebuild channel and stream");
+        log_e("channel error. going to rebuild channel and stream");
         destroy_stream();
         destroy_channel();
         create_channel();
         create_stream();
     }
-    else if (state == GRPC_CHANNEL_IDLE) {
-        // 这个状态只会在连接还未建立就析构客户端时出现
-        log_d("context cancelled before connection build");
-        return;
-    }
-    else {
-        // Stream发生错误，但是连接正常
-        log_d("going to rebuild stream");
+
+    if (state == GRPC_CHANNEL_READY && !ok) {
+        log_e("stream error. going to rebuild stream");
+        destroy_stream();
+        create_stream();
     }
 }
 
-int Client::handle_cq_timeout()
+void Client::handle_cq_timeout()
 {
-    int ret = PS_RET_SUCCESS;
+    int64_t now = Utils::GetSteayMilliSeconds();
 
-    return ret;
+    if (now - last_heartbeat_ts_ >= Config::Instance()->heart_beat_interval) {
+        std::shared_ptr<PushRegReq> req = std::make_shared<PushRegReq>();
+        req->set_uri(StreamURI::PPushGateWayPingURI);
+        queue_.push(req);
+        last_heartbeat_ts_ = now;
+    }
+
+    if (status_ == ClientStatus::READY_TO_WRITE && !queue_.empty()) {
+        std::shared_ptr<PushRegReq> req = queue_.front();
+        queue_.pop();
+        stream_->Write(*req, reinterpret_cast<void*>(ClientEvent::WRITE_DONE));
+    }
 }
 
 void Client::event_loop()
@@ -151,33 +264,34 @@ void Client::event_loop()
         status = cq_->AsyncNext(reinterpret_cast<void**>(&event), &ok, tw);
         switch (status) {
             case grpc::CompletionQueue::SHUTDOWN: {
-                log_w("grpc completion queue shutdown");
+                log_w("completion queue shutdown");
                 run_ = false;
                 break;
             }
             case grpc::CompletionQueue::TIMEOUT: {
-                handle_cq_timeout();
+                check_channel_and_stream(ok);
+                if (ok) {
+                    handle_cq_timeout();
+                }
                 break;
             }
             case grpc::CompletionQueue::GOT_EVENT: {
-                if (!ok) {
-                    handle_cq_error();
+                check_channel_and_stream(ok);
+                if (ok) {
+                    handle_event(event);
                 }
-                else {
-                    log_d("grpc completion queue got event {}",
-                          client_event_to_string(event));
-                    handle_event(ok, event);
-                }
-
                 break;
             }
             default:
-                log_e("grpc completion queue return unknow status={}", status);
+                log_e("completion queue return unknow status={}", status);
                 break;
         }
     }
-    log_i("event loop thread going to quit");
+
     // 收尾工作....
+    log_i("event loop thread going to quit");
+    destroy_stream();
+    destroy_channel();
 }
 
 int Client::Initialize()
@@ -197,18 +311,22 @@ void Client::Destroy()
 
     if (cq_) {
         cq_->Shutdown();
-        cq_.reset();
-        cq_ = nullptr;
     }
 
     if (thread_) {
         thread_->join();
-        thread_.reset();
+        thread_.release();
         thread_ = nullptr;
     }
 
-    destroy_stream();
-    destroy_channel();
-    
+    if (cq_) {
+        cq_.release();
+        cq_ = nullptr;
+    }
+
+    if (state_listener_) {
+        state_listener_.reset();
+        state_listener_ = nullptr;
+    }
 }
 }  // namespace edu

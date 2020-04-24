@@ -2,21 +2,28 @@
 #define EDU_PUSH_SDK_CORE_H
 
 #include <common/singleton.h>
+#include <core/client.h>
+
+#include <memory>
 
 namespace edu {
 
-class Client;
-
-class PushSDK : public Singleton<PushSDK> {
+class PushSDK : public Singleton<PushSDK>,
+                public ChannelStateListener,
+                public std::enable_shared_from_this<PushSDK> {
     friend class Singleton<PushSDK>;
 
   public:
     virtual ~PushSDK();
-    virtual int  Initialize();
-    virtual void Destroy();
 
   protected:
     PushSDK();
+
+  public:
+    virtual int  Initialize();
+    virtual void Destroy();
+    virtual void OnChannelStateChange(ChannelState state) override;
+
 
   private:
     bool init_;
