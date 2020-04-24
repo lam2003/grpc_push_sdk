@@ -33,6 +33,17 @@ class Config : public Singleton<Config> {
 
     // 与PushGateway心跳间隔(ms)
     int64_t heart_beat_interval = 3 * 1000;
+
+    // GRPC心跳间隔(ms)
+    int grpc_keep_alive_time = 1000;
+    // GRPC心跳超时时间(ms)
+    int grpc_keep_alive_timeout = 5000;
+    // GRPC在没有调用时也强制发送心跳(1为enabled 0为disabled)
+    int grpc_keep_alive_permit_without_calls = 1;
+    // GRPC在发送数据帧前，可以发送多少个心跳？(0为不限制)
+    int grpc_max_pings_without_data = 0;
+    // GRPC发送连续的ping帧而不接收任何数据之间的最短时间(ms)
+    int grpc_min_sent_ping_interval_without_data = 1000;
 };
 
 }  // namespace edu
