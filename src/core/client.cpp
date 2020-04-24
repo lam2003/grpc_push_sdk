@@ -48,6 +48,7 @@ static std::string grpc_channel_state_to_string(grpc_connectivity_state state)
 
 Client::Client()
 {
+    uid_                  = "";
     front_envoy_port_idx_ = 0;
     last_heartbeat_ts_    = -1;
     status_               = ClientStatus::WAIT_CONNECT;
@@ -60,6 +61,7 @@ Client::Client()
     ctx_     = nullptr;
     thread_  = nullptr;
     run_     = false;
+    init_    = false;
 }
 
 Client ::~Client()
@@ -132,7 +134,7 @@ void Client::create_stream()
 {
     ctx_.reset(new grpc::ClientContext());
     // 填入路由所需header kv
-    ctx_->AddMetadata(HASH_HEADER_KEY, "");
+    ctx_->AddMetadata(HASH_HEADER_KEY, uid_);
 
     stream_ = stub_->AsyncPushRegister(
         ctx_.get(), cq_.get(), reinterpret_cast<void*>(ClientEvent::CONNECTED));
@@ -298,19 +300,33 @@ void Client::event_loop()
     destroy_channel();
 }
 
-int Client::Initialize()
+int Client::Initialize(uint32_t uid)
 {
     int ret = PS_RET_SUCCESS;
+
+    if (init_) {
+        ret = PS_RET_ALREADY_INIT;
+        return ret;
+    }
+
+    std::ostringstream oss;
+    oss << uid;
+    uid_ = oss.str();
 
     run_    = true;
     thread_ = std::unique_ptr<std::thread>(
         new std::thread(std::bind(&Client::event_loop, this)));
 
+    init_ = true;
     return ret;
 }
 
 void Client::Destroy()
 {
+    if (!init_) {
+        return;
+    }
+
     run_ = false;
 
     if (cq_) {
@@ -332,5 +348,7 @@ void Client::Destroy()
         state_listener_.reset();
         state_listener_ = nullptr;
     }
+
+    init_ = false;
 }
 }  // namespace edu

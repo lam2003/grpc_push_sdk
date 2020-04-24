@@ -22,18 +22,18 @@ using Stream =
 namespace edu {
 
 enum class ClientEvent {
-    CONNECTED  = 0x01,
-    READ_DONE  = 0x02,
-    WRITE_DONE = 0x03,
-    FINISHED   = 0x04
+    CONNECTED  = 1,
+    READ_DONE  = 2,
+    WRITE_DONE = 3,
+    FINISHED   = 4
 };
 
 enum class ClientStatus {
-    WAIT_CONNECT,
-    READY_TO_WRITE,
-    WAIT_WRITE_DONE,
-    WAIT_READ_DONE,
-    FINISHED
+    WAIT_CONNECT    = 100,
+    READY_TO_WRITE  = 101,
+    WAIT_WRITE_DONE = 102,
+    WAIT_READ_DONE  = 103,
+    FINISHED        = 104
 };
 
 enum class ChannelState { CONNECTED, DISCONNECTED };
@@ -54,7 +54,7 @@ class Client {
     Client();
     virtual ~Client();
 
-    virtual int  Initialize();
+    virtual int  Initialize(uint32_t uid);
     virtual void Destroy();
 
     virtual void
@@ -72,6 +72,7 @@ class Client {
     void check_channel_and_stream(bool ok);
 
   private:
+    std::string                             uid_;
     int                                     front_envoy_port_idx_;
     int64_t                                 last_heartbeat_ts_;
     ClientStatus                            status_;
@@ -85,6 +86,7 @@ class Client {
     std::unique_ptr<grpc::ClientContext>    ctx_;
     std::unique_ptr<std::thread>            thread_;
     std::atomic<bool>                       run_;
+    bool                                    init_;
 };
 }  // namespace edu
 #endif

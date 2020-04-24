@@ -20,10 +20,9 @@ class PushSDK : public Singleton<PushSDK>,
     PushSDK();
 
   public:
-    virtual int  Initialize();
+    virtual int  Initialize(uint32_t uid);
     virtual void Destroy();
     virtual void OnChannelStateChange(ChannelState state) override;
-
 
   private:
     bool init_;

@@ -11,24 +11,22 @@ PushSDK::PushSDK()
     init_   = false;
 }
 
-int PushSDK::Initialize()
+int PushSDK::Initialize(uint32_t uid)
 {
     int ret = PS_RET_SUCCESS;
 
     if (init_) {
         ret = PS_RET_ALREADY_INIT;
-        log_w("push_sdk already initialized");
         return ret;
     }
 
     client_->SetChannelStateListener(this->shared_from_this());
 
-    if ((ret = client_->Initialize()) != PS_RET_SUCCESS) {
+    if ((ret = client_->Initialize(uid)) != PS_RET_SUCCESS) {
         log_e("client create channel failed. ret=%d", PS_RET_SUCCESS);
         return ret;
     }
 
-    log_i("push_sdk initialize successfully");
     init_ = true;
     return ret;
 }

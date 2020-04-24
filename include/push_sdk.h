@@ -15,11 +15,10 @@ extern "C" {
 
 // Push SDK API返回码
 typedef enum {
-    PS_RET_SUCCESS               = 0,  // 成功
-    PS_RET_ALREADY_INIT          = 1,  // 重复初始化sdk
-    PS_RET_INIT_LOG_FAILED       = 2,  // 初始化日志库失败
-    PS_RET_CREATE_CHANNEL_FAILED = 3,  // 创建GRPC Channel失败
-    PS_RET_CREATE_STREAM_FAILED  = 4,  // 创建GRPC Stream失败
+    PS_RET_SUCCESS         = 0,  // 成功
+    PS_RET_ALREADY_INIT    = 1,  // 重复初始化SDK
+    PS_RET_INIT_LOG_FAILED = 2,  // 初始化日志库失败
+    PS_RET_SDK_UNINIT      = 3,  // SDK未初始化
     PS_RET_UNKNOW
 } PushSDKRetCode;
 
@@ -34,16 +33,9 @@ typedef enum {
 // 网络连接状态
 typedef enum {
     PS_CONN_STATE_OK       = 0,  // 连接正常
-    PS_CONN_STATE_NO_READY = 1,  // 未就绪
-    PS_CONN_STATE_FINISH   = 2,  // 连接已结束
-    PS_CONN_STATE_UNKNOW
+    PS_CONN_STATE_NO_READY = 1,  // 连接未就绪
+    PS_CONN_STATE_UNKNOW   = 2
 } PushSDKConnState;
-
-typedef struct
-{
-    uint64_t gtype;
-    uint64_t gid;
-} PushSDKGroupInfo;
 
 typedef struct
 {
@@ -57,13 +49,26 @@ typedef struct
     uint32_t passwd_len;
 } PushSDKUserInfo;
 
-// @brief     初始化，必须最先调用，线程安全，重复调用返回成功
+typedef struct
+{
+    uint64_t gtype;
+    uint64_t gid;
+} PushSDKGroupInfo;
+
+// @brief     初始化，必须最先调用，线程安全，重复调用返 PS_RET_ALREADY_INIT
+// @param[in] uid 用户ID，SDK初始化时用于路由
 // @param[in] logdir 日志存放目录
 // @reture    SDK API返回码
-PS_EXPORT PushSDKRetCode PushSDKInitialize(const char* logdir);
+PS_EXPORT PushSDKRetCode PushSDKInitialize(uint32_t uid, const char* logdir);
 
 // @brief     去初始化，线程安全，可重复调用
 PS_EXPORT void PushSDKDestroy(void);
+
+// @brief     登录，线程安全，必须在SDK初始化之后调用，重复调用返回
+// PS_RET_ALREADY_INIT
+// @param[in] user 用户信息
+// @return    SDK API返回码
+PS_EXPORT PushSDKRetCode PushSDKLogin(PushSDKGroupInfo* user);
 
 // /**
 // @brief GRPC Call回调
