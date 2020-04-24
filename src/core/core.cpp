@@ -7,8 +7,7 @@ namespace edu {
 
 PushSDK::PushSDK()
 {
-    client_ = std::make_shared<Client>();
-    init_   = false;
+    init_ = false;
 }
 
 int PushSDK::Initialize(uint32_t uid)
@@ -20,6 +19,7 @@ int PushSDK::Initialize(uint32_t uid)
         return ret;
     }
 
+    client_ = std::make_shared<Client>();
     client_->SetChannelStateListener(this->shared_from_this());
     client_->SetClientStatusListener(this->shared_from_this());
     if ((ret = client_->Initialize(uid)) != PS_RET_SUCCESS) {
@@ -48,6 +48,9 @@ void PushSDK::Destroy()
     }
 
     client_->Destroy();
+    client_.reset();
+    client_ = nullptr;
+    init_   = false;
 }
 
 PushSDK::~PushSDK()

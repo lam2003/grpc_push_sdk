@@ -66,14 +66,14 @@ Client::Client()
     channel_state_        = ChannelState::DISCONNECTED;
     state_listener_       = nullptr;
     status_listener_      = nullptr;
-    cq_ = std::unique_ptr<grpc::CompletionQueue>(new grpc::CompletionQueue);
-    channel_ = nullptr;
-    stub_    = nullptr;
-    stream_  = nullptr;
-    ctx_     = nullptr;
-    thread_  = nullptr;
-    run_     = false;
-    init_    = false;
+    cq_                   = nullptr;
+    channel_              = nullptr;
+    stub_                 = nullptr;
+    stream_               = nullptr;
+    ctx_                  = nullptr;
+    thread_               = nullptr;
+    run_                  = false;
+    init_                 = false;
 }
 
 Client ::~Client()
@@ -124,7 +124,7 @@ void Client::create_channel()
                 Config::Instance()->front_envoy_ports.size()];
     front_envoy_port_idx_++;
 
-    log_i("create channel with {}", oss.str());
+    log_i("connect to {}", oss.str());
     channel_ = grpc::CreateCustomChannel(
         oss.str(), grpc::InsecureChannelCredentials(), get_channel_args());
     stub_ = PushGateway::NewStub(channel_);
@@ -164,9 +164,10 @@ void Client::destroy_stream()
 {
     if (ctx_) {
         ctx_->TryCancel();
-        ctx_.release();
-        ctx_ = nullptr;
     }
+
+    ctx_.release();
+    ctx_ = nullptr;
 
     stream_.release();
     stream_ = nullptr;
@@ -345,6 +346,8 @@ int Client::Initialize(uint32_t uid)
     oss << uid;
     uid_ = oss.str();
 
+    cq_ = std::unique_ptr<grpc::CompletionQueue>(new grpc::CompletionQueue);
+
     run_    = true;
     thread_ = std::unique_ptr<std::thread>(
         new std::thread(std::bind(&Client::event_loop, this)));
@@ -361,16 +364,14 @@ void Client::Destroy()
 
     run_ = false;
 
-    if (cq_) {
-        cq_->Shutdown();
-    }
 
     if (thread_) {
         thread_->join();
-        thread_.release();
-        thread_ = nullptr;
     }
 
+    thread_.release();
+    thread_ = nullptr;
+    
     cq_.release();
     cq_ = nullptr;
 
