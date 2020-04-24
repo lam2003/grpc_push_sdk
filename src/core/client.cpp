@@ -19,7 +19,6 @@ std::string channel_state_to_string(ChannelState state)
     switch (state) {
         case ChannelState::CONNECTED: return "CONNECTED";
         case ChannelState::DISCONNECTED: return "DISCONNECTED";
-        case ChannelState::UNKNOW:
         default: return "UNKNOW";
     }
 }
@@ -52,7 +51,7 @@ Client::Client()
     front_envoy_port_idx_ = 0;
     last_heartbeat_ts_    = -1;
     status_               = ClientStatus::WAIT_CONNECT;
-    channel_state_        = ChannelState::UNKNOW;
+    channel_state_        = ChannelState::DISCONNECTED;
     state_listener_       = nullptr;
     cq_ = std::unique_ptr<grpc::CompletionQueue>(new grpc::CompletionQueue);
     channel_ = nullptr;
@@ -120,7 +119,7 @@ void Client::destroy_channel()
 
     if (channel_state_ != ChannelState::DISCONNECTED && state_listener_) {
         state_listener_->OnChannelStateChange(ChannelState::DISCONNECTED);
-        channel_state_ = ChannelState::UNKNOW;
+        channel_state_ = ChannelState::DISCONNECTED;
     }
 }
 

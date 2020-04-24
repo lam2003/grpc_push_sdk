@@ -36,7 +36,7 @@ enum class ClientStatus {
     FINISHED
 };
 
-enum class ChannelState { CONNECTED, DISCONNECTED, UNKNOW };
+enum class ChannelState { CONNECTED, DISCONNECTED };
 
 extern std::string channel_state_to_string(ChannelState state);
 

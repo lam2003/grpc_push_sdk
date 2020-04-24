@@ -100,7 +100,7 @@ extern std::shared_ptr<edu::Log> _sdk_logger;
 extern std::shared_ptr<edu::Log> _grpc_logger;
 extern int                       init_logger(const std::string& log_dir);
 
-#if SMS_DEBUG
+#if PUSH_SDK_DEBUG
 #    define log_e(msg, ...)                                                    \
         do {                                                                   \
             if (_sdk_logger) {                                                 \

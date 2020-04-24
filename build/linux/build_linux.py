@@ -41,7 +41,7 @@ cmake_cmd = [
 call(cmake_cmd)
 build('libprotobuf')
 build('grpc++')
-build('service-mesh-cpp')
+build('push_sdk')
 
 
 def copy_protobuf_lib():
@@ -69,7 +69,7 @@ def copy_grpc_lib():
 
 
 def copy_service_mesh_lib():
-    copy_file(BUILD_DIR + '/src/libservice-mesh-cpp.a', libs_path)
+    copy_file(BUILD_DIR + '/src/libpush_sdk.a', libs_path)
 
 
 makedirs(libs_path)

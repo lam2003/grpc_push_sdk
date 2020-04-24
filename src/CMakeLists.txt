@@ -1,4 +1,4 @@
-project(service-mesh-cpp DESCRIPTION "ServiceMesh C++ Client" LANGUAGES CXX)
+project(push_sdk DESCRIPTION "Push SDK" LANGUAGES CXX)
 
 include(windows_support)
 
@@ -18,19 +18,19 @@ file(
     "${_include_root_path}/*.h*"
 )
 
-add_library(service-mesh-cpp STATIC ${_source_list} ${_public_headers_list})
+add_library(push_sdk STATIC ${_source_list} ${_public_headers_list})
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
-    target_compile_options(service-mesh-cpp PRIVATE /MP)
+    target_compile_options(push_sdk PRIVATE /MP)
 elseif(CMAKE_COMPILER_IS_GNUCC)
-    target_compile_options(service-mesh-cpp PRIVATE -Wno-attributes)
+    target_compile_options(push_sdk PRIVATE -Wno-attributes)
     # disable warnings
-    target_compile_options(service-mesh-cpp PRIVATE -Wno-conversion -Wno-pedantic -Wno-cast-qual -Wno-sign-compare)
+    target_compile_options(push_sdk PRIVATE -Wno-conversion -Wno-pedantic -Wno-cast-qual -Wno-sign-compare)
 endif()
 
-target_compile_features(service-mesh-cpp PUBLIC cxx_std_11)
+target_compile_features(push_sdk PUBLIC cxx_std_11)
 
-target_include_directories(service-mesh-cpp
+target_include_directories(push_sdk
     PUBLIC ${THIRD_PARTY_DIR}
     PUBLIC ${PUBLIC_INCLUDE_DIR}
     PRIVATE .

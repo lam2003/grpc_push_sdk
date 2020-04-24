@@ -58,10 +58,10 @@ for arch in arch_list:
     call(cmake_cmd)
     build('libprotobuf')
     build('grpc++')
-    build('service-mesh-cpp')
+    build('push_sdk')
 
     service_mesh_cpp_libs     .append(
-        BUILD_DIR + '/src/libservice-mesh-cpp.a')
+        BUILD_DIR + '/src/libpush_sdk.a')
     grpc_libs           .append(
         BUILD_DIR + '/3rdparty/grpc/libgrpc.a')
     grpcpp_libs         .append(

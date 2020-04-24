@@ -106,7 +106,7 @@ std::shared_ptr<edu::Log> _grpc_logger = nullptr;
 
 static void grpc_log_func(gpr_log_func_args* args)
 {
-#if SMS_DEBUG
+#if PUSH_SDK_DEBUG
     switch (args->severity) {
         case GPR_LOG_SEVERITY_DEBUG:
             _grpc_logger->Debug(GRPC_LOG_PREFIX_DEBUG, args->file, args->line,

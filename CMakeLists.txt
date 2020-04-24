@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.15)
 
-project(service-mesh-cpp)
+project(push_sdk)
 
 cmake_policy(SET CMP0042 NEW)
 cmake_policy(SET CMP0048 NEW)
@@ -37,7 +37,7 @@ set(THIRD_PARTY_DIR ${PROJECT_SOURCE_DIR}/3rdparty)
 if(BUILD_MODE MATCHES "Debug")
     message("##################BUILD DEBUG##################")
     set(CMAKE_CXX_FLAGS "-g ${CMAKE_CXX_FLAGS}")
-    add_definitions(-D SMS_DEBUG)
+    add_definitions(-D PUSH_SDK_DEBUG)
 else()
     message("##################BUILD Release##################")
 endif()
