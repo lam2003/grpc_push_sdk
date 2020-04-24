@@ -166,11 +166,12 @@ void Client::destroy_stream()
         ctx_->TryCancel();
     }
 
+    stream_.release();
+    stream_ = nullptr;
+
     ctx_.release();
     ctx_ = nullptr;
 
-    stream_.release();
-    stream_ = nullptr;
     status_ = ClientStatus::FINISHED;
     if (state_listener_) {
         status_listener_->OnClientStatusChange(status_);
@@ -234,6 +235,7 @@ void Client::handle_event(ClientEvent event)
                           reinterpret_cast<void*>(ClientEvent::READ_DONE));
             break;
         }
+        default: break;
     }
 }
 
@@ -294,6 +296,8 @@ void Client::event_loop()
     ClientEvent event;
     bool        ok;
 
+    cq_ = std::unique_ptr<grpc::CompletionQueue>(new grpc::CompletionQueue);
+
     create_channel();
     create_stream();
 
@@ -329,8 +333,13 @@ void Client::event_loop()
 
     // 收尾工作....
     log_i("event loop thread going to quit");
+
     destroy_stream();
     destroy_channel();
+
+    cq_->Shutdown();
+    cq_.release();
+    cq_ = nullptr;
 }
 
 int Client::Initialize(uint32_t uid)
@@ -345,8 +354,6 @@ int Client::Initialize(uint32_t uid)
     std::ostringstream oss;
     oss << uid;
     uid_ = oss.str();
-
-    cq_ = std::unique_ptr<grpc::CompletionQueue>(new grpc::CompletionQueue);
 
     run_    = true;
     thread_ = std::unique_ptr<std::thread>(
@@ -364,16 +371,12 @@ void Client::Destroy()
 
     run_ = false;
 
-
     if (thread_) {
         thread_->join();
     }
 
     thread_.release();
     thread_ = nullptr;
-    
-    cq_.release();
-    cq_ = nullptr;
 
     state_listener_.reset();
     state_listener_ = nullptr;

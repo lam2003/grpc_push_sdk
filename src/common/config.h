@@ -18,7 +18,7 @@ class Config : public Singleton<Config> {
 
   public:
     // grpc日志输出到控制台开关
-    bool grpc_log_on_console = false;
+    bool grpc_log_on_console = true;
     // grpc日志等级
     std::string grpc_log_level = "trace";
 
