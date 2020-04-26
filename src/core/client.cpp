@@ -181,7 +181,7 @@ void Client::create_stream()
         ctx_.get(), cq_.get(), reinterpret_cast<void*>(ClientEvent::CONNECTED));
     check_and_notify_client_status_change(ClientStatus::WAIT_CONNECT);
 
-    last_heartbeat_ts_ = Utils::GetSteayMilliSeconds();
+    last_heartbeat_ts_ = Utils::GetSteadyMilliSeconds();
 }
 
 void Client::destroy_stream()
@@ -296,7 +296,7 @@ void Client::check_channel_and_stream(bool ok)
 
 void Client::handle_cq_timeout()
 {
-    int64_t now = Utils::GetSteayMilliSeconds();
+    int64_t now = Utils::GetSteadyMilliSeconds();
 
     if (now - last_heartbeat_ts_ >= Config::Instance()->heart_beat_interval) {
         std::shared_ptr<PushRegReq> req = std::make_shared<PushRegReq>();

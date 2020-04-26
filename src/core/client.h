@@ -14,6 +14,7 @@ using PushGateway      = grpc::push::gateway::PushGateway;
 using Stub             = grpc::push::gateway::PushGateway::Stub;
 using PushRegReq       = grpc::push::gateway::PushRegReq;
 using LoginRequest     = grpc::push::gateway::LoginRequest;
+using LoginResponse    = grpc::push::gateway::LoginResponse;
 using PushData         = grpc::push::gateway::PushData;
 using StreamURI        = grpc::push::gateway::StreamURI;
 using UserTerminalType = grpc::push::gateway::UserTerminalType;

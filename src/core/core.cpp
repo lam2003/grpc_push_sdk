@@ -1,7 +1,11 @@
 
+#include <common/err_code.h>
 #include <common/log.h>
 #include <common/utils.h>
 #include <core/core.h>
+
+#define CHECK_TIMEOUT_INTERVAL 500  // ms
+#define CALL_TIMEOUT 2000000        // us
 
 namespace edu {
 
@@ -38,10 +42,23 @@ static UserTerminalType get_user_terminal_type()
 
 PushSDK::PushSDK()
 {
-    init_ = false;
+    init_    = false;
+    uid_     = 0;
+    appid_   = 0;
+    appkey_  = 0;
+    cb_func_ = nullptr;
+    cb_args_ = nullptr;
+    user_    = nullptr;
+    client_  = nullptr;
+    thread_  = nullptr;
+    run_     = false;
 }
 
-int PushSDK::Initialize(uint32_t uid, uint64_t appid, uint64_t appkey)
+int PushSDK::Initialize(uint32_t      uid,
+                        uint64_t      appid,
+                        uint64_t      appkey,
+                        PushSDKCallCB cb_func,
+                        void*         cb_args)
 {
     int ret = PS_RET_SUCCESS;
 
@@ -51,9 +68,11 @@ int PushSDK::Initialize(uint32_t uid, uint64_t appid, uint64_t appkey)
         return ret;
     }
 
-    uid_    = uid;
-    appid_  = appid;
-    appkey_ = appkey;
+    uid_     = uid;
+    appid_   = appid;
+    appkey_  = appkey;
+    cb_func_ = cb_func;
+    cb_args_ = cb_args;
 
     client_ = std::make_shared<Client>();
     client_->SetChannelStateListener(this->shared_from_this());
@@ -63,6 +82,30 @@ int PushSDK::Initialize(uint32_t uid, uint64_t appid, uint64_t appkey)
         log_e("client create channel failed. ret={}", PS_RET_SUCCESS);
         return ret;
     }
+
+    run_    = true;
+    thread_ = std::unique_ptr<std::thread>(new std::thread([this]() {
+        while (run_) {
+            std::unique_lock<std::mutex> lock(mux_);
+            cond_.wait_for(lock,
+                           std::chrono::milliseconds(CHECK_TIMEOUT_INTERVAL));
+            if (!run_) {
+                return;
+            }
+            int64_t now = Utils::GetSteadyMicroSeconds();
+            std::map<int64_t, PushSDKCBType>::iterator it;
+            while (!cb_map_.empty()) {
+                it = cb_map_.begin();
+                if (now - it->first >= CALL_TIMEOUT) {
+                    cb_func_(it->second, PS_CALL_TIMEOUT, "timeout", cb_args_);
+                    cb_map_.erase(it);
+                }
+                else {
+                    break;
+                }
+            }
+        }
+    }));
 
     init_ = true;
     return ret;
@@ -89,6 +132,12 @@ void PushSDK::Destroy()
         return;
     }
 
+    run_ = false;
+    cond_.notify_one();
+    thread_->join();
+    thread_.reset();
+    thread_ = nullptr;
+
     client_->Destroy();
     client_.reset();
     client_ = nullptr;
@@ -100,7 +149,7 @@ PushSDK::~PushSDK()
     Destroy();
 }
 
-std::shared_ptr<PushRegReq> PushSDK::make_login_packet()
+std::shared_ptr<PushRegReq> PushSDK::make_login_packet(int64_t now)
 {
     LoginRequest login_req;
     login_req.set_uid(uid_);
@@ -111,6 +160,7 @@ std::shared_ptr<PushRegReq> PushSDK::make_login_packet()
     login_req.set_account(std::string(user_->account));
     login_req.set_password(std::string(user_->passwd));
     login_req.set_cookie(std::string(user_->token));
+    login_req.set_context(std::to_string(now));
 
     std::string msg_data;
     if (!login_req.SerializeToString(&msg_data)) {
@@ -145,22 +195,64 @@ int PushSDK::Login(const PushSDKUserInfo& user)
     user_.release();
     user_.reset(user_ptr);
 
-    std::shared_ptr<PushRegReq> req = make_login_packet();
+    int64_t                     now = Utils::GetSteadyMicroSeconds();
+    std::shared_ptr<PushRegReq> req = make_login_packet(now);
     if (!req) {
-        ret = PS_RET_ENCODE_LOGIN_PKT_FAILED;
-        log_e("encode login packet failed. ret={}",
-              PS_RET_ENCODE_LOGIN_PKT_FAILED);
-        return PS_RET_ENCODE_LOGIN_PKT_FAILED;
+        ret = PS_RET_LOGIN_REQ_ENC_FAILED;
+        log_e("encode login request packet failed. ret={}",
+              PS_RET_LOGIN_REQ_ENC_FAILED);
+        return PS_RET_LOGIN_REQ_ENC_FAILED;
     }
+
+    mux_.lock();
+    cb_map_[now] = PushSDKCBType::PS_CB_LOGIN;
+    mux_.unlock();
 
     client_->Send(req);
 
     return ret;
 }
 
+void PushSDK::handle_login_response(std::shared_ptr<PushData> msg)
+{
+    LoginResponse res;
+    // 登录错误时，清理原来的登录信息
+    if (!res.ParseFromString(msg->msgdata())) {
+        user_.reset();
+        user_ = nullptr;
+        log_e("decode login response packet failed");
+        cb_func_(PS_CB_LOGIN, PS_CALL_LOGIN_RES_DEC_FAILED,
+                 "decode login response packet failed", cb_args_);
+        return;
+    }
+
+    mux_.lock();
+    cb_map_.erase(std::stoll(res.context()));
+    mux_.unlock();
+
+    if (res.rescode() != RES_SUCCESS) {
+        user_.reset();
+        user_ = nullptr;
+        log_e("user login failed. desc={}, code={}", res.errmsg(),
+              res.rescode());
+        cb_func_(PS_CB_LOGIN, PS_CALL_LOGIN_FAILED, res.errmsg().c_str(),
+                 cb_args_);
+    }
+    else {
+        log_d("user login successfully");
+        cb_func_(PS_CB_LOGIN, PS_CALL_RES_OK, "ok", cb_args_);
+    }
+}
+
 void PushSDK::OnMessage(std::shared_ptr<PushData> msg)
 {
-    log_w("msg:{}", msg->uri());
+    switch (msg->uri()) {
+        case StreamURI::PPushGateWayLoginResURI: {
+            log_d("recv msg. uri=PPushGateWayLoginResURI");
+            handle_login_response(msg);
+            break;
+        }
+    }
 }
 
 }  // namespace edu

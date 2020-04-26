@@ -15,22 +15,29 @@ extern "C" {
 
 // Push SDK API返回码
 typedef enum {
-    PS_RET_SUCCESS                 = 0,  // 成功
-    PS_RET_ALREADY_INIT            = 1,  // 重复初始化SDK
-    PS_RET_INIT_LOG_FAILED         = 2,  // 初始化日志库失败
-    PS_RET_SDK_UNINIT              = 3,  // SDK未初始化
-    PS_RET_ALREADY_LOGIN           = 4,  // SDK已经登录，请先登出
-    PS_RET_ENCODE_LOGIN_PKT_FAILED = 5,  // 登录请求包序列化失败
-    PS_RET_USER_INFO_IS_NULL       = 6,  // 登录传入的用户信息为空
+    PS_RET_SUCCESS              = 0,  // 成功
+    PS_RET_ALREADY_INIT         = 1,  // 重复初始化SDK
+    PS_RET_INIT_LOG_FAILED      = 2,  // 初始化日志库失败
+    PS_RET_SDK_UNINIT           = 3,  // SDK未初始化
+    PS_RET_ALREADY_LOGIN        = 4,  // SDK已经登录，请先登出
+    PS_RET_LOGIN_REQ_ENC_FAILED = 5,  // 登录请求包序列化失败
+    PS_RET_USER_INFO_IS_NULL    = 6,  // 登录传入的用户信息为空
+    PS_RET_CB_IS_NULL           = 7,  // 回调函数为空
     PS_RET_UNKNOW
 } PushSDKRetCode;
 
+// Push SDK回调类型
+typedef enum {
+    PS_CB_LOGIN = 0,  // 登录回调
+} PushSDKCBType;
+
 // GRPC调用返回码
 typedef enum {
-    PS_CALL_RES_OK      = 0,  // 成功
-    PS_CALL_RES_ILLEGAL = 1,  // 参数非法
-    PS_CALL_RES_TIMEOUT = 2,  // 超时
-    PS_CALL_RES_UNKNOW
+    PS_CALL_RES_OK               = 0,  // 成功
+    PS_CALL_LOGIN_RES_DEC_FAILED = 1,  // 登录回复包解包失败
+    PS_CALL_LOGIN_FAILED         = 2,  // 登录失败
+    PS_CALL_TIMEOUT              = 3,  // 调用超时
+
 } PushSDKCallRes;
 
 // 网络连接状态
@@ -53,16 +60,31 @@ typedef struct
     uint64_t gid;
 } PushSDKGroupInfo;
 
+/**
+@brief SDK回调
+@param [in] code 错误码
+@param [in] desc 错误描述
+@param [in] data 自定义指针
+*/
+typedef void (*PushSDKCallCB)(PushSDKCBType  type,
+                              PushSDKCallRes res,
+                              const char*    desc,
+                              void*          data);
+
 // @brief     初始化，必须最先调用，线程安全，重复调用返 PS_RET_ALREADY_INIT
 // @param[in] uid 用户ID，SDK初始化时用于路由
 // @param[in] appid 应用ID
 // @param[in] appkey 应用密钥
 // @param[in] logdir 日志存放目录
+// @param[in] cb_func 异步回调函数
+// @param[in] cb_arg 异步回调函数args
 // @reture    SDK API返回码
-PS_EXPORT PushSDKRetCode PushSDKInitialize(uint32_t    uid,
-                                           uint64_t    appid,
-                                           uint64_t    appkey,
-                                           const char* logdir);
+PS_EXPORT PushSDKRetCode PushSDKInitialize(uint32_t      uid,
+                                           uint64_t      appid,
+                                           uint64_t      appkey,
+                                           const char*   logdir,
+                                           PushSDKCallCB cb_func,
+                                           void*         cb_arg);
 
 // @brief     去初始化，线程安全，可重复调用
 PS_EXPORT void PushSDKDestroy(void);
@@ -72,16 +94,6 @@ PS_EXPORT void PushSDKDestroy(void);
 // @param[in] user 用户信息
 // @return    SDK API返回码
 PS_EXPORT PushSDKRetCode PushSDKLogin(PushSDKUserInfo* user);
-
-// /**
-// @brief GRPC Call回调
-// @param [in] code 错误码
-// @param [in] desc 错误描述
-// @param [in] data 自定义指针
-// */
-// typedef void (*PushSDKCallCB)(PushSDKCallRes code,
-//                               const char*    desc,
-//                               void*          data);
 
 // typedef void* ps_hdl_t;
 // typedef void (*SmsTransLinkstatus_Callback)(PushSDKConnState state, void*

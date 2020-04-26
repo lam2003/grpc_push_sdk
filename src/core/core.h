@@ -6,6 +6,7 @@
 
 #include <push_sdk.h>
 
+#include <condition_variable>
 #include <memory>
 
 namespace edu {
@@ -24,7 +25,11 @@ class PushSDK : public Singleton<PushSDK>,
     PushSDK();
 
   public:
-    virtual int  Initialize(uint32_t uid, uint64_t appid, uint64_t appkey);
+    virtual int  Initialize(uint32_t      uid,
+                            uint64_t      appid,
+                            uint64_t      appkey,
+                            PushSDKCallCB cb_func,
+                            void*         cb_args);
     virtual void Destroy();
     virtual int  Login(const PushSDKUserInfo& user);
     virtual void OnChannelStateChange(ChannelState state) override;
@@ -32,15 +37,23 @@ class PushSDK : public Singleton<PushSDK>,
     virtual void OnMessage(std::shared_ptr<PushData> msg) override;
 
   private:
-    std::shared_ptr<PushRegReq> make_login_packet();
+    std::shared_ptr<PushRegReq> make_login_packet(int64_t now);
+    void handle_login_response(std::shared_ptr<PushData> msg);
 
   private:
     bool                             init_;
     uint32_t                         uid_;
     uint64_t                         appid_;
     uint64_t                         appkey_;
+    PushSDKCallCB                    cb_func_;
+    void*                            cb_args_;
     std::unique_ptr<PushSDKUserInfo> user_;
     std::shared_ptr<Client>          client_;
+    std::unique_ptr<std::thread>     thread_;
+    std::mutex                       mux_;
+    std::condition_variable          cond_;
+    std::atomic<bool>                run_;
+    std::map<int64_t, PushSDKCBType> cb_map_;
 };
 
 }  // namespace edu

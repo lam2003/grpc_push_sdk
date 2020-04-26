@@ -5,14 +5,18 @@
 #include <atomic>
 #include <mutex>
 
-static std::mutex _mux;
-volatile bool     _initialized     = false;
-volatile bool     _log_initialized = false;
+static std::mutex        _mux;
+static std::atomic<bool> _initialized(false);
+static std::atomic<bool> _log_initialized(false);
+static PushSDKCallCB     _cb_func = nullptr;
+static void*             _cb_args = nullptr;
 
-PushSDKRetCode PushSDKInitialize(uint32_t    uid,
-                                 uint64_t    appid,
-                                 uint64_t    appkey,
-                                 const char* log_dir)
+PushSDKRetCode PushSDKInitialize(uint32_t      uid,
+                                 uint64_t      appid,
+                                 uint64_t      appkey,
+                                 const char*   log_dir,
+                                 PushSDKCallCB cb_func,
+                                 void*         cb_arg)
 {
     PushSDKRetCode               ret = PS_RET_SUCCESS;
     std::unique_lock<std::mutex> lock(_mux);
@@ -29,8 +33,14 @@ PushSDKRetCode PushSDKInitialize(uint32_t    uid,
     }
     _log_initialized = true;
 
+    if (!cb_func) {
+        ret = PS_RET_CB_IS_NULL;
+        log_e("call back function is null");
+        return ret;
+    }
+    
     if ((ret = static_cast<PushSDKRetCode>(edu::PushSDK::Instance()->Initialize(
-             uid, appid, appkey))) != PS_RET_SUCCESS) {
+             uid, appid, appkey, cb_func, cb_arg))) != PS_RET_SUCCESS) {
         log_e("push_sdk initailize failed. ret={}", ret);
         return ret;
     }

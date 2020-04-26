@@ -38,11 +38,18 @@ LOG_LEVEL Utils::StrToLogLevel(const std::string& s)
     }
 }
 
-int64_t Utils::GetSteayMilliSeconds()
+int64_t Utils::GetSteadyMilliSeconds()
 {
     using namespace std::chrono;
     steady_clock::time_point now = steady_clock::now();
     return duration_cast<milliseconds>(now.time_since_epoch()).count();
+}
+
+int64_t Utils::GetSteadyMicroSeconds()
+{
+    using namespace std::chrono;
+    steady_clock::time_point now = steady_clock::now();
+    return duration_cast<microseconds>(now.time_since_epoch()).count();
 }
 
 TerminalType Utils::GetTerminalType()

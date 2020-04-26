@@ -25,7 +25,8 @@ class Utils {
   public:
     static std::string  GetSystemTime(const std::string& format = "%Y-%m-%d");
     static LOG_LEVEL    StrToLogLevel(const std::string& s);
-    static int64_t      GetSteayMilliSeconds();
+    static int64_t      GetSteadyMilliSeconds();
+    static int64_t      GetSteadyMicroSeconds();
     static TerminalType GetTerminalType();
     static uint64_t     GetSUID(uint32_t uid, uint64_t terminal_type);
 };
