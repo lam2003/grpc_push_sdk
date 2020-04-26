@@ -17,8 +17,8 @@ namespace edu {
 std::string channel_state_to_string(ChannelState state)
 {
     switch (state) {
-        case ChannelState::CONNECTED: return "CONNECTED";
-        case ChannelState::DISCONNECTED: return "DISCONNECTED";
+        case ChannelState::OK: return "OK";
+        case ChannelState::NO_READY: return "NO_READY";
         default: return "UNKNOW";
     }
 }
@@ -30,6 +30,7 @@ std::string client_status_to_string(ClientStatus status)
         case ClientStatus::READY_TO_WRITE: return "READY_TO_WRITE";
         case ClientStatus::WAIT_CONNECT: return "WAIT_CONNECT";
         case ClientStatus::WAIT_WRITE_DONE: return "WAIT_WRITE_DONE";
+        case ClientStatus::CONNECTED: return "CONNECTED";
         default: return "UNKNOW";
     }
 }
@@ -63,9 +64,11 @@ Client::Client()
     front_envoy_port_idx_ = 0;
     last_heartbeat_ts_    = -1;
     client_status_        = ClientStatus::FINISHED;
-    channel_state_        = ChannelState::DISCONNECTED;
+    channel_state_        = ChannelState::NO_READY;
     state_listener_       = nullptr;
     status_listener_      = nullptr;
+    msg_hdl_              = nullptr;
+    msg_cache_            = nullptr;
     cq_                   = nullptr;
     channel_              = nullptr;
     stub_                 = nullptr;
@@ -91,6 +94,11 @@ void Client::SetClientStatusListener(
     std::shared_ptr<ClientStatusListener> listener)
 {
     status_listener_ = listener;
+}
+
+void Client::SetMessageHandler(std::shared_ptr<MessageHandler> hdl)
+{
+    msg_hdl_ = hdl;
 }
 
 static grpc::ChannelArguments get_channel_args()
@@ -138,6 +146,12 @@ void Client::check_and_notify_channel_state_change(ChannelState new_state)
     }
 }
 
+void Client::Send(std::shared_ptr<PushRegReq> req)
+{
+    std::unique_lock<std::mutex> lock(mux_);
+    queue_.push(req);
+}
+
 void Client::destroy_channel()
 {
     stub_.release();
@@ -146,7 +160,7 @@ void Client::destroy_channel()
     channel_.reset();
     channel_ = nullptr;
 
-    check_and_notify_channel_state_change(ChannelState::DISCONNECTED);
+    check_and_notify_channel_state_change(ChannelState::NO_READY);
 }
 
 void Client::check_and_notify_client_status_change(ClientStatus new_status)
@@ -185,18 +199,21 @@ void Client::destroy_stream()
     check_and_notify_client_status_change(ClientStatus::FINISHED);
 }
 
-static PushData data;
-
 void Client::handle_event(ClientEvent event)
 {
     switch (event) {
         case ClientEvent::CONNECTED: {
-            stream_->Read(&data,
+            check_and_notify_client_status_change(ClientStatus::CONNECTED);
+
+            msg_cache_ = std::make_shared<PushData>();
+            stream_->Read(msg_cache_.get(),
                           reinterpret_cast<void*>(ClientEvent::READ_DONE));
 
+            std::unique_lock<std::mutex> lock(mux_);
             if (!queue_.empty()) {
                 std::shared_ptr<PushRegReq> req = queue_.front();
                 queue_.pop();
+                lock.unlock();
 
                 stream_->Write(
                     *req, reinterpret_cast<void*>(ClientEvent::WRITE_DONE));
@@ -212,9 +229,11 @@ void Client::handle_event(ClientEvent event)
             break;
         }
         case ClientEvent::WRITE_DONE: {
+            std::unique_lock<std::mutex> lock(mux_);
             if (!queue_.empty()) {
                 std::shared_ptr<PushRegReq> req = queue_.front();
                 queue_.pop();
+                lock.unlock();
 
                 stream_->Write(
                     *req, reinterpret_cast<void*>(ClientEvent::WRITE_DONE));
@@ -230,7 +249,13 @@ void Client::handle_event(ClientEvent event)
             break;
         }
         case ClientEvent::READ_DONE: {
-            stream_->Read(&data,
+            if (msg_hdl_ &&
+                msg_cache_->uri() != StreamURI::PPushGateWayPongURI) {
+                msg_hdl_->OnMessage(msg_cache_);
+            }
+            msg_cache_ = std::make_shared<PushData>();
+
+            stream_->Read(msg_cache_.get(),
                           reinterpret_cast<void*>(ClientEvent::READ_DONE));
             break;
         }
@@ -244,10 +269,10 @@ void Client::check_channel_and_stream(bool ok)
 
     ChannelState new_channel_state;
     if (state == GRPC_CHANNEL_READY) {
-        new_channel_state = ChannelState::CONNECTED;
+        new_channel_state = ChannelState::OK;
     }
     else {
-        new_channel_state = ChannelState::DISCONNECTED;
+        new_channel_state = ChannelState::NO_READY;
     }
 
     check_and_notify_channel_state_change(new_channel_state);
@@ -276,13 +301,17 @@ void Client::handle_cq_timeout()
     if (now - last_heartbeat_ts_ >= Config::Instance()->heart_beat_interval) {
         std::shared_ptr<PushRegReq> req = std::make_shared<PushRegReq>();
         req->set_uri(StreamURI::PPushGateWayPingURI);
+        mux_.lock();
         queue_.push(req);
+        mux_.unlock();
         last_heartbeat_ts_ = now;
     }
 
+    std::unique_lock<std::mutex> lock(mux_);
     if (client_status_ == ClientStatus::READY_TO_WRITE && !queue_.empty()) {
         std::shared_ptr<PushRegReq> req = queue_.front();
         queue_.pop();
+        lock.unlock();
         stream_->Write(*req, reinterpret_cast<void*>(ClientEvent::WRITE_DONE));
     }
 }
@@ -379,6 +408,12 @@ void Client::Destroy()
 
     status_listener_.reset();
     status_listener_ = nullptr;
+
+    msg_hdl_.reset();
+    msg_hdl_ = nullptr;
+
+    msg_cache_.reset();
+    msg_cache_ = nullptr;
 
     init_ = false;
 }

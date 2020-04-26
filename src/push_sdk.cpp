@@ -9,7 +9,10 @@ static std::mutex _mux;
 volatile bool     _initialized     = false;
 volatile bool     _log_initialized = false;
 
-PushSDKRetCode PushSDKInitialize(uint32_t uid, const char* log_dir)
+PushSDKRetCode PushSDKInitialize(uint32_t    uid,
+                                 uint64_t    appid,
+                                 uint64_t    appkey,
+                                 const char* log_dir)
 {
     PushSDKRetCode               ret = PS_RET_SUCCESS;
     std::unique_lock<std::mutex> lock(_mux);
@@ -26,13 +29,14 @@ PushSDKRetCode PushSDKInitialize(uint32_t uid, const char* log_dir)
     }
     _log_initialized = true;
 
-    if ((ret = static_cast<PushSDKRetCode>(
-             edu::PushSDK::Instance()->Initialize(uid))) != PS_RET_SUCCESS) {
+    if ((ret = static_cast<PushSDKRetCode>(edu::PushSDK::Instance()->Initialize(
+             uid, appid, appkey))) != PS_RET_SUCCESS) {
         log_e("push_sdk initailize failed. ret={}", ret);
         return ret;
     }
 
-    log_i("push_sdk initialize successfully. uid={}", uid);
+    log_i("push_sdk initialize successfully. uid={}, appid={}, appkey={}", uid,
+          appid, appkey);
 
     _initialized = true;
     return ret;
@@ -56,6 +60,18 @@ PushSDKRetCode PushSDKLogin(PushSDKUserInfo* user)
 
     if (!_initialized) {
         ret = PS_RET_SDK_UNINIT;
+        return ret;
+    }
+
+    if (!user) {
+        ret = PS_RET_USER_INFO_IS_NULL;
+        log_e("login with user info(null) is not allow. ret={}", ret);
+        return ret;
+    }
+
+    if ((ret = static_cast<PushSDKRetCode>(
+             edu::PushSDK::Instance()->Login(*user))) != PS_RET_SUCCESS) {
+        log_e("login failed. ret={}", ret);
         return ret;
     }
 

@@ -45,4 +45,52 @@ int64_t Utils::GetSteayMilliSeconds()
     return duration_cast<milliseconds>(now.time_since_epoch()).count();
 }
 
+TerminalType Utils::GetTerminalType()
+{
+    TerminalType type = TerminalType::UNKNOWN;
+#ifdef _WIN32
+#    ifdef _WIN64
+    type = TerminalType::WINDOWS_64;
+#    else
+    type = TerminalType::WINDOWS_32;
+#    endif
+
+#elif __APPLE__
+#    include "TargetConditionals.h"
+
+#    if TARGET_IPHONE_SIMULATOR
+    type = TerminalType::IOS_SIMULATOR;
+#    elif TARGET_OS_IPHONE
+    type = TerminalType::IOS;
+#    elif TARGET_OS_MAC
+    type = TerminalType::MAC;
+#    else
+#        warning "Unknown Apple platform"
+    type = TerminalType::APPLE_UNKNOWN;
+#    endif
+#elif __ANDROID__
+    type = TerminalType::ANDROID;
+#elif __linux__
+    type = TerminalType::LINUX;
+#elif __unix__
+    type = TerminalType::UNIX;
+#elif defined(_POSIX_VERSION)
+    type = TerminalType::POSIX_UNKNOWN;
+#else
+#    warning "Unknown compiler"
+    type = TerminalType::UNKNOWN;
+#endif
+    return type;
+}
+
+uint64_t Utils::GetSUID(uint32_t uid, uint64_t terminal_type)
+{
+    uint64_t suid = 0;
+    uint64_t type = terminal_type;
+
+    suid |= type << (32 + 8);
+    suid |= uint64_t(uid) & 0x00000000FFFFFFFF;
+    return suid;
+}
+
 }  // namespace edu

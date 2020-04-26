@@ -7,7 +7,7 @@
 extern "C" {
 #endif
 
-#ifdef WINDOWS
+#ifdef _WIN32
 #    define PS_EXPORT __declspec(dllexport)
 #else
 #    define PS_EXPORT
@@ -15,10 +15,13 @@ extern "C" {
 
 // Push SDK API返回码
 typedef enum {
-    PS_RET_SUCCESS         = 0,  // 成功
-    PS_RET_ALREADY_INIT    = 1,  // 重复初始化SDK
-    PS_RET_INIT_LOG_FAILED = 2,  // 初始化日志库失败
-    PS_RET_SDK_UNINIT      = 3,  // SDK未初始化
+    PS_RET_SUCCESS                 = 0,  // 成功
+    PS_RET_ALREADY_INIT            = 1,  // 重复初始化SDK
+    PS_RET_INIT_LOG_FAILED         = 2,  // 初始化日志库失败
+    PS_RET_SDK_UNINIT              = 3,  // SDK未初始化
+    PS_RET_ALREADY_LOGIN           = 4,  // SDK已经登录，请先登出
+    PS_RET_ENCODE_LOGIN_PKT_FAILED = 5,  // 登录请求包序列化失败
+    PS_RET_USER_INFO_IS_NULL       = 6,  // 登录传入的用户信息为空
     PS_RET_UNKNOW
 } PushSDKRetCode;
 
@@ -39,14 +42,9 @@ typedef enum {
 
 typedef struct
 {
-    uint32_t uid;
-    uint64_t appid;
-    char*    token;
-    uint32_t token_len;
-    char*    account;
-    uint32_t account_len;
-    char*    passwd;
-    uint32_t passwd_len;
+    char token[256];
+    char account[256];
+    char passwd[256];
 } PushSDKUserInfo;
 
 typedef struct
@@ -57,9 +55,14 @@ typedef struct
 
 // @brief     初始化，必须最先调用，线程安全，重复调用返 PS_RET_ALREADY_INIT
 // @param[in] uid 用户ID，SDK初始化时用于路由
+// @param[in] appid 应用ID
+// @param[in] appkey 应用密钥
 // @param[in] logdir 日志存放目录
 // @reture    SDK API返回码
-PS_EXPORT PushSDKRetCode PushSDKInitialize(uint32_t uid, const char* logdir);
+PS_EXPORT PushSDKRetCode PushSDKInitialize(uint32_t    uid,
+                                           uint64_t    appid,
+                                           uint64_t    appkey,
+                                           const char* logdir);
 
 // @brief     去初始化，线程安全，可重复调用
 PS_EXPORT void PushSDKDestroy(void);
@@ -68,7 +71,7 @@ PS_EXPORT void PushSDKDestroy(void);
 // PS_RET_ALREADY_INIT
 // @param[in] user 用户信息
 // @return    SDK API返回码
-PS_EXPORT PushSDKRetCode PushSDKLogin(PushSDKGroupInfo* user);
+PS_EXPORT PushSDKRetCode PushSDKLogin(PushSDKUserInfo* user);
 
 // /**
 // @brief GRPC Call回调

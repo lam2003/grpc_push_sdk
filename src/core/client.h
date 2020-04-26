@@ -10,11 +10,13 @@
 #include <thread>
 #include <vector>
 
-using PushGateway = grpc::push::gateway::PushGateway;
-using Stub        = grpc::push::gateway::PushGateway::Stub;
-using PushRegReq  = grpc::push::gateway::PushRegReq;
-using PushData    = grpc::push::gateway::PushData;
-using StreamURI   = grpc::push::gateway::StreamURI;
+using PushGateway      = grpc::push::gateway::PushGateway;
+using Stub             = grpc::push::gateway::PushGateway::Stub;
+using PushRegReq       = grpc::push::gateway::PushRegReq;
+using LoginRequest     = grpc::push::gateway::LoginRequest;
+using PushData         = grpc::push::gateway::PushData;
+using StreamURI        = grpc::push::gateway::StreamURI;
+using UserTerminalType = grpc::push::gateway::UserTerminalType;
 using Stream =
     grpc::ClientAsyncReaderWriterInterface<grpc::push::gateway::PushRegReq,
                                            grpc::push::gateway::PushData>;
@@ -30,12 +32,13 @@ enum class ClientEvent {
 
 enum class ClientStatus {
     WAIT_CONNECT    = 100,
-    READY_TO_WRITE  = 101,
-    WAIT_WRITE_DONE = 102,
-    FINISHED        = 103
+    CONNECTED       = 101,
+    READY_TO_WRITE  = 102,
+    WAIT_WRITE_DONE = 103,
+    FINISHED        = 104
 };
 
-enum class ChannelState { CONNECTED, DISCONNECTED };
+enum class ChannelState { OK, NO_READY };
 
 extern std::string channel_state_to_string(ChannelState state);
 extern std::string client_status_to_string(ClientStatus status);
@@ -58,6 +61,12 @@ class ClientStatusListener {
     virtual void OnClientStatusChange(ClientStatus statue) = 0;
 };
 
+class MessageHandler {
+  public:
+  public:
+    virtual void OnMessage(std::shared_ptr<PushData> msg) = 0;
+};
+
 class Client {
   public:
     Client();
@@ -71,6 +80,10 @@ class Client {
 
     virtual void
     SetClientStatusListener(std::shared_ptr<ClientStatusListener> listener);
+
+    virtual void SetMessageHandler(std::shared_ptr<MessageHandler> hdl);
+
+    virtual void Send(std::shared_ptr<PushRegReq> req);
 
   private:
     void create_channel();
@@ -94,7 +107,10 @@ class Client {
     ChannelState                            channel_state_;
     std::shared_ptr<ChannelStateListener>   state_listener_;
     std::shared_ptr<ClientStatusListener>   status_listener_;
+    std::shared_ptr<MessageHandler>         msg_hdl_;
+    std::shared_ptr<PushData>               msg_cache_;
     std::queue<std::shared_ptr<PushRegReq>> queue_;
+    std::mutex                              mux_;
     std::unique_ptr<grpc::CompletionQueue>  cq_;
     std::shared_ptr<grpc::Channel>          channel_;
     std::unique_ptr<Stub>                   stub_;
