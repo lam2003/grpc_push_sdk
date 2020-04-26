@@ -83,11 +83,14 @@ class Client {
     void handle_cq_timeout();
     void check_channel_and_stream(bool ok);
 
+    void check_and_notify_client_status_change(ClientStatus new_status);
+    void check_and_notify_channel_state_change(ChannelState new_state);
+
   private:
     std::string                             uid_;
     int                                     front_envoy_port_idx_;
     int64_t                                 last_heartbeat_ts_;
-    ClientStatus                            status_;
+    ClientStatus                            client_status_;
     ChannelState                            channel_state_;
     std::shared_ptr<ChannelStateListener>   state_listener_;
     std::shared_ptr<ClientStatusListener>   status_listener_;

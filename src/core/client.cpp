@@ -62,7 +62,7 @@ Client::Client()
     uid_                  = "";
     front_envoy_port_idx_ = 0;
     last_heartbeat_ts_    = -1;
-    status_               = ClientStatus::FINISHED;
+    client_status_        = ClientStatus::FINISHED;
     channel_state_        = ChannelState::DISCONNECTED;
     state_listener_       = nullptr;
     status_listener_      = nullptr;
@@ -130,6 +130,14 @@ void Client::create_channel()
     stub_ = PushGateway::NewStub(channel_);
 }
 
+void Client::check_and_notify_channel_state_change(ChannelState new_state)
+{
+    if (channel_state_ != new_state && state_listener_) {
+        state_listener_->OnChannelStateChange(new_state);
+        channel_state_ = new_state;
+    }
+}
+
 void Client::destroy_channel()
 {
     stub_.release();
@@ -138,9 +146,14 @@ void Client::destroy_channel()
     channel_.reset();
     channel_ = nullptr;
 
-    if (channel_state_ != ChannelState::DISCONNECTED && state_listener_) {
-        state_listener_->OnChannelStateChange(ChannelState::DISCONNECTED);
-        channel_state_ = ChannelState::DISCONNECTED;
+    check_and_notify_channel_state_change(ChannelState::DISCONNECTED);
+}
+
+void Client::check_and_notify_client_status_change(ClientStatus new_status)
+{
+    if (client_status_ != new_status && status_listener_) {
+        status_listener_->OnClientStatusChange(new_status);
+        client_status_ = new_status;
     }
 }
 
@@ -152,10 +165,7 @@ void Client::create_stream()
 
     stream_ = stub_->AsyncPushRegister(
         ctx_.get(), cq_.get(), reinterpret_cast<void*>(ClientEvent::CONNECTED));
-    status_ = ClientStatus::WAIT_CONNECT;
-    if (state_listener_) {
-        status_listener_->OnClientStatusChange(status_);
-    }
+    check_and_notify_client_status_change(ClientStatus::WAIT_CONNECT);
 
     last_heartbeat_ts_ = Utils::GetSteayMilliSeconds();
 }
@@ -172,10 +182,7 @@ void Client::destroy_stream()
     ctx_.release();
     ctx_ = nullptr;
 
-    status_ = ClientStatus::FINISHED;
-    if (state_listener_) {
-        status_listener_->OnClientStatusChange(status_);
-    }
+    check_and_notify_client_status_change(ClientStatus::FINISHED);
 }
 
 static PushData data;
@@ -194,16 +201,12 @@ void Client::handle_event(ClientEvent event)
                 stream_->Write(
                     *req, reinterpret_cast<void*>(ClientEvent::WRITE_DONE));
 
-                status_ = ClientStatus::WAIT_WRITE_DONE;
-                if (state_listener_) {
-                    status_listener_->OnClientStatusChange(status_);
-                }
+                check_and_notify_client_status_change(
+                    ClientStatus::WAIT_WRITE_DONE);
             }
             else {
-                status_ = ClientStatus::READY_TO_WRITE;
-                if (state_listener_) {
-                    status_listener_->OnClientStatusChange(status_);
-                }
+                check_and_notify_client_status_change(
+                    ClientStatus::READY_TO_WRITE);
             }
 
             break;
@@ -216,16 +219,12 @@ void Client::handle_event(ClientEvent event)
                 stream_->Write(
                     *req, reinterpret_cast<void*>(ClientEvent::WRITE_DONE));
 
-                status_ = ClientStatus::WAIT_WRITE_DONE;
-                if (state_listener_) {
-                    status_listener_->OnClientStatusChange(status_);
-                }
+                check_and_notify_client_status_change(
+                    ClientStatus::WAIT_WRITE_DONE);
             }
             else {
-                status_ = ClientStatus::READY_TO_WRITE;
-                if (state_listener_) {
-                    status_listener_->OnClientStatusChange(status_);
-                }
+                check_and_notify_client_status_change(
+                    ClientStatus::READY_TO_WRITE);
             }
 
             break;
@@ -243,18 +242,15 @@ void Client::check_channel_and_stream(bool ok)
 {
     grpc_connectivity_state state = channel_->GetState(true);
 
-    ChannelState now_channel_state;
+    ChannelState new_channel_state;
     if (state == GRPC_CHANNEL_READY) {
-        now_channel_state = ChannelState::CONNECTED;
+        new_channel_state = ChannelState::CONNECTED;
     }
     else {
-        now_channel_state = ChannelState::DISCONNECTED;
+        new_channel_state = ChannelState::DISCONNECTED;
     }
 
-    if (now_channel_state != channel_state_ && state_listener_) {
-        state_listener_->OnChannelStateChange(now_channel_state);
-        channel_state_ = now_channel_state;
-    }
+    check_and_notify_channel_state_change(new_channel_state);
 
     if (state == GRPC_CHANNEL_TRANSIENT_FAILURE ||
         state == GRPC_CHANNEL_SHUTDOWN) {
@@ -284,7 +280,7 @@ void Client::handle_cq_timeout()
         last_heartbeat_ts_ = now;
     }
 
-    if (status_ == ClientStatus::READY_TO_WRITE && !queue_.empty()) {
+    if (client_status_ == ClientStatus::READY_TO_WRITE && !queue_.empty()) {
         std::shared_ptr<PushRegReq> req = queue_.front();
         queue_.pop();
         stream_->Write(*req, reinterpret_cast<void*>(ClientEvent::WRITE_DONE));
