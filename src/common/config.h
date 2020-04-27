@@ -44,6 +44,11 @@ class Config : public Singleton<Config> {
     int grpc_max_pings_without_data = 0;
     // GRPC发送连续的ping帧而不接收任何数据之间的最短时间(ms)
     int grpc_min_sent_ping_interval_without_data = 1000;
+
+    // PushGateway call超时时长(us)
+    int call_timeout_interval = 3000 * 1000;
+    // PushGateway 检测超时间隔(ms)
+    int call_check_timeout_interval   = 500;
 };
 
 }  // namespace edu

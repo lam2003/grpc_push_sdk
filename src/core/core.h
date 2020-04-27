@@ -40,19 +40,25 @@ class PushSDK : public Singleton<PushSDK>,
                             void*         cb_args);
     virtual void Destroy();
     virtual int
-                Login(const PushSDKUserInfo& user, PushSDKCallCB cb_func, void* cb_args);
-    virtual int Logout(PushSDKCallCB cb_func, void* cb_args);
-    virtual int JoinGroup(const PushSDKGroupInfo& group,
-                          PushSDKCallCB           cb_func,
-                          void*                   cb_args);
+                 Login(const PushSDKUserInfo& user, PushSDKCallCB cb_func, void* cb_args);
+    virtual int  Logout(PushSDKCallCB cb_func, void* cb_args);
+    virtual int  JoinGroup(const PushSDKGroupInfo& group,
+                           PushSDKCallCB           cb_func,
+                           void*                   cb_args);
     virtual void OnChannelStateChange(ChannelState state) override;
     virtual void OnClientStatusChange(ClientStatus status) override;
     virtual void OnMessage(std::shared_ptr<PushData> msg) override;
 
   private:
+    bool is_group_info_exists(uint64_t gtype, uint64_t gid);
     void handle_login_timeout(std::shared_ptr<CallContext> ctx);
     void handle_relogin_timeout(std::shared_ptr<CallContext> ctx);
     void handle_logout_timeout(std::shared_ptr<CallContext> ctx);
+    void call(PushSDKCBType               type,
+              std::shared_ptr<PushRegReq> msg,
+              int64_t                     now,
+              PushSDKCallCB               cb_func,
+              void*                       cb_args);
     void relogin();
 
     template <typename T> void handle_response(std::shared_ptr<PushData> msg)
@@ -110,6 +116,7 @@ class PushSDK : public Singleton<PushSDK>,
     std::atomic<bool>                               run_;
     std::atomic<bool>                               logining_;
     std::map<int64_t, std::shared_ptr<CallContext>> cb_map_;
+    std::multimap<uint64_t, uint64_t>               groups_;
 };
 
 }  // namespace edu
