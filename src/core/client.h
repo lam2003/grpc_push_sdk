@@ -10,16 +10,19 @@
 #include <thread>
 #include <vector>
 
-using PushGateway      = grpc::push::gateway::PushGateway;
-using Stub             = grpc::push::gateway::PushGateway::Stub;
-using PushRegReq       = grpc::push::gateway::PushRegReq;
-using LoginRequest     = grpc::push::gateway::LoginRequest;
-using LoginResponse    = grpc::push::gateway::LoginResponse;
-using LogoutRequest    = grpc::push::gateway::LogoutRequest;
-using LogoutResponse   = grpc::push::gateway::LogoutResponse;
-using PushData         = grpc::push::gateway::PushData;
-using StreamURI        = grpc::push::gateway::StreamURI;
-using UserTerminalType = grpc::push::gateway::UserTerminalType;
+using PushGateway       = grpc::push::gateway::PushGateway;
+using Stub              = grpc::push::gateway::PushGateway::Stub;
+using PushRegReq        = grpc::push::gateway::PushRegReq;
+using LoginRequest      = grpc::push::gateway::LoginRequest;
+using LoginResponse     = grpc::push::gateway::LoginResponse;
+using LogoutRequest     = grpc::push::gateway::LogoutRequest;
+using LogoutResponse    = grpc::push::gateway::LogoutResponse;
+using JoinGroupRequest  = grpc::push::gateway::JoinGroupRequest;
+using JoinGroupResponse = grpc::push::gateway::JoinGroupResponse;
+using UserGroup         = grpc::push::gateway::UserGroup;
+using PushData          = grpc::push::gateway::PushData;
+using StreamURI         = grpc::push::gateway::StreamURI;
+using UserTerminalType  = grpc::push::gateway::UserTerminalType;
 using Stream =
     grpc::ClientAsyncReaderWriterInterface<grpc::push::gateway::PushRegReq,
                                            grpc::push::gateway::PushData>;

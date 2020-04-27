@@ -2,42 +2,12 @@
 #include <common/log.h>
 #include <common/utils.h>
 #include <core/core.h>
+#include <core/packet.h>
 
 #define CHECK_TIMEOUT_INTERVAL 500  // ms
 #define CALL_TIMEOUT 2000000        // us
 
 namespace edu {
-
-static UserTerminalType get_user_terminal_type()
-{
-    UserTerminalType utt;
-    switch (Utils::GetTerminalType()) {
-        case TerminalType::UNKNOWN: utt = UserTerminalType::UTT_UNKNOWN; break;
-        case TerminalType::WINDOWS_32:
-            utt = UserTerminalType::UTT_DESKTOP;
-            break;
-        case TerminalType::WINDOWS_64:
-            utt = UserTerminalType::UTT_DESKTOP;
-            break;
-        case TerminalType::IOS: utt = UserTerminalType::UTT_IPHONE; break;
-        case TerminalType::ANDROID: utt = UserTerminalType::UTT_ANDROID; break;
-        case TerminalType::IOS_SIMULATOR:
-            utt = UserTerminalType::UTT_IPHONE;
-            break;
-        case TerminalType::LINUX: utt = UserTerminalType::UTT_SERVER; break;
-        case TerminalType::UNIX: utt = UserTerminalType::UTT_SERVER; break;
-        case TerminalType::MAC: utt = UserTerminalType::UTT_SERVER; break;
-        case TerminalType::APPLE_UNKNOWN:
-            utt = UserTerminalType::UTT_UNKNOWN;
-            break;
-        case TerminalType::POSIX_UNKNOWN:
-            utt = UserTerminalType::UTT_UNKNOWN;
-            break;
-        default: utt = UserTerminalType::UTT_UNKNOWN; break;
-    }
-
-    return utt;
-}
 
 PushSDK::PushSDK()
 {
@@ -165,55 +135,6 @@ PushSDK::~PushSDK()
     Destroy();
 }
 
-std::shared_ptr<PushRegReq> PushSDK::make_login_packet(int64_t now)
-{
-    LoginRequest login_req;
-    login_req.set_uid(uid_);
-    login_req.set_suid(Utils::GetSUID(uid_, get_user_terminal_type()));
-    login_req.set_appid(std::to_string(appid_));
-    login_req.set_appkey(appkey_);
-    login_req.set_termnialtype(get_user_terminal_type());
-    login_req.set_account(std::string(user_->account));
-    login_req.set_password(std::string(user_->passwd));
-    login_req.set_cookie(std::string(user_->token));
-    login_req.set_context(std::to_string(now));
-
-    std::string msg_data;
-    if (!login_req.SerializeToString(&msg_data)) {
-        log_e("LoginRequest packet serialize failed");
-        return nullptr;
-    }
-
-    std::shared_ptr<PushRegReq> req = std::make_shared<PushRegReq>();
-    req->set_uri(StreamURI::PPushGateWayLoginURI);
-    req->set_msgdata(msg_data);
-
-    return req;
-}
-
-std::shared_ptr<PushRegReq> PushSDK::make_logout_packet(int64_t now)
-{
-    LogoutRequest logout_req;
-    logout_req.set_appid(std::to_string(appid_));
-    logout_req.set_uid(uid_);
-    logout_req.set_suid(Utils::GetSUID(uid_, get_user_terminal_type()));
-    logout_req.set_context(std::to_string(now));
-    logout_req.set_appkey(appkey_);
-    logout_req.set_termnialtype(get_user_terminal_type());
-
-    std::string msg_data;
-    if (!logout_req.SerializeToString(&msg_data)) {
-        log_e("LogoutRequest packet serialize failed");
-        return nullptr;
-    }
-
-    std::shared_ptr<PushRegReq> req = std::make_shared<PushRegReq>();
-    req->set_uri(StreamURI::PPushGateWayLogoutURI);
-    req->set_msgdata(msg_data);
-
-    return req;
-}
-
 int PushSDK::Login(const PushSDKUserInfo& user,
                    PushSDKCallCB          cb_func,
                    void*                  cb_args)
@@ -239,7 +160,8 @@ int PushSDK::Login(const PushSDKUserInfo& user,
     user_.reset(user_ptr);
 
     int64_t                     now = Utils::GetSteadyMicroSeconds();
-    std::shared_ptr<PushRegReq> req = make_login_packet(now);
+    std::shared_ptr<PushRegReq> req =
+        make_login_packet(uid_, appid_, appkey_, user_.get(), now);
     if (!req) {
         ret = PS_RET_REQ_ENC_FAILED;
         log_e("encode login request packet failed. ret={}", ret);
@@ -280,7 +202,8 @@ int PushSDK::Logout(PushSDKCallCB cb_func, void* cb_args)
     user_lock.unlock();
 
     int64_t                     now = Utils::GetSteadyMicroSeconds();
-    std::shared_ptr<PushRegReq> req = make_logout_packet(now);
+    std::shared_ptr<PushRegReq> req =
+        make_logout_packet(uid_, appid_, appkey_, now);
     if (!req) {
         ret = PS_RET_REQ_ENC_FAILED;
         log_e("encode logout request packet failed. ret={}", ret);
@@ -296,6 +219,21 @@ int PushSDK::Logout(PushSDKCallCB cb_func, void* cb_args)
     cb_map_[now] = ctx;
     map_mux_.unlock();
     client_->Send(req);
+
+    return ret;
+}
+
+int PushSDK::JoinGroup(const PushSDKGroupInfo& group,
+                       PushSDKCallCB           cb_func,
+                       void*                   cb_args)
+{
+    int ret = PS_RET_SUCCESS;
+
+    std::unique_lock<std::mutex> user_lock(user_mux_);
+    if (!user_) {
+        ret = PS_RET_UNLOGIN;
+        return ret;
+    }
 
     return ret;
 }
@@ -324,7 +262,8 @@ void PushSDK::relogin()
     }
 
     int64_t                     now = Utils::GetSteadyMicroSeconds();
-    std::shared_ptr<PushRegReq> req = make_login_packet(now);
+    std::shared_ptr<PushRegReq> req =
+        make_login_packet(uid_, appid_, appkey_, user_.get(), now);
     if (!req) {
         user_.release();
         user_.reset(nullptr);

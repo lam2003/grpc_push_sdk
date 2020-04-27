@@ -15,14 +15,16 @@ extern "C" {
 
 // Push SDK API返回码
 typedef enum {
-    PS_RET_SUCCESS           = 0,  // 成功
-    PS_RET_ALREADY_INIT      = 1,  // 重复初始化SDK
-    PS_RET_INIT_LOG_FAILED   = 2,  // 初始化日志库失败
-    PS_RET_SDK_UNINIT        = 3,  // SDK未初始化
-    PS_RET_ALREADY_LOGIN     = 4,  // SDK已经登录，请先登出
-    PS_RET_REQ_ENC_FAILED    = 5,  // 请求包序列化失败
-    PS_RET_USER_INFO_IS_NULL = 6,  // 登录传入的用户信息为空
-    PS_RET_CB_IS_NULL        = 7,  // 回调函数为空
+    PS_RET_SUCCESS            = 0,  // 成功
+    PS_RET_ALREADY_INIT       = 1,  // 重复初始化SDK
+    PS_RET_INIT_LOG_FAILED    = 2,  // 初始化日志库失败
+    PS_RET_SDK_UNINIT         = 3,  // SDK未初始化
+    PS_RET_ALREADY_LOGIN      = 4,  // SDK已经登录，请先登出
+    PS_RET_REQ_ENC_FAILED     = 5,  // 请求包序列化失败
+    PS_RET_USER_INFO_IS_NULL  = 6,  // 登录传入的用户信息为空
+    PS_RET_CB_IS_NULL         = 7,  // 回调函数为空
+    PS_RET_ALREADY_JOIN_GROUP = 8,  // 该组已经加入
+    PS_RET_UNLOGIN            = 9,  // 未登录
     PS_RET_UNKNOW
 } PushSDKRetCode;
 
@@ -94,7 +96,7 @@ PS_EXPORT PushSDKRetCode PushSDKInitialize(uint32_t      uid,
 PS_EXPORT void PushSDKDestroy(void);
 
 // @brief     登录，线程安全，必须在SDK初始化之后调用，重复调用返回
-// PS_RET_ALREADY_INIT
+// PS_RET_ALREADY_LOGIN
 // @param[in] user 用户信息
 // @param[in] cb_func 回调函数
 // @param[in] cb_arg 回调函数args
@@ -108,6 +110,15 @@ PS_EXPORT PushSDKRetCode PushSDKLogin(PushSDKUserInfo* user,
 // @param[in] cb_arg 回调函数args
 // @return    SDK API返回码
 PS_EXPORT PushSDKRetCode PushSDKLogout(PushSDKCallCB cb_func, void* cb_arg);
+
+// @brief
+// 进组，线程安全，必须在SDK初始化之后调用，重复进组返回PS_RET_ALREADY_JOIN_GROUP
+// @param[in] cb_func 回调函数
+// @param[in] cb_arg 回调函数args
+// @return    SDK API返回码
+PS_EXPORT PushSDKRetCode PushSDKJoinGroup(PushSDKGroupInfo* group,
+                                          PushSDKCallCB     cb_func,
+                                          void*             cb_arg);
 
 // typedef void* ps_hdl_t;
 // typedef void (*SmsTransLinkstatus_Callback)(PushSDKConnState state, void*

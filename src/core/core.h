@@ -42,14 +42,14 @@ class PushSDK : public Singleton<PushSDK>,
     virtual int
                 Login(const PushSDKUserInfo& user, PushSDKCallCB cb_func, void* cb_args);
     virtual int Logout(PushSDKCallCB cb_func, void* cb_args);
-
+    virtual int JoinGroup(const PushSDKGroupInfo& group,
+                          PushSDKCallCB           cb_func,
+                          void*                   cb_args);
     virtual void OnChannelStateChange(ChannelState state) override;
     virtual void OnClientStatusChange(ClientStatus status) override;
     virtual void OnMessage(std::shared_ptr<PushData> msg) override;
 
   private:
-    std::shared_ptr<PushRegReq> make_login_packet(int64_t now);
-    std::shared_ptr<PushRegReq> make_logout_packet(int64_t now);
     void handle_login_timeout(std::shared_ptr<CallContext> ctx);
     void handle_relogin_timeout(std::shared_ptr<CallContext> ctx);
     void handle_logout_timeout(std::shared_ptr<CallContext> ctx);
