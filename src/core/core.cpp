@@ -1,5 +1,4 @@
 
-#include <common/err_code.h>
 #include <common/log.h>
 #include <common/utils.h>
 #include <core/core.h>
@@ -42,18 +41,17 @@ static UserTerminalType get_user_terminal_type()
 
 PushSDK::PushSDK()
 {
-    init_           = false;
-    uid_            = 0;
-    appid_          = 0;
-    appkey_         = 0;
-    cb_func_        = nullptr;
-    cb_args_        = nullptr;
-    user_           = nullptr;
-    client_         = nullptr;
-    thread_         = nullptr;
-    run_            = false;
-    logining_       = false;
-    login_manually_ = true;
+    init_          = false;
+    uid_           = 0;
+    appid_         = 0;
+    appkey_        = 0;
+    event_cb_      = nullptr;
+    event_cb_args_ = nullptr;
+    user_          = nullptr;
+    client_        = nullptr;
+    thread_        = nullptr;
+    run_           = false;
+    logining_      = false;
 }
 
 int PushSDK::Initialize(uint32_t      uid,
@@ -70,11 +68,11 @@ int PushSDK::Initialize(uint32_t      uid,
         return ret;
     }
 
-    uid_     = uid;
-    appid_   = appid;
-    appkey_  = appkey;
-    cb_func_ = cb_func;
-    cb_args_ = cb_args;
+    uid_           = uid;
+    appid_         = appid;
+    appkey_        = appkey;
+    event_cb_      = cb_func;
+    event_cb_args_ = cb_args;
 
     client_ = std::make_shared<Client>();
     client_->SetChannelStateListener(this->shared_from_this());
@@ -95,28 +93,20 @@ int PushSDK::Initialize(uint32_t      uid,
                 return;
             }
             int64_t now = Utils::GetSteadyMicroSeconds();
-            std::map<int64_t, PushSDKCBType>::iterator it;
+            std::map<int64_t, std::shared_ptr<CallContext>>::iterator it;
             while (!cb_map_.empty()) {
                 it = cb_map_.begin();
 
-                int64_t       call_time = it->first;
-                PushSDKCBType type      = it->second;
+                int64_t                      call_time = it->first;
+                std::shared_ptr<CallContext> ctx       = it->second;
+                PushSDKCBType                type      = ctx->type;
 
                 if (now - call_time >= CALL_TIMEOUT) {
-                    if (type == PS_CB_LOGIN || type == PS_CB_RELOGIN) {
-                        logining_ = false;
-
-                        if (type == PS_CB_LOGIN) {
-                            login_manually_ = false;
-                        }
-
-                        cb_func_(type, PS_CALL_TIMEOUT,
-                                 "login timeout and we will inner retry",
-                                 cb_args_);
-                    }
-                    else if (type == PS_CB_LOGOUT) {
-                        cb_func_(type, PS_CALL_TIMEOUT,
-                                 "logout timeout. ignore it", cb_args_);
+                    switch (type) {
+                        case PS_CB_LOGIN: handle_login_timeout(ctx); break;
+                        case PS_CB_RELOGIN: handle_relogin_timeout(ctx); break;
+                        case PS_CB_LOGOUT: handle_logout_timeout(ctx); break;
+                        default: break;
                     }
                     cb_map_.erase(it);
                 }
@@ -224,38 +214,9 @@ std::shared_ptr<PushRegReq> PushSDK::make_logout_packet(int64_t now)
     return req;
 }
 
-void PushSDK::relogin()
-{
-    std::unique_lock<std::mutex> user_lock(user_mux_);
-    if (!user_ || logining_) {
-        return;
-    }
-
-    int64_t                     now = Utils::GetSteadyMicroSeconds();
-    std::shared_ptr<PushRegReq> req = make_login_packet(now);
-    if (!req) {
-        user_.release();
-        user_.reset(nullptr);
-        user_lock.unlock();
-        log_e("encode login request packet failed");
-        cb_func_(PS_CB_RELOGIN, PS_CALL_RELOGIN_REQ_ENC_FAILED,
-                 "inner relogin: LoginRequest packet serialize failed. you "
-                 "should relogin manually",
-                 cb_args_);
-        return;
-    }
-
-    user_lock.unlock();
-
-    map_mux_.lock();
-    cb_map_[now] = PushSDKCBType::PS_CB_RELOGIN;
-    map_mux_.unlock();
-
-    logining_ = true;
-    client_->Send(req);
-}
-
-int PushSDK::Login(const PushSDKUserInfo& user)
+int PushSDK::Login(const PushSDKUserInfo& user,
+                   PushSDKCallCB          cb_func,
+                   void*                  cb_args)
 {
     int ret = PS_RET_SUCCESS;
     if (!init_) {
@@ -280,25 +241,29 @@ int PushSDK::Login(const PushSDKUserInfo& user)
     int64_t                     now = Utils::GetSteadyMicroSeconds();
     std::shared_ptr<PushRegReq> req = make_login_packet(now);
     if (!req) {
-        ret = PS_RET_LOGIN_REQ_ENC_FAILED;
+        ret = PS_RET_REQ_ENC_FAILED;
         log_e("encode login request packet failed. ret={}", ret);
         return ret;
     }
 
     user_lock.unlock();
 
-    logining_       = true;
-    login_manually_ = true;
+    logining_ = true;
+
+    std::shared_ptr<CallContext> ctx = std::make_shared<CallContext>();
+    ctx->cb_func                     = cb_func;
+    ctx->cb_args                     = cb_args;
+    ctx->type                        = PushSDKCBType::PS_CB_LOGIN;
 
     map_mux_.lock();
-    cb_map_[now] = PushSDKCBType::PS_CB_LOGIN;
+    cb_map_[now] = ctx;
     map_mux_.unlock();
     client_->Send(req);
 
     return ret;
 }
 
-int PushSDK::Logout()
+int PushSDK::Logout(PushSDKCallCB cb_func, void* cb_args)
 {
     int ret = PS_RET_SUCCESS;
 
@@ -317,13 +282,18 @@ int PushSDK::Logout()
     int64_t                     now = Utils::GetSteadyMicroSeconds();
     std::shared_ptr<PushRegReq> req = make_logout_packet(now);
     if (!req) {
-        ret = PS_RET_LOGOUT_REQ_ENC_FAILED;
+        ret = PS_RET_REQ_ENC_FAILED;
         log_e("encode logout request packet failed. ret={}", ret);
         return ret;
     }
 
+    std::shared_ptr<CallContext> ctx = std::make_shared<CallContext>();
+    ctx->cb_func                     = cb_func;
+    ctx->cb_args                     = cb_args;
+    ctx->type                        = PushSDKCBType::PS_CB_LOGOUT;
+
     map_mux_.lock();
-    cb_map_[now] = PushSDKCBType::PS_CB_LOGOUT;
+    cb_map_[now] = ctx;
     map_mux_.unlock();
     client_->Send(req);
 
@@ -335,128 +305,72 @@ void PushSDK::OnMessage(std::shared_ptr<PushData> msg)
     switch (msg->uri()) {
         case StreamURI::PPushGateWayLoginResURI: {
             log_d("recv msg. uri=PPushGateWayLoginResURI");
-            handle_login_response(msg);
+            handle_response<LoginResponse>(msg);
             break;
         }
         case StreamURI::PPushGateWayLogoutResURI: {
             log_d("recv msg. uri=PPushGateWayLogoutResURI");
-            handle_logout_response(msg);
+            handle_response<LogoutResponse>(msg);
             break;
         }
     }
 }
 
-void PushSDK::handle_login_response(std::shared_ptr<PushData> msg)
+void PushSDK::relogin()
 {
-    logining_ = false;
-
-    LoginResponse res;
-    // 登录错误时，清理原来的登录信息
-    if (!res.ParseFromString(msg->msgdata())) {
-        user_mux_.lock();
-        user_.reset();
-        user_ = nullptr;
-        user_mux_.unlock();
-
-        if (login_manually_) {
-            login_manually_ = false;
-            log_e("decode login response packet failed");
-            cb_func_(PS_CB_LOGIN, PS_CALL_LOGIN_RES_DEC_FAILED,
-                     "decode login response packet failed", cb_args_);
-        }
-        else {
-            log_e("inner relogin: decode login response packet failed");
-            cb_func_(PS_CB_RELOGIN, PS_CALL_RELOGIN_RES_DEC_FAILED,
-                     "inner relogin: decode login response packet failed. you "
-                     "should relogin manually",
-                     cb_args_);
-        }
+    std::unique_lock<std::mutex> user_lock(user_mux_);
+    if (!user_ || logining_) {
         return;
     }
 
-    int64_t       ts = std::stoll(res.context());
-    PushSDKCBType cb_type;
-
-    {
-        std::unique_lock<std::mutex> lock(map_mux_);
-        if (cb_map_.find(ts) == cb_map_.end()) {
-            log_e("login response already timeout");
-            return;
-        }
-        else {
-            cb_type = cb_map_[ts];
-            cb_map_.erase(ts);
-        }
+    int64_t                     now = Utils::GetSteadyMicroSeconds();
+    std::shared_ptr<PushRegReq> req = make_login_packet(now);
+    if (!req) {
+        user_.release();
+        user_.reset(nullptr);
+        user_lock.unlock();
+        log_e("encode login request packet failed");
+        event_cb_(PS_CB_RELOGIN, PS_CALL_REQ_ENC_FAILED,
+                  "inner relogin: LoginRequest packet serialize failed. you "
+                  "should relogin manually",
+                  event_cb_args_);
+        return;
     }
 
-    if (res.rescode() != RES_SUCCESS) {
-        user_mux_.lock();
-        user_.reset();
-        user_ = nullptr;
-        user_mux_.unlock();
+    user_lock.unlock();
 
-        if (cb_type == PS_CB_LOGIN) {
-            login_manually_ = false;
-            log_e("user login failed. desc={}, code={}", res.errmsg(),
-                  res.rescode());
-            cb_func_(cb_type, PS_CALL_RES_FAILE, res.errmsg().c_str(),
-                     cb_args_);
-        }
-        else {
-            log_e("inner relogin: user login failed. desc={}, code={}",
-                  res.errmsg(), res.rescode());
-            cb_func_(cb_type, PS_CALL_RES_FAILE,
-                     ("inner relogin: " + res.errmsg() +
-                      ". you should relogin manually")
-                         .c_str(),
-                     cb_args_);
-        }
-    }
-    else {
-        if (cb_type == PS_CB_LOGIN) {
-            login_manually_ = false;
-            log_d("user login successfully");
-            cb_func_(cb_type, PS_CALL_RES_OK, "ok", cb_args_);
-        }
-        else {
-            log_d("inner relogin: user login successfully");
-            cb_func_(cb_type, PS_CALL_RES_OK, "inner relogin: ok", cb_args_);
-        }
-    }
+    std::shared_ptr<CallContext> ctx = std::make_shared<CallContext>();
+    ctx->cb_func                     = event_cb_;
+    ctx->cb_args                     = event_cb_args_;
+    ctx->type                        = PushSDKCBType::PS_CB_RELOGIN;
+
+    map_mux_.lock();
+    cb_map_[now] = ctx;
+    map_mux_.unlock();
+
+    logining_ = true;
+
+    client_->Send(req);
 }
 
-void PushSDK::handle_logout_response(std::shared_ptr<PushData> msg)
+void PushSDK::handle_login_timeout(std::shared_ptr<CallContext> ctx)
 {
-    LogoutResponse res;
-    if (!res.ParseFromString(msg->msgdata())) {
-        log_e("decode logout response packet failed");
-        cb_func_(PS_CB_LOGOUT, PS_CALL_LOGOUT_RES_DEC_FAILED,
-                 "decode logout response packet failed", cb_args_);
-        return;
-    }
+    logining_ = false;
+    ctx->cb_func(PS_CB_LOGIN, PS_CALL_TIMEOUT,
+                 "login timeout. we will relogin inner", ctx->cb_args);
+}
 
-    int64_t ts = std::stoll(res.context());
-    {
-        std::unique_lock<std::mutex> lock(map_mux_);
-        if (cb_map_.find(ts) == cb_map_.end()) {
-            log_e("logout response already timeout");
-            return;
-        }
-        else {
-            cb_map_.erase(ts);
-        }
-    }
+void PushSDK::handle_relogin_timeout(std::shared_ptr<CallContext> ctx)
+{
+    logining_ = false;
+    ctx->cb_func(PS_CB_RELOGIN, PS_CALL_TIMEOUT,
+                 "login timeout. we will relogin inner", ctx->cb_args);
+}
 
-    if (res.rescode() != RES_SUCCESS) {
-        log_e("user logout failed. desc={}, code={}", res.errmsg(),
-              res.rescode());
-        cb_func_(PS_CB_LOGOUT, PS_CALL_RES_FAILE, res.errmsg().c_str(),
-                 cb_args_);
-    }
-    else {
-        log_d("user logout successfully");
-        cb_func_(PS_CB_LOGOUT, PS_CALL_RES_OK, "ok", cb_args_);
-    }
+void PushSDK::handle_logout_timeout(std::shared_ptr<CallContext> ctx)
+{
+    ctx->cb_func(PS_CB_LOGOUT, PS_CALL_TIMEOUT, "logout timeout. ignore it",
+                 ctx->cb_args);
 }
 
 }  // namespace edu
