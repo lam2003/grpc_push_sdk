@@ -38,7 +38,7 @@ PushSDKRetCode PushSDKInitialize(uint32_t      uid,
         log_e("call back function is null");
         return ret;
     }
-    
+
     if ((ret = static_cast<PushSDKRetCode>(edu::PushSDK::Instance()->Initialize(
              uid, appid, appkey, cb_func, cb_arg))) != PS_RET_SUCCESS) {
         log_e("push_sdk initailize failed. ret={}", ret);
@@ -66,7 +66,8 @@ void PushSDKDestroy()
 
 PushSDKRetCode PushSDKLogin(PushSDKUserInfo* user)
 {
-    PushSDKRetCode ret = PS_RET_SUCCESS;
+    PushSDKRetCode               ret = PS_RET_SUCCESS;
+    std::unique_lock<std::mutex> lock(_mux);
 
     if (!_initialized) {
         ret = PS_RET_SDK_UNINIT;
@@ -82,6 +83,23 @@ PushSDKRetCode PushSDKLogin(PushSDKUserInfo* user)
     if ((ret = static_cast<PushSDKRetCode>(
              edu::PushSDK::Instance()->Login(*user))) != PS_RET_SUCCESS) {
         log_e("login failed. ret={}", ret);
+        return ret;
+    }
+
+    return ret;
+}
+
+PushSDKRetCode PushSDKLogout()
+{
+    PushSDKRetCode ret = PS_RET_SUCCESS;
+    if (!_initialized) {
+        ret = PS_RET_SDK_UNINIT;
+        return ret;
+    }
+
+    if ((ret = static_cast<PushSDKRetCode>(
+             edu::PushSDK::Instance()->Logout())) != PS_RET_SUCCESS) {
+        log_e("logout failed. ret={}", ret);
         return ret;
     }
 
