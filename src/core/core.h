@@ -39,6 +39,7 @@ class PushSDK : public Singleton<PushSDK>,
   private:
     std::shared_ptr<PushRegReq> make_login_packet(int64_t now);
     void handle_login_response(std::shared_ptr<PushData> msg);
+    void relogin();
 
   private:
     bool                             init_;
@@ -53,6 +54,7 @@ class PushSDK : public Singleton<PushSDK>,
     std::mutex                       mux_;
     std::condition_variable          cond_;
     std::atomic<bool>                run_;
+    std::atomic<bool>                already_login_;
     std::map<int64_t, PushSDKCBType> cb_map_;
 };
 

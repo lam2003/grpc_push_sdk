@@ -28,15 +28,20 @@ typedef enum {
 
 // Push SDK回调类型
 typedef enum {
-    PS_CB_LOGIN = 0,  // 登录回调
+    PS_CB_LOGIN   = 0,  // 登录回调
+    PS_CB_RELOGIN = 1,  // SDK内部重新登录回调
 } PushSDKCBType;
 
 // GRPC调用返回码
 typedef enum {
     PS_CALL_RES_OK               = 0,  // 成功
-    PS_CALL_LOGIN_RES_DEC_FAILED = 1,  // 登录回复包解包失败
+    PS_CALL_LOGIN_RES_DEC_FAILED = 1,  // 登录回复包去序列化失败
     PS_CALL_LOGIN_FAILED         = 2,  // 登录失败
     PS_CALL_TIMEOUT              = 3,  // 调用超时
+    PS_CALL_RELOGIN_REQ_ENC_FAILED = 4,  // 内部重登录请求包序列化失败
+    PS_CALL_RELOGIN_RES_DEC_FAILED = 5,  // 内部重新登录回复包去序列化失败
+    PS_CALL_RELOGIN_FAILED = 6,  // 内部重登录失败
+    PS_CALL_RELOGIN_OK     = 7,  // 内部重新登录成功
 
 } PushSDKCallRes;
 

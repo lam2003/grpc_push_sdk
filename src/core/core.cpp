@@ -42,16 +42,17 @@ static UserTerminalType get_user_terminal_type()
 
 PushSDK::PushSDK()
 {
-    init_    = false;
-    uid_     = 0;
-    appid_   = 0;
-    appkey_  = 0;
-    cb_func_ = nullptr;
-    cb_args_ = nullptr;
-    user_    = nullptr;
-    client_  = nullptr;
-    thread_  = nullptr;
-    run_     = false;
+    init_          = false;
+    uid_           = 0;
+    appid_         = 0;
+    appkey_        = 0;
+    cb_func_       = nullptr;
+    cb_args_       = nullptr;
+    user_          = nullptr;
+    client_        = nullptr;
+    thread_        = nullptr;
+    run_           = false;
+    already_login_ = false;
 }
 
 int PushSDK::Initialize(uint32_t      uid,
@@ -97,7 +98,8 @@ int PushSDK::Initialize(uint32_t      uid,
             while (!cb_map_.empty()) {
                 it = cb_map_.begin();
                 if (now - it->first >= CALL_TIMEOUT) {
-                    cb_func_(it->second, PS_CALL_TIMEOUT, "timeout", cb_args_);
+                    cb_func_(it->second, PS_CALL_TIMEOUT,
+                             "timeout and we will inner retry", cb_args_);
                     cb_map_.erase(it);
                 }
                 else {
@@ -122,6 +124,8 @@ void PushSDK::OnClientStatusChange(ClientStatus status)
 
     switch (status) {
         case ClientStatus::CONNECTED: {
+            relogin();
+            break;
         }
     }
 }
@@ -175,6 +179,33 @@ std::shared_ptr<PushRegReq> PushSDK::make_login_packet(int64_t now)
     return req;
 }
 
+void PushSDK::relogin()
+{
+    if (!user_ || !already_login_) {
+        return;
+    }
+
+    int64_t                     now = Utils::GetSteadyMicroSeconds();
+    std::shared_ptr<PushRegReq> req = make_login_packet(now);
+    if (!req) {
+        user_.release();
+        user_.reset(nullptr);
+        log_e("encode login request packet failed");
+        already_login_ = false;
+        cb_func_(PS_CB_RELOGIN, PS_CALL_RELOGIN_REQ_ENC_FAILED,
+                 "inner relogin: LoginRequest packet serialize failed. you "
+                 "should relogin manually",
+                 cb_args_);
+        return;
+    }
+
+    mux_.lock();
+    cb_map_[now] = PushSDKCBType::PS_CB_RELOGIN;
+    mux_.unlock();
+
+    client_->Send(req);
+}
+
 int PushSDK::Login(const PushSDKUserInfo& user)
 {
     int ret = PS_RET_SUCCESS;
@@ -185,7 +216,7 @@ int PushSDK::Login(const PushSDKUserInfo& user)
 
     if (user_) {
         ret = PS_RET_ALREADY_LOGIN;
-        log_w("sdk alreay login. ret=%d", PS_RET_ALREADY_LOGIN);
+        log_w("sdk alreay login. ret={}", PS_RET_ALREADY_LOGIN);
         return ret;
     }
 
@@ -220,27 +251,70 @@ void PushSDK::handle_login_response(std::shared_ptr<PushData> msg)
     if (!res.ParseFromString(msg->msgdata())) {
         user_.reset();
         user_ = nullptr;
-        log_e("decode login response packet failed");
-        cb_func_(PS_CB_LOGIN, PS_CALL_LOGIN_RES_DEC_FAILED,
-                 "decode login response packet failed", cb_args_);
+
+        if (!already_login_) {
+            log_e("decode login response packet failed");
+            cb_func_(PS_CB_LOGIN, PS_CALL_LOGIN_RES_DEC_FAILED,
+                     "decode login response packet failed", cb_args_);
+        }
+        else {
+            log_e("inner relogin: decode login response packet failed");
+            already_login_ = false;
+            cb_func_(PS_CB_RELOGIN, PS_CALL_RELOGIN_RES_DEC_FAILED,
+                     "inner relogin: decode login response packet failed. you "
+                     "should relogin manually",
+                     cb_args_);
+        }
         return;
     }
 
-    mux_.lock();
-    cb_map_.erase(std::stoll(res.context()));
-    mux_.unlock();
+    int64_t       ts = std::stoll(res.context());
+    PushSDKCBType cb_type;
+
+    {
+        std::unique_lock<std::mutex> lock(mux_);
+        if (cb_map_.find(ts) == cb_map_.end()) {
+            log_e("login call already timeout");
+            return;
+        }
+        else {
+            cb_type = cb_map_[ts];
+            cb_map_.erase(ts);
+        }
+    }
 
     if (res.rescode() != RES_SUCCESS) {
         user_.reset();
         user_ = nullptr;
-        log_e("user login failed. desc={}, code={}", res.errmsg(),
-              res.rescode());
-        cb_func_(PS_CB_LOGIN, PS_CALL_LOGIN_FAILED, res.errmsg().c_str(),
-                 cb_args_);
+
+        if (cb_type == PS_CB_LOGIN) {
+            log_e("user login failed. desc={}, code={}", res.errmsg(),
+                  res.rescode());
+            cb_func_(cb_type, PS_CALL_LOGIN_FAILED, res.errmsg().c_str(),
+                     cb_args_);
+        }
+        else {
+            log_e("inner relogin: user login failed. desc={}, code={}",
+                  res.errmsg(), res.rescode());
+            already_login_ = false;
+            cb_func_(cb_type, PS_CALL_RELOGIN_FAILED,
+                     ("inner relogin: " + res.errmsg() +
+                      ". you should relogin manually")
+                         .c_str(),
+                     cb_args_);
+        }
     }
     else {
-        log_d("user login successfully");
-        cb_func_(PS_CB_LOGIN, PS_CALL_RES_OK, "ok", cb_args_);
+        if (cb_type == PS_CB_LOGIN) {
+            log_d("user login successfully");
+            cb_func_(cb_type, PS_CALL_RES_OK, "ok", cb_args_);
+            already_login_ = true;
+        }
+        else {
+            log_d("inner relogin: user login successfully");
+            cb_func_(cb_type, PS_CALL_RELOGIN_OK, "inner relogin: ok",
+                     cb_args_);
+        }
     }
 }
 
