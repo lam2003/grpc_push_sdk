@@ -42,17 +42,18 @@ static UserTerminalType get_user_terminal_type()
 
 PushSDK::PushSDK()
 {
-    init_          = false;
-    uid_           = 0;
-    appid_         = 0;
-    appkey_        = 0;
-    cb_func_       = nullptr;
-    cb_args_       = nullptr;
-    user_          = nullptr;
-    client_        = nullptr;
-    thread_        = nullptr;
-    run_           = false;
-    already_login_ = false;
+    init_           = false;
+    uid_            = 0;
+    appid_          = 0;
+    appkey_         = 0;
+    cb_func_        = nullptr;
+    cb_args_        = nullptr;
+    user_           = nullptr;
+    client_         = nullptr;
+    thread_         = nullptr;
+    run_            = false;
+    logining_       = false;
+    login_manually_ = true;
 }
 
 int PushSDK::Initialize(uint32_t      uid,
@@ -98,6 +99,14 @@ int PushSDK::Initialize(uint32_t      uid,
             while (!cb_map_.empty()) {
                 it = cb_map_.begin();
                 if (now - it->first >= CALL_TIMEOUT) {
+                    if (it->second == PS_CB_LOGIN) {
+                        logining_       = false;
+                        login_manually_ = false;
+                    }
+                    else if (it->second == PS_CB_RELOGIN) {
+                        logining_ = false;
+                    }
+
                     cb_func_(it->second, PS_CALL_TIMEOUT,
                              "timeout and we will inner retry", cb_args_);
                     cb_map_.erase(it);
@@ -181,7 +190,7 @@ std::shared_ptr<PushRegReq> PushSDK::make_login_packet(int64_t now)
 
 void PushSDK::relogin()
 {
-    if (!user_ || !already_login_) {
+    if (!user_ || logining_) {
         return;
     }
 
@@ -191,7 +200,6 @@ void PushSDK::relogin()
         user_.release();
         user_.reset(nullptr);
         log_e("encode login request packet failed");
-        already_login_ = false;
         cb_func_(PS_CB_RELOGIN, PS_CALL_RELOGIN_REQ_ENC_FAILED,
                  "inner relogin: LoginRequest packet serialize failed. you "
                  "should relogin manually",
@@ -203,6 +211,7 @@ void PushSDK::relogin()
     cb_map_[now] = PushSDKCBType::PS_CB_RELOGIN;
     mux_.unlock();
 
+    logining_ = true;
     client_->Send(req);
 }
 
@@ -239,6 +248,8 @@ int PushSDK::Login(const PushSDKUserInfo& user)
     cb_map_[now] = PushSDKCBType::PS_CB_LOGIN;
     mux_.unlock();
 
+    logining_       = true;
+    login_manually_ = true;
     client_->Send(req);
 
     return ret;
@@ -246,20 +257,22 @@ int PushSDK::Login(const PushSDKUserInfo& user)
 
 void PushSDK::handle_login_response(std::shared_ptr<PushData> msg)
 {
+    logining_ = false;
+
     LoginResponse res;
     // 登录错误时，清理原来的登录信息
     if (!res.ParseFromString(msg->msgdata())) {
         user_.reset();
         user_ = nullptr;
 
-        if (!already_login_) {
+        if (login_manually_) {
+            login_manually_ = false;
             log_e("decode login response packet failed");
             cb_func_(PS_CB_LOGIN, PS_CALL_LOGIN_RES_DEC_FAILED,
                      "decode login response packet failed", cb_args_);
         }
         else {
             log_e("inner relogin: decode login response packet failed");
-            already_login_ = false;
             cb_func_(PS_CB_RELOGIN, PS_CALL_RELOGIN_RES_DEC_FAILED,
                      "inner relogin: decode login response packet failed. you "
                      "should relogin manually",
@@ -274,7 +287,7 @@ void PushSDK::handle_login_response(std::shared_ptr<PushData> msg)
     {
         std::unique_lock<std::mutex> lock(mux_);
         if (cb_map_.find(ts) == cb_map_.end()) {
-            log_e("login call already timeout");
+            log_e("login response already timeout");
             return;
         }
         else {
@@ -288,6 +301,7 @@ void PushSDK::handle_login_response(std::shared_ptr<PushData> msg)
         user_ = nullptr;
 
         if (cb_type == PS_CB_LOGIN) {
+            login_manually_ = false;
             log_e("user login failed. desc={}, code={}", res.errmsg(),
                   res.rescode());
             cb_func_(cb_type, PS_CALL_LOGIN_FAILED, res.errmsg().c_str(),
@@ -296,7 +310,6 @@ void PushSDK::handle_login_response(std::shared_ptr<PushData> msg)
         else {
             log_e("inner relogin: user login failed. desc={}, code={}",
                   res.errmsg(), res.rescode());
-            already_login_ = false;
             cb_func_(cb_type, PS_CALL_RELOGIN_FAILED,
                      ("inner relogin: " + res.errmsg() +
                       ". you should relogin manually")
@@ -306,9 +319,9 @@ void PushSDK::handle_login_response(std::shared_ptr<PushData> msg)
     }
     else {
         if (cb_type == PS_CB_LOGIN) {
+            login_manually_ = false;
             log_d("user login successfully");
             cb_func_(cb_type, PS_CALL_RES_OK, "ok", cb_args_);
-            already_login_ = true;
         }
         else {
             log_d("inner relogin: user login successfully");

@@ -54,7 +54,8 @@ class PushSDK : public Singleton<PushSDK>,
     std::mutex                       mux_;
     std::condition_variable          cond_;
     std::atomic<bool>                run_;
-    std::atomic<bool>                already_login_;
+    std::atomic<bool>                logining_;
+    std::atomic<bool>                login_manually_;
     std::map<int64_t, PushSDKCBType> cb_map_;
 };
 
