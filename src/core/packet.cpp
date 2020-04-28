@@ -97,8 +97,8 @@ make_join_group_packet(uint32_t uid, uint64_t gtype, uint64_t gid, int64_t now)
     jg_req.set_context(std::to_string(now));
 
     UserGroup* usergroup = jg_req.add_usergroupset();
-    usergroup->set_usergroupid(gid);
     usergroup->set_usergrouptype(gtype);
+    usergroup->set_usergroupid(gid);
 
     std::string msg_data;
     if (!jg_req.SerializeToString(&msg_data)) {
@@ -126,8 +126,8 @@ make_join_group_packet(uint32_t                                 uid,
     auto it = groups.begin();
     for (; it != groups.end(); it++) {
         UserGroup* usergroup = jg_req.add_usergroupset();
-        usergroup->set_usergroupid(it->first);
-        usergroup->set_usergrouptype(it->second);
+        usergroup->set_usergrouptype(it->first);
+        usergroup->set_usergroupid(it->second);
     }
 
     std::string msg_data;

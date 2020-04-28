@@ -9,6 +9,7 @@
 
 #include <condition_variable>
 #include <memory>
+#include <sstream>
 
 namespace edu {
 
@@ -21,6 +22,7 @@ struct CallContext
     //记录进组信息
     uint64_t gtype;
     uint64_t gid;
+    bool     is_relogin;
 };
 
 class PushSDK : public Singleton<PushSDK>,
@@ -54,44 +56,66 @@ class PushSDK : public Singleton<PushSDK>,
     virtual void OnMessage(std::shared_ptr<PushData> msg) override;
 
   private:
-    bool is_group_info_exists(uint64_t gtype, uint64_t gid);
-    void remove_group_info(uint64_t gtype, uint64_t gid);
+    bool        is_group_info_exists(uint64_t gtype, uint64_t gid);
+    void        remove_group_info(uint64_t gtype, uint64_t gid);
+    std::string dump_all_group_info();
+    void        remove_all_group_info();
+
     void call(PushSDKCBType               type,
               std::shared_ptr<PushRegReq> msg,
               int64_t                     now,
               PushSDKCallCB               cb_func,
               void*                       cb_args,
-              uint64_t                    gtype = 0,
-              uint64_t                    gid   = 0);
+              uint64_t                    gtype      = 0,
+              uint64_t                    gid        = 0,
+              bool                        is_relogin = false);
     void relogin();
     void rejoin_group();
 
     void handle_timeout_response(PushSDKCBType type);
 
     template <typename T>
-    void handle_failed_response(std::shared_ptr<CallContext> ctx)
+    void handle_failed_response(const T& res, std::shared_ptr<CallContext> ctx)
     {
         if (std::is_same<T, LoginResponse>::value) {
             // 登录失败，清理登录信息
             // 清除正在登录状态
+            log_e("login failed. desc={}, code={}", res.errmsg(),
+                  res.rescode());
+
             logining_ = false;
             user_mux_.lock();
-            groups_.clear();
+            std::string dump_str = dump_all_group_info();
+            if (dump_str != "") {
+                log_w("remove all group infos. dump={}", dump_str);
+            }
+            remove_all_group_info();
             user_.release();
             user_ = nullptr;
             user_mux_.unlock();
         }
+        else if (std::is_same<T, LogoutResponse>::value) {
+            log_e("logout failed. desc={}, code={}", res.errmsg(),
+                  res.rescode());
+        }
         else if (std::is_same<T, JoinGroupResponse>::value) {
+            log_e("join group failed. desc={}, code={}", res.errmsg(),
+                  res.rescode());
+
             user_mux_.lock();
             // 进组失败，清理组信息
-
             if (ctx->gtype != 0 && ctx->gid != 0) {
                 // SDK外部调用JoinGroup，仅清除单个
+                log_w("remove gtype={}, gid={}", ctx->gtype, ctx->gid);
                 remove_group_info(ctx->gtype, ctx->gid);
             }
             else {
+                std::string dump_str = dump_all_group_info();
+                if (dump_str != "") {
+                    log_w("remove all group infos. dump={}", dump_str);
+                }
                 // SDK内部重新进组，全量清除
-                groups_.clear();
+                remove_all_group_info();
             }
             user_mux_.unlock();
         }
@@ -104,10 +128,29 @@ class PushSDK : public Singleton<PushSDK>,
     void handle_success_response(std::shared_ptr<CallContext> ctx)
     {
         if (std::is_same<T, LoginResponse>::value) {
+            log_i("login successfully");
             // 清除正在登录状态
             logining_ = false;
             // 重新进组
-            rejoin_group();
+            if (ctx->is_relogin) {
+                rejoin_group();
+            }
+        }
+        else if (std::is_same<T, LogoutResponse>::value) {
+            log_i("logout successfully");
+        }
+        else if (std::is_same<T, JoinGroupResponse>::value) {
+            if (ctx->gtype == 0 && ctx->gid == 0) {
+                //全量进组
+                std::string dump_str = dump_all_group_info();
+                if (dump_str != "") {
+                    log_i("join group successfully. dump={}", dump_str);
+                }
+            }
+            else {
+                log_i("join group successfully. gtype={}, gid={}", ctx->gtype,
+                      ctx->gid);
+            }
         }
         else {
             // ignore
@@ -145,14 +188,12 @@ class PushSDK : public Singleton<PushSDK>,
         void*         cb_args = ctx->cb_args;
 
         if (res.rescode() != RES_SUCCESS) {
-            handle_failed_response<T>(ctx);
-            log_e("call failed. desc={}, code={}", res.errmsg(), res.rescode());
-            cb_func(type, PS_CALL_RES_FAILE, res.errmsg().c_str(), cb_args);
+            handle_failed_response<T>(res, ctx);
+            cb_func(type, PS_CALL_RES_FAILED, res.errmsg().c_str(), cb_args);
         }
         else {
             handle_success_response<T>(ctx);
-            log_d("call successfully");
-            cb_func(type, PS_CALL_RES_OK, "ok", cb_args);
+            cb_func(type, PS_CALL_RES_OK, res.errmsg().c_str(), cb_args);
         }
     }
 

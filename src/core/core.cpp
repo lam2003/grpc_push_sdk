@@ -183,7 +183,7 @@ int PushSDK::Logout(PushSDKCallCB cb_func, void* cb_args)
     }
 
     // 清理登录信息
-    groups_.clear();
+    remove_all_group_info();
     user_.release();
     user_ = nullptr;
 
@@ -279,7 +279,7 @@ void PushSDK::relogin()
     }
 
     logining_ = true;
-    call(PS_CB_LOGIN, req, now, event_cb_, event_cb_args_);
+    call(PS_CB_LOGIN, req, now, event_cb_, event_cb_args_, 0, 0, true);
 }
 
 void PushSDK::rejoin_group()
@@ -293,9 +293,13 @@ void PushSDK::rejoin_group()
     std::shared_ptr<PushRegReq> req =
         make_join_group_packet(uid_, groups_, now);
     if (!req) {
-        groups_.clear();
-        user_lock.unlock();
+        std::string dump_str = dump_all_group_info();
+        remove_all_group_info();
         log_e("encode join group request packet failed");
+        if (dump_str != "") {
+            log_w("remove all group infos. dump={}", dump_str);
+        }
+        user_lock.unlock();
         event_cb_(PS_CB_JOIN_GROUP, PS_CALL_REQ_ENC_FAILED,
                   "inner rejoin group : JoinGroupRequest packet serialize "
                   "failed. you "
@@ -331,13 +335,37 @@ void PushSDK::remove_group_info(uint64_t gtype, uint64_t gid)
     }
 }
 
+std::string PushSDK::dump_all_group_info()
+{
+    if (groups_.empty()) {
+        return "";
+    }
+    std::ostringstream oss;
+
+    auto it = groups_.begin();
+    for (; it != groups_.end(); it++) {
+        oss << "<" << it->first << "," << it->second << "> ";
+    }
+
+    std::string str = oss.str();
+    str             = str.substr(0, str.length() - 1);
+
+    return str;
+}
+
+void PushSDK::remove_all_group_info()
+{
+    groups_.clear();
+}
+
 void PushSDK::call(PushSDKCBType               type,
                    std::shared_ptr<PushRegReq> msg,
                    int64_t                     now,
                    PushSDKCallCB               cb_func,
                    void*                       cb_args,
                    uint64_t                    gtype,
-                   uint64_t                    gid)
+                   uint64_t                    gid,
+                   bool                        is_relogin)
 {
     std::shared_ptr<CallContext> ctx = std::make_shared<CallContext>();
     ctx->cb_func                     = cb_func;
@@ -345,6 +373,7 @@ void PushSDK::call(PushSDKCBType               type,
     ctx->type                        = type;
     ctx->gtype                       = gtype;
     ctx->gid                         = gid;
+    ctx->is_relogin                  = is_relogin;
 
     map_mux_.lock();
     cb_map_[now] = ctx;

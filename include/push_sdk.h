@@ -39,7 +39,7 @@ typedef enum {
 // GRPC调用返回码
 typedef enum {
     PS_CALL_RES_OK         = 0,  // 成功
-    PS_CALL_RES_FAILE      = 1,  // 失败
+    PS_CALL_RES_FAILED      = 1,  // 失败
     PS_CALL_TIMEOUT        = 2,  // 调用超时
     PS_CALL_REQ_ENC_FAILED = 3,  // 序列化请求包失败
     PS_CALL_RES_DEC_FAILED = 4   // 去序列化回复包失败
