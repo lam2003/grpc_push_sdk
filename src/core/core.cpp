@@ -73,9 +73,9 @@ int PushSDK::Initialize(uint32_t      uid,
 
                 if (Utils::NanoSecondsToMilliSeconds(now - call_time) >=
                     Config::Instance()->call_timeout_interval) {
-                    handle_timeout_response(type);
-                    ctx->cb_func(PS_CB_LOGOUT, PS_CALL_TIMEOUT,
-                                 "logout timeout. ignore it", ctx->cb_args);
+                    handle_timeout_response(ctx);
+                    ctx->cb_func(type, PS_CALL_TIMEOUT, "timeout",
+                                 ctx->cb_args);
                     cb_map_.erase(it);
                 }
                 else {
@@ -151,22 +151,22 @@ int PushSDK::Login(const PushSDKUserInfo& user,
         return ret;
     }
 
-    PushSDKUserInfo* user_ptr = new PushSDKUserInfo;
-    *user_ptr                 = user;
-
-    user_.release();
-    user_.reset(user_ptr);
-
     int64_t                     now = Utils::GetSteadyNanoSeconds();
     std::shared_ptr<PushRegReq> req =
-        make_login_packet(uid_, appid_, appkey_, user_.get(), now);
+        make_login_packet(uid_, appid_, appkey_, &user, now);
     if (!req) {
         ret = PS_RET_REQ_ENC_FAILED;
         log_e("encode login request packet failed. ret={}", ret);
         return ret;
     }
 
+    PushSDKUserInfo* user_ptr = new PushSDKUserInfo;
+    *user_ptr                 = user;
+    user_.release();
+    user_.reset(user_ptr);
+
     logining_ = true;
+
     call(PS_CB_LOGIN, req, now, cb_func, cb_args);
 
     return ret;
@@ -182,11 +182,6 @@ int PushSDK::Logout(PushSDKCallCB cb_func, void* cb_args)
         return ret;
     }
 
-    // 清理登录信息
-    remove_all_group_info();
-    user_.release();
-    user_ = nullptr;
-
     int64_t                     now = Utils::GetSteadyNanoSeconds();
     std::shared_ptr<PushRegReq> req =
         make_logout_packet(uid_, appid_, appkey_, now);
@@ -195,6 +190,11 @@ int PushSDK::Logout(PushSDKCallCB cb_func, void* cb_args)
         log_e("encode logout request packet failed. ret={}", ret);
         return ret;
     }
+
+    // 清理登录信息
+    remove_all_group_info();
+    user_.release();
+    user_ = nullptr;
 
     call(PS_CB_LOGOUT, req, now, cb_func, cb_args);
 
@@ -220,8 +220,6 @@ int PushSDK::JoinGroup(const PushSDKGroupInfo& group,
         return ret;
     }
 
-    groups_.insert(std::make_pair(group.gtype, group.gid));
-
     int64_t                     now = Utils::GetSteadyNanoSeconds();
     std::shared_ptr<PushRegReq> req =
         make_join_group_packet(uid_, group.gtype, group.gid, now);
@@ -231,7 +229,40 @@ int PushSDK::JoinGroup(const PushSDKGroupInfo& group,
         return ret;
     }
 
+    groups_.insert(std::make_pair(group.gtype, group.gid));
+
     call(PS_CB_JOIN_GROUP, req, now, cb_func, cb_args, group.gtype, group.gid);
+
+    return ret;
+}
+
+int PushSDK::LeaveGroup(const PushSDKGroupInfo& group,
+                        PushSDKCallCB           cb_func,
+                        void*                   cb_args)
+{
+    int ret = PS_RET_SUCCESS;
+
+    std::unique_lock<std::mutex> user_lock(user_mux_);
+    if (!user_) {
+        ret = PS_RET_UNLOGIN;
+        return ret;
+    }
+
+    if (!is_group_info_exists(group.gtype, group.gid)) {
+        // 未加入该组直接返回成功
+        return ret;
+    }
+
+    int64_t                     now = Utils::GetSteadyNanoSeconds();
+    std::shared_ptr<PushRegReq> req =
+        make_leave_group_packet(uid_, group.gtype, group.gid, now);
+    if (!req) {
+        ret = PS_RET_REQ_ENC_FAILED;
+        log_e("encode leave group request packet failed. ret={}", ret);
+        return ret;
+    }
+
+    call(PS_CB_LEAVE_GROUP, req, now, cb_func, cb_args, group.gtype, group.gid);
 
     return ret;
 }
@@ -252,16 +283,22 @@ void PushSDK::OnMessage(std::shared_ptr<PushData> msg)
             handle_response<JoinGroupResponse>(msg);
             break;
         }
+        case StreamURI::PPushGateWayLeaveGroupResURI: {
+            handle_response<LeaveGroupResponse>(msg);
+            break;
+        }
         default: break;
     }
 }
 
-void PushSDK::relogin()
+void PushSDK::relogin(bool need_to_lock)
 {
     std::unique_lock<std::mutex> user_lock(user_mux_);
     if (!user_ || logining_) {
         return;
     }
+
+    client_->CleanQueue();
 
     int64_t                     now = Utils::GetSteadyNanoSeconds();
     std::shared_ptr<PushRegReq> req =
@@ -279,13 +316,14 @@ void PushSDK::relogin()
     }
 
     logining_ = true;
-    call(PS_CB_LOGIN, req, now, event_cb_, event_cb_args_, 0, 0, true);
+    call(PS_CB_LOGIN, req, now, event_cb_, event_cb_args_, 0, 0, true,
+         need_to_lock);
 }
 
-void PushSDK::rejoin_group()
+void PushSDK::rejoin_group(bool need_to_lock)
 {
     std::unique_lock<std::mutex> user_lock(user_mux_);
-    if (groups_.empty()) {
+    if (!user_ || groups_.empty()) {
         return;
     }
 
@@ -308,7 +346,8 @@ void PushSDK::rejoin_group()
         return;
     }
 
-    call(PS_CB_JOIN_GROUP, req, now, event_cb_, event_cb_args_);
+    call(PS_CB_JOIN_GROUP, req, now, event_cb_, event_cb_args_, 0, 0, true,
+         need_to_lock);
 }
 
 bool PushSDK::is_group_info_exists(uint64_t gtype, uint64_t gid)
@@ -365,7 +404,8 @@ void PushSDK::call(PushSDKCBType               type,
                    void*                       cb_args,
                    uint64_t                    gtype,
                    uint64_t                    gid,
-                   bool                        is_relogin)
+                   bool                        is_retry,
+                   bool                        need_to_lock)
 {
     std::shared_ptr<CallContext> ctx = std::make_shared<CallContext>();
     ctx->cb_func                     = cb_func;
@@ -373,19 +413,48 @@ void PushSDK::call(PushSDKCBType               type,
     ctx->type                        = type;
     ctx->gtype                       = gtype;
     ctx->gid                         = gid;
-    ctx->is_relogin                  = is_relogin;
+    ctx->is_retry                    = is_retry;
 
-    map_mux_.lock();
-    cb_map_[now] = ctx;
-    map_mux_.unlock();
-
+    if (need_to_lock) {
+        map_mux_.lock();
+        cb_map_[now] = ctx;
+        map_mux_.unlock();
+    }
+    else {
+        cb_map_[now] = ctx;
+    }
     client_->Send(msg);
 }
 
-void PushSDK::handle_timeout_response(PushSDKCBType type)
+void PushSDK::handle_timeout_response(std::shared_ptr<CallContext> ctx)
 {
-    switch (type) {
-        case PS_CB_LOGIN: logining_ = false; break;
+    switch (ctx->type) {
+        case PS_CB_LOGIN: {
+            logining_ = false;
+            log_e("login timeout");
+            if (ctx->is_retry) {
+                relogin(false);
+            }
+            break;
+        }
+
+        case PS_CB_JOIN_GROUP: {
+            log_e("join group timeout");
+            if (ctx->is_retry) {
+                rejoin_group(false);
+            }
+            break;
+        }
+
+        case PS_CB_LOGOUT: {
+            log_e("logout timeout");
+            break;
+        }
+
+        case PS_CB_LEAVE_GROUP: {
+            log_e("leave group timeout");
+            break;
+        }
         default: break;
     }
 }

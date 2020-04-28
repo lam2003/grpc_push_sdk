@@ -183,6 +183,14 @@ void Client::Send(std::shared_ptr<PushRegReq> req)
     queue_.push(req);
 }
 
+void Client::CleanQueue()
+{
+    std::unique_lock<std::mutex> lock(mux_);
+    while(!queue_.empty()){
+        queue_.pop();
+    }
+}
+
 void Client::destroy_channel()
 {
     stub_.release();
@@ -433,6 +441,8 @@ void Client::Destroy()
 
     thread_.release();
     thread_ = nullptr;
+
+    CleanQueue();
 
     state_listener_.reset();
     state_listener_ = nullptr;

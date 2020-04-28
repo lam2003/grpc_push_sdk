@@ -30,16 +30,17 @@ typedef enum {
 
 // Push SDK回调类型
 typedef enum {
-    PS_CB_LOGIN      = 0,  // 登录回调
-    PS_CB_LOGOUT     = 1,  // 登出回调
-    PS_CB_JOIN_GROUP = 2,
-    PS_CB_INNER_ERR  = 3,  // 内部错误回调
+    PS_CB_LOGIN       = 0,  // 登录回调
+    PS_CB_LOGOUT      = 1,  // 登出回调
+    PS_CB_JOIN_GROUP  = 2,  // 加组回调
+    PS_CB_LEAVE_GROUP = 3,  // 离组回调
+    PS_CB_INNER_ERR   = 4   // 内部错误回调
 } PushSDKCBType;
 
 // GRPC调用返回码
 typedef enum {
     PS_CALL_RES_OK         = 0,  // 成功
-    PS_CALL_RES_FAILED      = 1,  // 失败
+    PS_CALL_RES_FAILED     = 1,  // 失败
     PS_CALL_TIMEOUT        = 2,  // 调用超时
     PS_CALL_REQ_ENC_FAILED = 3,  // 序列化请求包失败
     PS_CALL_RES_DEC_FAILED = 4   // 去序列化回复包失败
@@ -113,12 +114,23 @@ PS_EXPORT PushSDKRetCode PushSDKLogout(PushSDKCallCB cb_func, void* cb_arg);
 
 // @brief
 // 进组，线程安全，必须在SDK初始化之后调用，重复进组返回PS_RET_ALREADY_JOIN_GROUP
+// @param[in] group 组信息
 // @param[in] cb_func 回调函数
 // @param[in] cb_arg 回调函数args
 // @return    SDK API返回码
 PS_EXPORT PushSDKRetCode PushSDKJoinGroup(PushSDKGroupInfo* group,
                                           PushSDKCallCB     cb_func,
                                           void*             cb_arg);
+
+// @brief
+// 离组，线程安全，必须在SDK初始化之后调用，重复离组返回成功
+// @param[in] group 组信息
+// @param[in] cb_func 回调函数
+// @param[in] cb_arg 回调函数args
+// @return    SDK API返回码
+PS_EXPORT PushSDKRetCode PushSDKLeaveGroup(PushSDKGroupInfo* group,
+                                           PushSDKCallCB     cb_func,
+                                           void*             cb_arg);
 
 // typedef void* ps_hdl_t;
 // typedef void (*SmsTransLinkstatus_Callback)(PushSDKConnState state, void*

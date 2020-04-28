@@ -142,3 +142,27 @@ PushSDKJoinGroup(PushSDKGroupInfo* group, PushSDKCallCB cb_func, void* cb_arg)
 
     return ret;
 }
+
+PushSDKRetCode
+PushSDKLeaveGroup(PushSDKGroupInfo* group, PushSDKCallCB cb_func, void* cb_arg)
+{
+    PushSDKRetCode ret = PS_RET_SUCCESS;
+    if (!_initialized) {
+        ret = PS_RET_SDK_UNINIT;
+        return ret;
+    }
+
+    if (!cb_func) {
+        ret = PS_RET_CB_IS_NULL;
+        log_e("call back function is null");
+        return ret;
+    }
+
+    if ((ret = static_cast<PushSDKRetCode>(edu::PushSDK::Instance()->LeaveGroup(
+             *group, cb_func, cb_arg))) != PS_RET_SUCCESS) {
+        log_e("leave group failed. ret={}", ret);
+        return ret;
+    }
+
+    return ret;
+}

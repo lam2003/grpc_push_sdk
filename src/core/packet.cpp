@@ -37,7 +37,7 @@ static UserTerminalType get_user_terminal_type()
 std::shared_ptr<PushRegReq> make_login_packet(uint32_t         uid,
                                               uint64_t         appid,
                                               uint64_t         appkey,
-                                              PushSDKUserInfo* user,
+                                              const PushSDKUserInfo* user,
                                               int64_t          now)
 {
     LoginRequest login_req;
@@ -138,6 +138,30 @@ make_join_group_packet(uint32_t                                 uid,
 
     std::shared_ptr<PushRegReq> req = std::make_shared<PushRegReq>();
     req->set_uri(StreamURI::PPushGateWayJoinGroupURI);
+    req->set_msgdata(msg_data);
+
+    return req;
+}
+
+std::shared_ptr<PushRegReq>
+make_leave_group_packet(uint32_t uid, uint64_t gtype, uint64_t gid, int64_t now)
+{
+    LeaveGroupRequest lg_req;
+    lg_req.set_context(std::to_string(now));
+    lg_req.set_suid(Utils::GetSUID(uid, get_user_terminal_type()));
+    lg_req.set_uid(uid);
+    UserGroup* usergroup = lg_req.add_usergroupset();
+    usergroup->set_usergrouptype(gtype);
+    usergroup->set_usergroupid(gid);
+
+    std::string msg_data;
+    if (!lg_req.SerializeToString(&msg_data)) {
+        log_e("LeaveGroup packet serialize failed");
+        return nullptr;
+    }
+
+    std::shared_ptr<PushRegReq> req = std::make_shared<PushRegReq>();
+    req->set_uri(StreamURI::PPushGateWayLeaveGroupURI);
     req->set_msgdata(msg_data);
 
     return req;
