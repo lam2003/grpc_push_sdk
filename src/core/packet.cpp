@@ -112,4 +112,34 @@ make_join_group_packet(uint32_t uid, uint64_t gtype, uint64_t gid, int64_t now)
 
     return req;
 }
+
+std::shared_ptr<PushRegReq>
+make_join_group_packet(uint32_t                                 uid,
+                       const std::multimap<uint64_t, uint64_t>& groups,
+                       int64_t                                  now)
+{
+    JoinGroupRequest jg_req;
+    jg_req.set_uid(uid);
+    jg_req.set_suid(Utils::GetSUID(uid, get_user_terminal_type()));
+    jg_req.set_context(std::to_string(now));
+
+    auto it = groups.begin();
+    for (; it != groups.end(); it++) {
+        UserGroup* usergroup = jg_req.add_usergroupset();
+        usergroup->set_usergroupid(it->first);
+        usergroup->set_usergrouptype(it->second);
+    }
+
+    std::string msg_data;
+    if (!jg_req.SerializeToString(&msg_data)) {
+        log_e("JoinGroup packet serialize failed");
+        return nullptr;
+    }
+
+    std::shared_ptr<PushRegReq> req = std::make_shared<PushRegReq>();
+    req->set_uri(StreamURI::PPushGateWayJoinGroupURI);
+    req->set_msgdata(msg_data);
+
+    return req;
+}
 }  // namespace edu

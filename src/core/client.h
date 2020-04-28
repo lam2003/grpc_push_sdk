@@ -48,6 +48,7 @@ enum class ChannelState { OK, NO_READY };
 
 extern std::string channel_state_to_string(ChannelState state);
 extern std::string client_status_to_string(ClientStatus status);
+extern std::string stream_uri_to_string(StreamURI uri);
 
 class ChannelStateListener {
   public:

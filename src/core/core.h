@@ -17,6 +17,10 @@ struct CallContext
     PushSDKCBType type;
     PushSDKCallCB cb_func;
     void*         cb_args;
+
+    //记录进组信息
+    uint64_t gtype;
+    uint64_t gid;
 };
 
 class PushSDK : public Singleton<PushSDK>,
@@ -51,15 +55,64 @@ class PushSDK : public Singleton<PushSDK>,
 
   private:
     bool is_group_info_exists(uint64_t gtype, uint64_t gid);
-    void handle_login_timeout(std::shared_ptr<CallContext> ctx);
-    void handle_relogin_timeout(std::shared_ptr<CallContext> ctx);
-    void handle_logout_timeout(std::shared_ptr<CallContext> ctx);
+    void remove_group_info(uint64_t gtype, uint64_t gid);
     void call(PushSDKCBType               type,
               std::shared_ptr<PushRegReq> msg,
               int64_t                     now,
               PushSDKCallCB               cb_func,
-              void*                       cb_args);
+              void*                       cb_args,
+              uint64_t                    gtype = 0,
+              uint64_t                    gid   = 0);
     void relogin();
+    void rejoin_group();
+
+    void handle_timeout_response(PushSDKCBType type);
+
+    template <typename T>
+    void handle_failed_response(std::shared_ptr<CallContext> ctx)
+    {
+        if (std::is_same<T, LoginResponse>::value) {
+            // 登录失败，清理登录信息
+            // 清除正在登录状态
+            logining_ = false;
+            user_mux_.lock();
+            groups_.clear();
+            user_.release();
+            user_ = nullptr;
+            user_mux_.unlock();
+        }
+        else if (std::is_same<T, JoinGroupResponse>::value) {
+            user_mux_.lock();
+            // 进组失败，清理组信息
+
+            if (ctx->gtype != 0 && ctx->gid != 0) {
+                // SDK外部调用JoinGroup，仅清除单个
+                remove_group_info(ctx->gtype, ctx->gid);
+            }
+            else {
+                // SDK内部重新进组，全量清除
+                groups_.clear();
+            }
+            user_mux_.unlock();
+        }
+        else {
+            // ignore
+        }
+    }
+
+    template <typename T>
+    void handle_success_response(std::shared_ptr<CallContext> ctx)
+    {
+        if (std::is_same<T, LoginResponse>::value) {
+            // 清除正在登录状态
+            logining_ = false;
+            // 重新进组
+            rejoin_group();
+        }
+        else {
+            // ignore
+        }
+    }
 
     template <typename T> void handle_response(std::shared_ptr<PushData> msg)
     {
@@ -77,7 +130,8 @@ class PushSDK : public Singleton<PushSDK>,
         {
             std::unique_lock<std::mutex> lock(map_mux_);
             if (cb_map_.find(ts) == cb_map_.end()) {
-                log_e("logout response already timeout");
+                log_w("response already timeout. uri={}",
+                      stream_uri_to_string(msg->uri()));
                 return;
             }
             else {
@@ -91,10 +145,12 @@ class PushSDK : public Singleton<PushSDK>,
         void*         cb_args = ctx->cb_args;
 
         if (res.rescode() != RES_SUCCESS) {
+            handle_failed_response<T>(ctx);
             log_e("call failed. desc={}, code={}", res.errmsg(), res.rescode());
             cb_func(type, PS_CALL_RES_FAILE, res.errmsg().c_str(), cb_args);
         }
         else {
+            handle_success_response<T>(ctx);
             log_d("call successfully");
             cb_func(type, PS_CALL_RES_OK, "ok", cb_args);
         }

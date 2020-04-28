@@ -45,11 +45,11 @@ int64_t Utils::GetSteadyMilliSeconds()
     return duration_cast<milliseconds>(now.time_since_epoch()).count();
 }
 
-int64_t Utils::GetSteadyMicroSeconds()
+int64_t Utils::GetSteadyNanoSeconds()
 {
     using namespace std::chrono;
     steady_clock::time_point now = steady_clock::now();
-    return duration_cast<microseconds>(now.time_since_epoch()).count();
+    return duration_cast<nanoseconds>(now.time_since_epoch()).count();
 }
 
 TerminalType Utils::GetTerminalType()
@@ -98,6 +98,11 @@ uint64_t Utils::GetSUID(uint32_t uid, uint64_t terminal_type)
     suid |= type << (32 + 8);
     suid |= uint64_t(uid) & 0x00000000FFFFFFFF;
     return suid;
+}
+
+int64_t Utils::NanoSecondsToMilliSeconds(int64_t t)
+{
+    return (t / 1000000);
 }
 
 }  // namespace edu

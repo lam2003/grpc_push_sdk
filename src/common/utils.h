@@ -26,9 +26,10 @@ class Utils {
     static std::string  GetSystemTime(const std::string& format = "%Y-%m-%d");
     static LOG_LEVEL    StrToLogLevel(const std::string& s);
     static int64_t      GetSteadyMilliSeconds();
-    static int64_t      GetSteadyMicroSeconds();
+    static int64_t      GetSteadyNanoSeconds();
     static TerminalType GetTerminalType();
     static uint64_t     GetSUID(uint32_t uid, uint64_t terminal_type);
+    static int64_t      NanoSecondsToMilliSeconds(int64_t t);
 };
 
 }  // namespace edu

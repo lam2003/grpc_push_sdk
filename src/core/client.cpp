@@ -35,6 +35,37 @@ std::string client_status_to_string(ClientStatus status)
     }
 }
 
+std::string stream_uri_to_string(StreamURI uri)
+{
+    switch (uri) {
+        case StreamURI::PPushGateWayLoginURI: return "PPushGateWayLoginURI";
+        case StreamURI::PPushGateWayLoginResURI:
+            return "PPushGateWayLoginResURI";
+        case StreamURI::PPushGateWayLogoutURI: return "PPushGateWayLogoutURI";
+
+        case StreamURI::PPushGateWayLogoutResURI:
+            return "PPushGateWayLogoutResURI";
+        case StreamURI::PPushGateWayJoinGroupURI:
+            return "PPushGateWayJoinGroupURI";
+        case StreamURI::PPushGateWayJoinGroupResURI:
+            return "PPushGateWayJoinGroupResURI";
+        case StreamURI::PPushGateWayLeaveGroupURI:
+            return "PPushGateWayLeaveGroupURI";
+        case StreamURI::PPushGateWayLeaveGroupResURI:
+            return "PPushGateWayLeaveGroupResURI";
+        case StreamURI::PPushGateWayPingURI: return "PPushGateWayPingURI";
+        case StreamURI::PPushGateWayPongURI: return "PPushGateWayPongURI";
+        case StreamURI::PPushGateWayNotifyToCloseURI:
+            return "PPushGateWayNotifyToCloseURI";
+        case StreamURI::PPushGateWayPushDataByUidURI:
+            return "PPushGateWayPushDataByUidURI";
+        case StreamURI::PPushGateWayPushDataByGroupURI:
+            return "PPushGateWayPushDataByGroupURI";
+        case StreamURI::PPushGateWayUNKNOWN:
+        default: return "UNKNOW";
+    }
+}
+
 static std::string client_event_to_string(ClientEvent event)
 {
     switch (event) {

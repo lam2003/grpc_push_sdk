@@ -31,10 +31,9 @@ typedef enum {
 // Push SDK回调类型
 typedef enum {
     PS_CB_LOGIN      = 0,  // 登录回调
-    PS_CB_RELOGIN    = 1,  // SDK内部重新登录回调
-    PS_CB_LOGOUT     = 2,  // 登出回调
-    PS_CB_JOIN_GROUP = 3,
-    PS_CB_INNER_ERR  = 4,  // 内部错误回调
+    PS_CB_LOGOUT     = 1,  // 登出回调
+    PS_CB_JOIN_GROUP = 2,
+    PS_CB_INNER_ERR  = 3,  // 内部错误回调
 } PushSDKCBType;
 
 // GRPC调用返回码
