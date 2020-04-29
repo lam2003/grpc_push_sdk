@@ -211,7 +211,7 @@ class PushSDK : public Singleton<PushSDK>,
         T res;
         if (!res.ParseFromString(msg->msgdata())) {
             log_e("decode packet failed");
-            event_cb_(PS_CB_TYPE_INNER_ERR, PS_CB_EVENT_DEC_FAILED,
+            event_cb_(PS_CB_TYPE_INNER_ERR, PS_CB_EVENT_RES_DEC_FAILED,
                       "decode packet failed", event_cb_args_);
             return;
         }

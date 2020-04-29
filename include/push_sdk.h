@@ -26,7 +26,7 @@ typedef enum {
     PS_RET_ALREADY_JOIN_GROUP = 8,   // 该组已经加入
     PS_RET_UNLOGIN            = 9,   // 未登录
     PS_RET_CALL_TIMEOUT       = 10,  // 调用超时
-    PS_RET_CALL_FAILED        = 11,  // 服务器返回失败
+    PS_RET_CALL_FAILED        = 11   // 服务器返回失败
 } PushSDKRetCode;
 
 // Push SDK回调类型
@@ -44,7 +44,7 @@ typedef enum {
     PS_CB_EVENT_FAILED             = 1,  // 失败
     PS_CB_EVENT_TIMEOUT            = 2,  // 调用超时
     PS_CB_EVENT_REQ_ENC_FAILED     = 3,  // 序列化请求包失败
-    PS_CB_EVENT_DEC_FAILED         = 4,  // 去序列化回复包失败
+    PS_CB_EVENT_RES_DEC_FAILED     = 4,  // 去序列化回复包失败
     PS_CB_EVENT_USER_KICKED_BY_SRV = 5   // 登录后被踢下线
 
 } PushSDKCBEvent;
@@ -156,11 +156,10 @@ PS_EXPORT PushSDKRetCode PushSDKLeaveGroup(PushSDKGroupInfo* group,
 PS_EXPORT PushSDKRetCode PushSDKLeaveGroupSync(PushSDKGroupInfo* group);
 
 // @brief
-// 线程安全，同步调用返回PS_RET_CALL_FAILED的时候，立刻调用此函数可获得错误描述及返回码，
+// 同步调用返回PS_RET_CALL_FAILED的时候，立刻调用此函数可获得错误描述及返回码，线程安全，
 // 异步调用时请勿使用
 // @param[out] desc 服务器返回的错误描述，使用后需要手动free
 // @param[out] code 服务器返回的错误码
-// @return    SDK API返回码
 PS_EXPORT void PushSDKGetError(char** desc, int* code);
 
 #ifdef __cplusplus
