@@ -24,11 +24,11 @@ PushSDK::PushSDK()
     code_          = RES_SUCCESS;
 }
 
-int PushSDK::Initialize(uint32_t      uid,
-                        uint64_t      appid,
-                        uint64_t      appkey,
-                        PushSDKCallCB cb_func,
-                        void*         cb_args)
+int PushSDK::Initialize(uint32_t       uid,
+                        uint64_t       appid,
+                        uint64_t       appkey,
+                        PushSDKEventCB cb_func,
+                        void*          cb_args)
 {
     int ret = PS_RET_SUCCESS;
 
@@ -133,7 +133,7 @@ PushSDK::~PushSDK()
 
 int PushSDK::Login(const PushSDKUserInfo& user,
                    bool                   is_sync,
-                   PushSDKCallCB          cb_func,
+                   PushSDKEventCB         cb_func,
                    void*                  cb_args)
 {
     int ret = PS_RET_SUCCESS;
@@ -177,7 +177,7 @@ int PushSDK::Login(const PushSDKUserInfo& user,
     return ret;
 }
 
-int PushSDK::Logout(bool is_sync, PushSDKCallCB cb_func, void* cb_args)
+int PushSDK::Logout(bool is_sync, PushSDKEventCB cb_func, void* cb_args)
 {
     int ret = PS_RET_SUCCESS;
 
@@ -214,7 +214,7 @@ int PushSDK::Logout(bool is_sync, PushSDKCallCB cb_func, void* cb_args)
 
 int PushSDK::JoinGroup(const PushSDKGroupInfo& group,
                        bool                    is_sync,
-                       PushSDKCallCB           cb_func,
+                       PushSDKEventCB          cb_func,
                        void*                   cb_args)
 {
     int ret = PS_RET_SUCCESS;
@@ -257,7 +257,7 @@ int PushSDK::JoinGroup(const PushSDKGroupInfo& group,
 
 int PushSDK::LeaveGroup(const PushSDKGroupInfo& group,
                         bool                    is_sync,
-                        PushSDKCallCB           cb_func,
+                        PushSDKEventCB          cb_func,
                         void*                   cb_args)
 {
     int ret = PS_RET_SUCCESS;
@@ -437,7 +437,7 @@ void PushSDK::remove_all_group_info()
 void PushSDK::call(PushSDKCBType               type,
                    std::shared_ptr<PushRegReq> msg,
                    int64_t                     now,
-                   PushSDKCallCB               cb_func,
+                   PushSDKEventCB              cb_func,
                    void*                       cb_args,
                    uint64_t                    gtype,
                    uint64_t                    gid,

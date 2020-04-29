@@ -9,12 +9,12 @@ static std::mutex        _mux;
 static std::atomic<bool> _initialized(false);
 static std::atomic<bool> _log_initialized(false);
 
-PushSDKRetCode PushSDKInitialize(uint32_t      uid,
-                                 uint64_t      appid,
-                                 uint64_t      appkey,
-                                 const char*   log_dir,
-                                 PushSDKCallCB cb_func,
-                                 void*         cb_arg)
+PushSDKRetCode PushSDKInitialize(uint32_t       uid,
+                                 uint64_t       appid,
+                                 uint64_t       appkey,
+                                 const char*    log_dir,
+                                 PushSDKEventCB cb_func,
+                                 void*          cb_arg)
 {
     PushSDKRetCode               ret = PS_RET_SUCCESS;
     std::unique_lock<std::mutex> lock(_mux);

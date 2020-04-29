@@ -21,9 +21,9 @@ struct CallContext
         res       = PS_CB_EVENT_OK;
     }
 
-    PushSDKCBType type;
-    PushSDKCallCB cb_func;
-    void*         cb_args;
+    PushSDKCBType  type;
+    PushSDKEventCB cb_func;
+    void*          cb_args;
 
     uint64_t gtype;
     uint64_t gid;
@@ -52,27 +52,27 @@ class PushSDK : public Singleton<PushSDK>,
     PushSDK();
 
   public:
-    virtual int  Initialize(uint32_t      uid,
-                            uint64_t      appid,
-                            uint64_t      appkey,
-                            PushSDKCallCB cb_func,
-                            void*         cb_args);
+    virtual int  Initialize(uint32_t       uid,
+                            uint64_t       appid,
+                            uint64_t       appkey,
+                            PushSDKEventCB cb_func,
+                            void*          cb_args);
     virtual void Destroy();
     virtual int  Login(const PushSDKUserInfo& user,
                        bool                   is_sync = true,
-                       PushSDKCallCB          cb_func = nullptr,
+                       PushSDKEventCB         cb_func = nullptr,
                        void*                  cb_args = nullptr);
 
-    virtual int Logout(bool          is_sync = true,
-                       PushSDKCallCB cb_func = nullptr,
-                       void*         cb_args = nullptr);
+    virtual int Logout(bool           is_sync = true,
+                       PushSDKEventCB cb_func = nullptr,
+                       void*          cb_args = nullptr);
     virtual int JoinGroup(const PushSDKGroupInfo& group,
                           bool                    is_sync = true,
-                          PushSDKCallCB           cb_func = nullptr,
+                          PushSDKEventCB          cb_func = nullptr,
                           void*                   cb_args = nullptr);
     virtual int LeaveGroup(const PushSDKGroupInfo& group,
                            bool                    is_sync = true,
-                           PushSDKCallCB           cb_func = nullptr,
+                           PushSDKEventCB          cb_func = nullptr,
                            void*                   cb_args = nullptr);
 
     virtual void GetLastError(std::string& desc, int& code);
@@ -90,7 +90,7 @@ class PushSDK : public Singleton<PushSDK>,
     void call(PushSDKCBType               type,
               std::shared_ptr<PushRegReq> msg,
               int64_t                     now,
-              PushSDKCallCB               cb_func,
+              PushSDKEventCB              cb_func,
               void*                       cb_args,
               uint64_t                    gtype        = 0,
               uint64_t                    gid          = 0,
@@ -248,7 +248,7 @@ class PushSDK : public Singleton<PushSDK>,
     uint32_t                                        uid_;
     uint64_t                                        appid_;
     uint64_t                                        appkey_;
-    PushSDKCallCB                                   event_cb_;
+    PushSDKEventCB                                  event_cb_;
     void*                                           event_cb_args_;
     std::mutex                                      user_mux_;
     std::unique_ptr<PushSDKUserInfo>                user_;

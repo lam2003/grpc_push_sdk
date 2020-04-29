@@ -69,17 +69,38 @@ typedef struct
 } PushSDKGroupInfo;
 
 /**
-@brief SDK回调
+@brief SDK全局事件回调函数
 @param [in] code 错误码
 @param [in] desc 错误描述
 @param [in] data 自定义指针
 */
-typedef void (*PushSDKCallCB)(PushSDKCBType  type,
-                              PushSDKCBEvent res,
-                              const char*    desc,
-                              void*          data);
+typedef void (*PushSDKEventCB)(PushSDKCBType  type,
+                               PushSDKCBEvent res,
+                               const char*    desc,
+                               void*          data);
 
-// @brief     初始化，必须最先调用，线程安全，重复调用返 PS_RET_ALREADY_INIT
+typedef void* PS_MSG_HANDLER;
+
+/**
+@brief SDK用户消息回调
+@param [in] data 消息数据
+@param [in] len 消息长度
+*/
+typedef void (*PushSDKUserMsgCB)(const char* data, int len);
+
+/**
+@brief SDK组消息回调
+@param [in] from_gtype 消息来源组类型
+@param [in] frome_gid 消息来源组ID
+@param [in] data 消息数据
+@param [in] len 消息长度
+*/
+typedef void (*PushSDKGroupMsgCB)(uint64_t    from_gtype,
+                                  uint64_t    from_gid,
+                                  const char* data,
+                                  int         len);
+
+// @brief     初始化，必须最先调用，重复调用返 PS_RET_ALREADY_INIT，线程安全
 // @param[in] uid 用户ID，SDK初始化时用于路由
 // @param[in] appid 应用ID
 // @param[in] appkey 应用密钥
@@ -87,43 +108,67 @@ typedef void (*PushSDKCallCB)(PushSDKCBType  type,
 // @param[in] cb_func 全局事件回调函数
 // @param[in] cb_arg 全局事件回调函数args
 // @reture    SDK API返回码
-PS_EXPORT PushSDKRetCode PushSDKInitialize(uint32_t      uid,
-                                           uint64_t      appid,
-                                           uint64_t      appkey,
-                                           const char*   logdir,
-                                           PushSDKCallCB cb_func,
-                                           void*         cb_arg);
+PS_EXPORT PushSDKRetCode PushSDKInitialize(uint32_t       uid,
+                                           uint64_t       appid,
+                                           uint64_t       appkey,
+                                           const char*    logdir,
+                                           PushSDKEventCB cb_func,
+                                           void*          cb_arg);
 
-// @brief     去初始化，线程安全，可重复调用
+// @brief     去初始化，可重复调用，线程安全
 PS_EXPORT void PushSDKDestroy(void);
 
-// @brief     同步登录，线程安全，必须在SDK初始化之后调用，重复调用返回
+// @brief     同步登录，必须在SDK初始化之后调用，重复调用返回，线程安全
 // PS_RET_ALREADY_LOGIN
 // @param[in] user 用户信息
 // @return    SDK API返回码
 PS_EXPORT PushSDKRetCode PushSDKLogin(PushSDKUserInfo* user);
 
-// @brief     同步登出，线程安全，必须在SDK初始化之后调用，重复调用返回成功
+// @brief     同步登出，必须在SDK初始化之后调用，重复调用返回成功，线程安全
 // @return    SDK API返回码
 PS_EXPORT PushSDKRetCode PushSDKLogout();
 
 // @brief
-// 同步进组，线程安全，必须在SDK初始化之后调用，重复进组返回PS_RET_ALREADY_JOIN_GROUP
+// 同步进组，必须在SDK初始化之后调用，重复进组返回PS_RET_ALREADY_JOIN_GROUP，线程安全
 // @param[in] group 组信息
 // @return    SDK API返回码
 PS_EXPORT PushSDKRetCode PushSDKJoinGroup(PushSDKGroupInfo* group);
 
 // @brief
-// 同步离组，线程安全，必须在SDK初始化之后调用，重复离组返回成功
+// 同步离组，必须在SDK初始化之后调用，重复离组返回成功，线程安全
 // @param[in] group 组信息
 // @return    SDK API返回码
 PS_EXPORT PushSDKRetCode PushSDKLeaveGroup(PushSDKGroupInfo* group);
 
 // @brief
-// 同步调用返回PS_RET_CALL_FAILED的时候，立刻调用此函数可获得错误描述及返回码，线程安全，
+// 同步调用返回PS_RET_CALL_FAILED的时候，立刻调用此函数可获得错误描述及返回码，线程安全
 // @param[out] desc 服务器返回的错误描述，使用后需要手动free
 // @param[out] code 服务器返回的错误码
 PS_EXPORT void PushSDKGetError(char** desc, int* code);
+
+// @brief
+// 生成消息处理器句柄，线程安全
+// @return 消息处理器句柄，用于添加消息回调函数
+PS_EXPORT PS_MSG_HANDLER PushSDKCreateMsgHandler();
+
+// @brief
+// 摧毁消息处理器句柄，线程安全
+// @param[in] handle 消息处理器句柄
+PS_EXPORT void PushSDKDestroyMsgHandler(PS_MSG_HANDLER handler);
+
+// @brief
+// 添加用户消息处理器
+// @param[in] handler 消息处理器句柄
+// @param[in] msg_cb 用户消息回调
+PS_EXPORT void PushSDKAddUserMsgHandler(PS_MSG_HANDLER   handler,
+                                        PushSDKUserMsgCB msg_cb);
+
+// @brief
+// 添加组消息处理器
+// @param[in] handler 消息处理器句柄
+// @param[in] msg_cb 组消息回调
+PS_EXPORT void PushSDKAddGroupMsgHandler(PS_MSG_HANDLER    handler,
+                                         PushSDKGroupMsgCB msg_cb);
 
 #ifdef __cplusplus
 }
