@@ -105,6 +105,7 @@ class Client {
     void handle_event(ClientEvent event);
     void handle_cq_timeout();
     void check_channel_and_stream(bool ok);
+    void try_to_send_ping();
 
     void check_and_notify_client_status_change(ClientStatus new_status);
     void check_and_notify_channel_state_change(ChannelState new_state);

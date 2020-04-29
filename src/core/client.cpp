@@ -302,6 +302,20 @@ void Client::handle_event(ClientEvent event)
     }
 }
 
+void Client::try_to_send_ping()
+{
+    int64_t now = Utils::GetSteadyMilliSeconds();
+
+    if (now - last_heartbeat_ts_ >= Config::Instance()->heart_beat_interval) {
+        std::shared_ptr<PushRegReq> req = std::make_shared<PushRegReq>();
+        req->set_uri(StreamURI::PPushGateWayPingURI);
+        mux_.lock();
+        queue_.push(req);
+        mux_.unlock();
+        last_heartbeat_ts_ = now;
+    }
+}
+
 void Client::check_channel_and_stream(bool ok)
 {
     grpc_connectivity_state state = channel_->GetState(true);
@@ -335,17 +349,6 @@ void Client::check_channel_and_stream(bool ok)
 
 void Client::handle_cq_timeout()
 {
-    int64_t now = Utils::GetSteadyMilliSeconds();
-
-    if (now - last_heartbeat_ts_ >= Config::Instance()->heart_beat_interval) {
-        std::shared_ptr<PushRegReq> req = std::make_shared<PushRegReq>();
-        req->set_uri(StreamURI::PPushGateWayPingURI);
-        mux_.lock();
-        queue_.push(req);
-        mux_.unlock();
-        last_heartbeat_ts_ = now;
-    }
-
     std::unique_lock<std::mutex> lock(mux_);
     if (client_status_ == ClientStatus::READY_TO_WRITE && !queue_.empty()) {
         check_and_notify_client_status_change(ClientStatus::WAIT_WRITE_DONE);
@@ -379,6 +382,7 @@ void Client::event_loop()
             case grpc::CompletionQueue::TIMEOUT: {
                 check_channel_and_stream(ok);
                 if (ok) {
+                    try_to_send_ping();
                     handle_cq_timeout();
                 }
                 break;
@@ -386,6 +390,7 @@ void Client::event_loop()
             case grpc::CompletionQueue::GOT_EVENT: {
                 check_channel_and_stream(ok);
                 if (ok) {
+                    try_to_send_ping();
                     handle_event(event);
                 }
                 break;
