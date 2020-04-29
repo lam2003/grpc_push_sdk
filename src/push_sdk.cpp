@@ -8,8 +8,6 @@
 static std::mutex        _mux;
 static std::atomic<bool> _initialized(false);
 static std::atomic<bool> _log_initialized(false);
-static PushSDKCallCB     _cb_func = nullptr;
-static void*             _cb_args = nullptr;
 
 PushSDKRetCode PushSDKInitialize(uint32_t      uid,
                                  uint64_t      appid,
@@ -64,39 +62,7 @@ void PushSDKDestroy()
     _initialized = false;
 }
 
-PushSDKRetCode
-PushSDKLogin(PushSDKUserInfo* user, PushSDKCallCB cb_func, void* cb_arg)
-{
-    PushSDKRetCode               ret = PS_RET_SUCCESS;
-    std::unique_lock<std::mutex> lock(_mux);
-
-    if (!_initialized) {
-        ret = PS_RET_SDK_UNINIT;
-        return ret;
-    }
-
-    if (!user) {
-        ret = PS_RET_USER_INFO_IS_NULL;
-        log_e("login with user info(null) is not allow. ret={}", ret);
-        return ret;
-    }
-
-    if (!cb_func) {
-        ret = PS_RET_CB_IS_NULL;
-        log_e("call back function is null");
-        return ret;
-    }
-
-    if ((ret = static_cast<PushSDKRetCode>(edu::PushSDK::Instance()->Login(
-             *user, false, cb_func, cb_arg))) != PS_RET_SUCCESS) {
-        log_e("login failed. ret={}", ret);
-        return ret;
-    }
-
-    return ret;
-}
-
-PushSDKRetCode PushSDKLoginSync(PushSDKUserInfo* user)
+PushSDKRetCode PushSDKLogin(PushSDKUserInfo* user)
 {
     PushSDKRetCode               ret = PS_RET_SUCCESS;
     std::unique_lock<std::mutex> lock(_mux);
@@ -121,32 +87,11 @@ PushSDKRetCode PushSDKLoginSync(PushSDKUserInfo* user)
     return ret;
 }
 
-PushSDKRetCode PushSDKLogout(PushSDKCallCB cb_func, void* cb_arg)
+PushSDKRetCode PushSDKLogout()
 {
-    PushSDKRetCode ret = PS_RET_SUCCESS;
-    if (!_initialized) {
-        ret = PS_RET_SDK_UNINIT;
-        return ret;
-    }
+    PushSDKRetCode               ret = PS_RET_SUCCESS;
+    std::unique_lock<std::mutex> lock(_mux);
 
-    if (!cb_func) {
-        ret = PS_RET_CB_IS_NULL;
-        log_e("call back function is null");
-        return ret;
-    }
-
-    if ((ret = static_cast<PushSDKRetCode>(edu::PushSDK::Instance()->Logout(
-             false, cb_func, cb_arg))) != PS_RET_SUCCESS) {
-        log_e("logout failed. ret={}", ret);
-        return ret;
-    }
-
-    return ret;
-}
-
-PushSDKRetCode PushSDKLogoutSync()
-{
-    PushSDKRetCode ret = PS_RET_SUCCESS;
     if (!_initialized) {
         ret = PS_RET_SDK_UNINIT;
         return ret;
@@ -161,33 +106,11 @@ PushSDKRetCode PushSDKLogoutSync()
     return ret;
 }
 
-PushSDKRetCode
-PushSDKJoinGroup(PushSDKGroupInfo* group, PushSDKCallCB cb_func, void* cb_arg)
+PushSDKRetCode PushSDKJoinGroup(PushSDKGroupInfo* group)
 {
-    PushSDKRetCode ret = PS_RET_SUCCESS;
-    if (!_initialized) {
-        ret = PS_RET_SDK_UNINIT;
-        return ret;
-    }
+    PushSDKRetCode               ret = PS_RET_SUCCESS;
+    std::unique_lock<std::mutex> lock(_mux);
 
-    if (!cb_func) {
-        ret = PS_RET_CB_IS_NULL;
-        log_e("call back function is null");
-        return ret;
-    }
-
-    if ((ret = static_cast<PushSDKRetCode>(edu::PushSDK::Instance()->JoinGroup(
-             *group, false, cb_func, cb_arg))) != PS_RET_SUCCESS) {
-        log_e("join group failed. ret={}", ret);
-        return ret;
-    }
-
-    return ret;
-}
-
-PushSDKRetCode PushSDKJoinGroupSync(PushSDKGroupInfo* group)
-{
-    PushSDKRetCode ret = PS_RET_SUCCESS;
     if (!_initialized) {
         ret = PS_RET_SDK_UNINIT;
         return ret;
@@ -202,33 +125,11 @@ PushSDKRetCode PushSDKJoinGroupSync(PushSDKGroupInfo* group)
     return ret;
 }
 
-PushSDKRetCode
-PushSDKLeaveGroup(PushSDKGroupInfo* group, PushSDKCallCB cb_func, void* cb_arg)
+PushSDKRetCode PushSDKLeaveGroup(PushSDKGroupInfo* group)
 {
-    PushSDKRetCode ret = PS_RET_SUCCESS;
-    if (!_initialized) {
-        ret = PS_RET_SDK_UNINIT;
-        return ret;
-    }
+    PushSDKRetCode               ret = PS_RET_SUCCESS;
+    std::unique_lock<std::mutex> lock(_mux);
 
-    if (!cb_func) {
-        ret = PS_RET_CB_IS_NULL;
-        log_e("call back function is null");
-        return ret;
-    }
-
-    if ((ret = static_cast<PushSDKRetCode>(edu::PushSDK::Instance()->LeaveGroup(
-             *group, false, cb_func, cb_arg))) != PS_RET_SUCCESS) {
-        log_e("leave group failed. ret={}", ret);
-        return ret;
-    }
-
-    return ret;
-}
-
-PushSDKRetCode PushSDKLeaveGroupSync(PushSDKGroupInfo* group)
-{
-    PushSDKRetCode ret = PS_RET_SUCCESS;
     if (!_initialized) {
         ret = PS_RET_SDK_UNINIT;
         return ret;
@@ -248,6 +149,7 @@ void PushSDKGetError(char** desc, int* code)
     std::string s;
     int         c;
 
+    std::unique_lock<std::mutex> lock(_mux);
     edu::PushSDK::Instance()->GetLastError(s, c);
 
     *desc = (char*)malloc(s.length() + 1);

@@ -296,8 +296,6 @@ int PushSDK::LeaveGroup(const PushSDKGroupInfo& group,
 
 void PushSDK::GetLastError(std::string& desc, int& code)
 {
-    std::unique_lock<std::mutex> lock(user_mux_);
-
     desc = desc_;
     code = code_;
 }

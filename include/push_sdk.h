@@ -97,67 +97,30 @@ PS_EXPORT PushSDKRetCode PushSDKInitialize(uint32_t      uid,
 // @brief     去初始化，线程安全，可重复调用
 PS_EXPORT void PushSDKDestroy(void);
 
-// @brief     异步登录，线程安全，必须在SDK初始化之后调用，重复调用返回
-// PS_RET_ALREADY_LOGIN
-// @param[in] user 用户信息
-// @param[in] cb_func 回调函数
-// @param[in] cb_arg 回调函数args
-// @return    SDK API返回码
-PS_EXPORT PushSDKRetCode PushSDKLogin(PushSDKUserInfo* user,
-                                      PushSDKCallCB    cb_func,
-                                      void*            cb_arg);
-
 // @brief     同步登录，线程安全，必须在SDK初始化之后调用，重复调用返回
 // PS_RET_ALREADY_LOGIN
 // @param[in] user 用户信息
 // @return    SDK API返回码
-PS_EXPORT PushSDKRetCode PushSDKLoginSync(PushSDKUserInfo* user);
-
-// @brief     异步登出，线程安全，必须在SDK初始化之后调用，重复调用返回成功
-// @param[in] cb_func 回调函数
-// @param[in] cb_arg 回调函数args
-// @return    SDK API返回码
-PS_EXPORT PushSDKRetCode PushSDKLogout(PushSDKCallCB cb_func, void* cb_arg);
+PS_EXPORT PushSDKRetCode PushSDKLogin(PushSDKUserInfo* user);
 
 // @brief     同步登出，线程安全，必须在SDK初始化之后调用，重复调用返回成功
 // @return    SDK API返回码
-PS_EXPORT PushSDKRetCode PushSDKLogoutSync();
-
-// @brief
-// 异步进组，线程安全，必须在SDK初始化之后调用，重复进组返回PS_RET_ALREADY_JOIN_GROUP
-// @param[in] group 组信息
-// @param[in] cb_func 回调函数
-// @param[in] cb_arg 回调函数args
-// @return    SDK API返回码
-PS_EXPORT PushSDKRetCode PushSDKJoinGroup(PushSDKGroupInfo* group,
-                                          PushSDKCallCB     cb_func,
-                                          void*             cb_arg);
+PS_EXPORT PushSDKRetCode PushSDKLogout();
 
 // @brief
 // 同步进组，线程安全，必须在SDK初始化之后调用，重复进组返回PS_RET_ALREADY_JOIN_GROUP
 // @param[in] group 组信息
 // @return    SDK API返回码
-PS_EXPORT PushSDKRetCode PushSDKJoinGroupSync(PushSDKGroupInfo* group);
+PS_EXPORT PushSDKRetCode PushSDKJoinGroup(PushSDKGroupInfo* group);
 
 // @brief
-// 异步离组，线程安全，必须在SDK初始化之后调用，重复离组返回成功
-// @param[in] group 组信息
-// @param[in] cb_func 回调函数
-// @param[in] cb_arg 回调函数args
-// @return    SDK API返回码
-PS_EXPORT PushSDKRetCode PushSDKLeaveGroup(PushSDKGroupInfo* group,
-                                           PushSDKCallCB     cb_func,
-                                           void*             cb_arg);
-
-// @brief
-// 同步离组，线程安全，必须在SDK初始化之后调用，重复进组返回PS_RET_ALREADY_JOIN_GROUP
+// 同步离组，线程安全，必须在SDK初始化之后调用，重复离组返回成功
 // @param[in] group 组信息
 // @return    SDK API返回码
-PS_EXPORT PushSDKRetCode PushSDKLeaveGroupSync(PushSDKGroupInfo* group);
+PS_EXPORT PushSDKRetCode PushSDKLeaveGroup(PushSDKGroupInfo* group);
 
 // @brief
 // 同步调用返回PS_RET_CALL_FAILED的时候，立刻调用此函数可获得错误描述及返回码，线程安全，
-// 异步调用时请勿使用
 // @param[out] desc 服务器返回的错误描述，使用后需要手动free
 // @param[out] code 服务器返回的错误码
 PS_EXPORT void PushSDKGetError(char** desc, int* code);
