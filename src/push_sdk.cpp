@@ -226,7 +226,7 @@ PushSDKLeaveGroup(PushSDKGroupInfo* group, PushSDKCallCB cb_func, void* cb_arg)
     return ret;
 }
 
-PS_EXPORT PushSDKRetCode PushSDKLeaveGroupSync(PushSDKGroupInfo* group)
+PushSDKRetCode PushSDKLeaveGroupSync(PushSDKGroupInfo* group)
 {
     PushSDKRetCode ret = PS_RET_SUCCESS;
     if (!_initialized) {
@@ -241,4 +241,18 @@ PS_EXPORT PushSDKRetCode PushSDKLeaveGroupSync(PushSDKGroupInfo* group)
     }
 
     return ret;
+}
+
+void PushSDKGetError(char** desc, int* code)
+{
+    std::string s;
+    int         c;
+
+    edu::PushSDK::Instance()->GetLastError(s, c);
+
+    *desc = (char*)malloc(s.length() + 1);
+    memcpy(*desc, s.c_str(), s.length());
+    (*desc)[s.length()] = '\0';
+
+    *code = c;
 }

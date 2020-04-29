@@ -15,17 +15,18 @@ extern "C" {
 
 // Push SDK API返回码
 typedef enum {
-    PS_RET_SUCCESS            = 0,  // 成功
-    PS_RET_ALREADY_INIT       = 1,  // 重复初始化SDK
-    PS_RET_INIT_LOG_FAILED    = 2,  // 初始化日志库失败
-    PS_RET_SDK_UNINIT         = 3,  // SDK未初始化
-    PS_RET_ALREADY_LOGIN      = 4,  // SDK已经登录，请先登出
-    PS_RET_REQ_ENC_FAILED     = 5,  // 请求包序列化失败
-    PS_RET_USER_INFO_IS_NULL  = 6,  // 登录传入的用户信息为空
-    PS_RET_CB_IS_NULL         = 7,  // 回调函数为空
-    PS_RET_ALREADY_JOIN_GROUP = 8,  // 该组已经加入
-    PS_RET_UNLOGIN            = 9,  // 未登录
-    PS_RET_UNKNOW
+    PS_RET_SUCCESS            = 0,   // 成功
+    PS_RET_ALREADY_INIT       = 1,   // 重复初始化SDK
+    PS_RET_INIT_LOG_FAILED    = 2,   // 初始化日志库失败
+    PS_RET_SDK_UNINIT         = 3,   // SDK未初始化
+    PS_RET_ALREADY_LOGIN      = 4,   // SDK已经登录，请先登出
+    PS_RET_REQ_ENC_FAILED     = 5,   // 请求包序列化失败
+    PS_RET_USER_INFO_IS_NULL  = 6,   // 登录传入的用户信息为空
+    PS_RET_CB_IS_NULL         = 7,   // 回调函数为空
+    PS_RET_ALREADY_JOIN_GROUP = 8,   // 该组已经加入
+    PS_RET_UNLOGIN            = 9,   // 未登录
+    PS_RET_CALL_TIMEOUT       = 10,  // 调用超时
+    PS_RET_CALL_FAILED        = 11,  // 服务器返回失败
 } PushSDKRetCode;
 
 // Push SDK回调类型
@@ -51,8 +52,7 @@ typedef enum {
 // 网络连接状态
 typedef enum {
     PS_CONN_STATE_OK       = 0,  // 连接正常
-    PS_CONN_STATE_NO_READY = 1,  // 连接未就绪
-    PS_CONN_STATE_UNKNOW   = 2
+    PS_CONN_STATE_NO_READY = 1   // 连接未就绪
 } PushSDKConnState;
 
 typedef struct
@@ -155,42 +155,13 @@ PS_EXPORT PushSDKRetCode PushSDKLeaveGroup(PushSDKGroupInfo* group,
 // @return    SDK API返回码
 PS_EXPORT PushSDKRetCode PushSDKLeaveGroupSync(PushSDKGroupInfo* group);
 
-// typedef void* ps_hdl_t;
-// typedef void (*SmsTransLinkstatus_Callback)(PushSDKConnState state, void*
-// arg); typedef void (*SmsTransPushmsg_Callback)(const char* data,
-//                                          uint32_t    size,
-//                                          void*       arg);
-// extern "C" ps_hdl_t
-// SmsTransAddLinkStatusListener(SmsTransLinkstatus_Callback link_cb, void*
-// arg); extern "C" ps_hdl_t SmsTransAddUidMessageListener(const char*
-// servicename,
-//                               uint64_t                 uid,
-//                               SmsTransPushmsg_Callback msg_cb,
-//                               void*                    arg);
-// extern "C" ps_hdl_t
-//                 SmsTransAddGroupMessageListener(const char* servicename,
-//                                                 uint64_t grouptype, uint64_t
-//                                                 groupid,
-//                                                 SmsTransPushmsg_Callback
-//                                                 msg_cb, void* arg);
-// extern "C" bool SmsTransRemoveLinkStatusListener(ps_hdl_t);
-// extern "C" bool SmsTransRemoveUidMessageListener(ps_hdl_t);
-// extern "C" bool SmsTransRemoveGroupMessageListener(ps_hdl_t);
-
-// extern "C" PS_EXPORT PushSDKRetCode SmsTransStart(uint32_t uid,
-//                                                   uint64_t appid  = 0,
-//                                                   uint64_t appkey = 0);
-// extern "C" PS_EXPORT PushSDKRetCode SmsTransUserLogin(PushSDKUserInfo user,
-//                                                       PushSDKCallCB   cb,
-//                                                       void*           data);
-// extern "C" PS_EXPORT PushSDKRetCode
-// SmsTransUserJoinGroup(PushSDKGroupInfo group, PushSDKCallCB cb, void* data);
-// extern "C" PS_EXPORT PushSDKRetCode
-//                                     SmsTransUserLeaveGroup(PushSDKGroupInfo
-//                                     group, PushSDKCallCB cb, void* data);
-// extern "C" PS_EXPORT PushSDKRetCode SmsTransUserLogout(PushSDKUserInfo user,
-//                                                        PushSDKCallCB   cb,
-//                                                        void*           data);
+// @brief
+// 线程安全，同步调用返回PS_RET_CALL_FAILED的时候，立刻调用此函数可获得错误描述及返回码，
+// 异步调用时请勿使用
+// @param[out] desc 服务器返回的错误描述，使用后需要手动free
+// @param[out] code 服务器返回的错误码
+// @return    SDK API返回码
+PS_EXPORT void PushSDKGetError(char** desc, int* code);
 
 #ifdef __cplusplus
 }

@@ -34,6 +34,8 @@ struct CallContext
     std::condition_variable cond;
     std::atomic<bool>       call_done;
     PushSDKCBEvent          res;
+    std::string             desc;
+    int                     code;
 };
 
 class PushSDK : public Singleton<PushSDK>,
@@ -61,17 +63,20 @@ class PushSDK : public Singleton<PushSDK>,
                        PushSDKCallCB          cb_func = nullptr,
                        void*                  cb_args = nullptr);
 
-    virtual int  Logout(bool          is_sync = true,
-                        PushSDKCallCB cb_func = nullptr,
-                        void*         cb_args = nullptr);
-    virtual int  JoinGroup(const PushSDKGroupInfo& group,
+    virtual int Logout(bool          is_sync = true,
+                       PushSDKCallCB cb_func = nullptr,
+                       void*         cb_args = nullptr);
+    virtual int JoinGroup(const PushSDKGroupInfo& group,
+                          bool                    is_sync = true,
+                          PushSDKCallCB           cb_func = nullptr,
+                          void*                   cb_args = nullptr);
+    virtual int LeaveGroup(const PushSDKGroupInfo& group,
                            bool                    is_sync = true,
                            PushSDKCallCB           cb_func = nullptr,
                            void*                   cb_args = nullptr);
-    virtual int  LeaveGroup(const PushSDKGroupInfo& group,
-                            bool                    is_sync = true,
-                            PushSDKCallCB           cb_func = nullptr,
-                            void*                   cb_args = nullptr);
+
+    virtual void GetLastError(std::string& desc, int& code);
+
     virtual void OnChannelStateChange(ChannelState state) override;
     virtual void OnClientStatusChange(ClientStatus status) override;
     virtual void OnMessage(std::shared_ptr<PushData> msg) override;
@@ -99,7 +104,8 @@ class PushSDK : public Singleton<PushSDK>,
                    uint64_t                    gid   = 0);
     void notify(std::shared_ptr<CallContext> ctx,
                 PushSDKCBEvent               res,
-                const std::string&           desc);
+                const std::string&           desc,
+                int                          code);
 
     void relogin(bool need_to_lock = true);
     void rejoin_group(bool need_to_lock = true);
@@ -228,11 +234,12 @@ class PushSDK : public Singleton<PushSDK>,
 
         if (res.rescode() != RES_SUCCESS) {
             handle_failed_response<T>(res, ctx);
-            notify(ctx, PS_CB_EVENT_FAILED, res.errmsg().c_str());
+            notify(ctx, PS_CB_EVENT_FAILED, res.errmsg().c_str(),
+                   res.rescode());
         }
         else {
             handle_success_response<T>(ctx);
-            notify(ctx, PS_CB_EVENT_OK, res.errmsg().c_str());
+            notify(ctx, PS_CB_EVENT_OK, res.errmsg().c_str(), res.rescode());
         }
     }
 
@@ -251,6 +258,8 @@ class PushSDK : public Singleton<PushSDK>,
     std::condition_variable                         map_cond_;
     std::atomic<bool>                               run_;
     std::atomic<bool>                               logining_;
+    std::string                                     desc_;
+    int                                             code_;
     std::map<int64_t, std::shared_ptr<CallContext>> cb_map_;
     std::multimap<uint64_t, uint64_t>               groups_;
 };

@@ -20,6 +20,8 @@ PushSDK::PushSDK()
     thread_        = nullptr;
     run_           = false;
     logining_      = false;
+    desc_          = "ok";
+    code_          = RES_SUCCESS;
 }
 
 int PushSDK::Initialize(uint32_t      uid,
@@ -73,7 +75,7 @@ int PushSDK::Initialize(uint32_t      uid,
                 if (Utils::NanoSecondsToMilliSeconds(now - call_time) >=
                     Config::Instance()->call_timeout_interval) {
                     handle_timeout_response(ctx);
-                    notify(ctx, PS_CB_EVENT_TIMEOUT, "timeout");
+                    notify(ctx, PS_CB_EVENT_TIMEOUT, "timeout", RES_ETIMEOUT);
                     cb_map_.erase(it);
                 }
                 else {
@@ -292,6 +294,14 @@ int PushSDK::LeaveGroup(const PushSDKGroupInfo& group,
     return ret;
 }
 
+void PushSDK::GetLastError(std::string& desc, int& code)
+{
+    std::unique_lock<std::mutex> lock(user_mux_);
+
+    desc = desc_;
+    code = code_;
+}
+
 void PushSDK::OnMessage(std::shared_ptr<PushData> msg)
 {
     log_d("recv msg. uri={}", stream_uri_to_string(msg->uri()));
@@ -313,11 +323,7 @@ void PushSDK::OnMessage(std::shared_ptr<PushData> msg)
             break;
         }
         case StreamURI::PPushGateWayNotifyToCloseURI: {
-            user_mux_.lock();
-            user_.release();
-            user_ = nullptr;
-            user_mux_.unlock();
-
+            handle_notify_to_close();
             break;
         }
         default: break;
@@ -485,16 +491,31 @@ int PushSDK::call_sync(PushSDKCBType               type,
                            std::chrono::milliseconds(
                                Config::Instance()->call_timeout_interval * 2));
     }
-    return ctx->res;
+
+    if (ctx->res == PS_CB_EVENT_OK) {
+        desc_ = "ok";
+        code_ = RES_SUCCESS;
+        return PS_RET_SUCCESS;
+    }
+    else {
+        desc_ = ctx->desc;
+        code_ = ctx->code;
+        if (ctx->res == PS_CB_EVENT_TIMEOUT) {
+            return PS_RET_CALL_TIMEOUT;
+        }
+        return PS_RET_CALL_FAILED;
+    }
 }
 
 void PushSDK::notify(std::shared_ptr<CallContext> ctx,
                      PushSDKCBEvent               res,
-                     const std::string&           desc)
+                     const std::string&           desc,
+                     int                          code)
 {
     if (!ctx->cb_func && !ctx->cb_args) {
-        ctx->res = res;
-
+        ctx->res       = res;
+        ctx->desc      = desc;
+        ctx->code      = code;
         ctx->call_done = true;
         ctx->cond.notify_all();
     }
@@ -514,8 +535,8 @@ void PushSDK::handle_notify_to_close()
     user_ = nullptr;
     user_lock.unlock();
 
-    event_cb_(PS_CB_TYPE_LOGIN, PS_CB_EVENT_LOGIN_EXPIRE, "user be kicked by the server",
-              event_cb_args_);
+    event_cb_(PS_CB_TYPE_LOGIN, PS_CB_EVENT_USER_KICKED_BY_SRV,
+              "user be kicked by the server", event_cb_args_);
 }
 
 void PushSDK::handle_timeout_response(std::shared_ptr<CallContext> ctx)
