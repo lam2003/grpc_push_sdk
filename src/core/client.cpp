@@ -186,7 +186,7 @@ void Client::Send(std::shared_ptr<PushRegReq> req)
 void Client::CleanQueue()
 {
     std::unique_lock<std::mutex> lock(mux_);
-    while(!queue_.empty()){
+    while (!queue_.empty()) {
         queue_.pop();
     }
 }
@@ -348,6 +348,7 @@ void Client::handle_cq_timeout()
 
     std::unique_lock<std::mutex> lock(mux_);
     if (client_status_ == ClientStatus::READY_TO_WRITE && !queue_.empty()) {
+        check_and_notify_client_status_change(ClientStatus::WAIT_WRITE_DONE);
         std::shared_ptr<PushRegReq> req = queue_.front();
         queue_.pop();
         lock.unlock();

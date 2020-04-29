@@ -15,14 +15,25 @@ namespace edu {
 
 struct CallContext
 {
+    CallContext()
+    {
+        call_done = false;
+        res       = PS_CB_EVENT_OK;
+    }
+
     PushSDKCBType type;
     PushSDKCallCB cb_func;
     void*         cb_args;
 
-    //记录进组信息
     uint64_t gtype;
     uint64_t gid;
     bool     is_retry;
+
+    // 同步接口使用
+    std::mutex              mux;
+    std::condition_variable cond;
+    std::atomic<bool>       call_done;
+    PushSDKCBEvent          res;
 };
 
 class PushSDK : public Singleton<PushSDK>,
@@ -45,15 +56,22 @@ class PushSDK : public Singleton<PushSDK>,
                             PushSDKCallCB cb_func,
                             void*         cb_args);
     virtual void Destroy();
-    virtual int
-                 Login(const PushSDKUserInfo& user, PushSDKCallCB cb_func, void* cb_args);
-    virtual int  Logout(PushSDKCallCB cb_func, void* cb_args);
+    virtual int  Login(const PushSDKUserInfo& user,
+                       bool                   is_sync = true,
+                       PushSDKCallCB          cb_func = nullptr,
+                       void*                  cb_args = nullptr);
+
+    virtual int  Logout(bool          is_sync = true,
+                        PushSDKCallCB cb_func = nullptr,
+                        void*         cb_args = nullptr);
     virtual int  JoinGroup(const PushSDKGroupInfo& group,
-                           PushSDKCallCB           cb_func,
-                           void*                   cb_args);
+                           bool                    is_sync = true,
+                           PushSDKCallCB           cb_func = nullptr,
+                           void*                   cb_args = nullptr);
     virtual int  LeaveGroup(const PushSDKGroupInfo& group,
-                            PushSDKCallCB           cb_func,
-                            void*                   cb_args);
+                            bool                    is_sync = true,
+                            PushSDKCallCB           cb_func = nullptr,
+                            void*                   cb_args = nullptr);
     virtual void OnChannelStateChange(ChannelState state) override;
     virtual void OnClientStatusChange(ClientStatus status) override;
     virtual void OnMessage(std::shared_ptr<PushData> msg) override;
@@ -73,10 +91,21 @@ class PushSDK : public Singleton<PushSDK>,
               uint64_t                    gid          = 0,
               bool                        is_retry     = false,
               bool                        need_to_lock = true);
+
+    int  call_sync(PushSDKCBType               type,
+                   std::shared_ptr<PushRegReq> msg,
+                   int64_t                     now,
+                   uint64_t                    gtype = 0,
+                   uint64_t                    gid   = 0);
+    void notify(std::shared_ptr<CallContext> ctx,
+                PushSDKCBEvent               res,
+                const std::string&           desc);
+
     void relogin(bool need_to_lock = true);
     void rejoin_group(bool need_to_lock = true);
 
     void handle_timeout_response(std::shared_ptr<CallContext> ctx);
+    void handle_notify_to_close();
 
     template <typename T>
     void handle_failed_response(const T& res, std::shared_ptr<CallContext> ctx)
@@ -176,7 +205,7 @@ class PushSDK : public Singleton<PushSDK>,
         T res;
         if (!res.ParseFromString(msg->msgdata())) {
             log_e("decode packet failed");
-            event_cb_(PS_CB_INNER_ERR, PS_CALL_RES_DEC_FAILED,
+            event_cb_(PS_CB_TYPE_INNER_ERR, PS_CB_EVENT_DEC_FAILED,
                       "decode packet failed", event_cb_args_);
             return;
         }
@@ -197,17 +226,13 @@ class PushSDK : public Singleton<PushSDK>,
             }
         }
 
-        PushSDKCBType type    = ctx->type;
-        PushSDKCallCB cb_func = ctx->cb_func;
-        void*         cb_args = ctx->cb_args;
-
         if (res.rescode() != RES_SUCCESS) {
             handle_failed_response<T>(res, ctx);
-            cb_func(type, PS_CALL_RES_FAILED, res.errmsg().c_str(), cb_args);
+            notify(ctx, PS_CB_EVENT_FAILED, res.errmsg().c_str());
         }
         else {
             handle_success_response<T>(ctx);
-            cb_func(type, PS_CALL_RES_OK, res.errmsg().c_str(), cb_args);
+            notify(ctx, PS_CB_EVENT_OK, res.errmsg().c_str());
         }
     }
 

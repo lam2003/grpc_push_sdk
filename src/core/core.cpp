@@ -69,13 +69,11 @@ int PushSDK::Initialize(uint32_t      uid,
 
                 int64_t                      call_time = it->first;
                 std::shared_ptr<CallContext> ctx       = it->second;
-                PushSDKCBType                type      = ctx->type;
 
                 if (Utils::NanoSecondsToMilliSeconds(now - call_time) >=
                     Config::Instance()->call_timeout_interval) {
                     handle_timeout_response(ctx);
-                    ctx->cb_func(type, PS_CALL_TIMEOUT, "timeout",
-                                 ctx->cb_args);
+                    notify(ctx, PS_CB_EVENT_TIMEOUT, "timeout");
                     cb_map_.erase(it);
                 }
                 else {
@@ -92,8 +90,6 @@ int PushSDK::Initialize(uint32_t      uid,
 void PushSDK::OnChannelStateChange(ChannelState state)
 {
     log_d("channel state change to {}", channel_state_to_string(state));
-
-    if (state == ChannelState::NO_READY) {}
 }
 
 void PushSDK::OnClientStatusChange(ClientStatus status)
@@ -134,6 +130,7 @@ PushSDK::~PushSDK()
 }
 
 int PushSDK::Login(const PushSDKUserInfo& user,
+                   bool                   is_sync,
                    PushSDKCallCB          cb_func,
                    void*                  cb_args)
 {
@@ -167,12 +164,18 @@ int PushSDK::Login(const PushSDKUserInfo& user,
 
     logining_ = true;
 
-    call(PS_CB_LOGIN, req, now, cb_func, cb_args);
+    if (is_sync) {
+        user_lock.unlock();
+        call_sync(PS_CB_TYPE_LOGIN, req, now);
+    }
+    else {
+        call(PS_CB_TYPE_LOGIN, req, now, cb_func, cb_args);
+    }
 
     return ret;
 }
 
-int PushSDK::Logout(PushSDKCallCB cb_func, void* cb_args)
+int PushSDK::Logout(bool is_sync, PushSDKCallCB cb_func, void* cb_args)
 {
     int ret = PS_RET_SUCCESS;
 
@@ -196,12 +199,19 @@ int PushSDK::Logout(PushSDKCallCB cb_func, void* cb_args)
     user_.release();
     user_ = nullptr;
 
-    call(PS_CB_LOGOUT, req, now, cb_func, cb_args);
+    if (is_sync) {
+        user_lock.unlock();
+        call_sync(PS_CB_TYPE_LOGOUT, req, now);
+    }
+    else {
+        call(PS_CB_TYPE_LOGOUT, req, now, cb_func, cb_args);
+    }
 
     return ret;
 }
 
 int PushSDK::JoinGroup(const PushSDKGroupInfo& group,
+                       bool                    is_sync,
                        PushSDKCallCB           cb_func,
                        void*                   cb_args)
 {
@@ -231,12 +241,20 @@ int PushSDK::JoinGroup(const PushSDKGroupInfo& group,
 
     groups_.insert(std::make_pair(group.gtype, group.gid));
 
-    call(PS_CB_JOIN_GROUP, req, now, cb_func, cb_args, group.gtype, group.gid);
+    if (is_sync) {
+        user_lock.unlock();
+        call_sync(PS_CB_TYPE_JOIN_GROUP, req, now, group.gtype, group.gid);
+    }
+    else {
+        call(PS_CB_TYPE_JOIN_GROUP, req, now, cb_func, cb_args, group.gtype,
+             group.gid);
+    }
 
     return ret;
 }
 
 int PushSDK::LeaveGroup(const PushSDKGroupInfo& group,
+                        bool                    is_sync,
                         PushSDKCallCB           cb_func,
                         void*                   cb_args)
 {
@@ -262,7 +280,14 @@ int PushSDK::LeaveGroup(const PushSDKGroupInfo& group,
         return ret;
     }
 
-    call(PS_CB_LEAVE_GROUP, req, now, cb_func, cb_args, group.gtype, group.gid);
+    if (is_sync) {
+        user_lock.unlock();
+        call_sync(PS_CB_TYPE_LEAVE_GROUP, req, now, group.gtype, group.gid);
+    }
+    else {
+        call(PS_CB_TYPE_LEAVE_GROUP, req, now, cb_func, cb_args, group.gtype,
+             group.gid);
+    }
 
     return ret;
 }
@@ -287,6 +312,14 @@ void PushSDK::OnMessage(std::shared_ptr<PushData> msg)
             handle_response<LeaveGroupResponse>(msg);
             break;
         }
+        case StreamURI::PPushGateWayNotifyToCloseURI: {
+            user_mux_.lock();
+            user_.release();
+            user_ = nullptr;
+            user_mux_.unlock();
+
+            break;
+        }
         default: break;
     }
 }
@@ -308,7 +341,7 @@ void PushSDK::relogin(bool need_to_lock)
         user_.reset(nullptr);
         user_lock.unlock();
         log_e("encode login request packet failed");
-        event_cb_(PS_CB_LOGIN, PS_CALL_REQ_ENC_FAILED,
+        event_cb_(PS_CB_TYPE_LOGIN, PS_CB_EVENT_REQ_ENC_FAILED,
                   "inner relogin: LoginRequest packet serialize failed. you "
                   "should relogin manually",
                   event_cb_args_);
@@ -316,7 +349,7 @@ void PushSDK::relogin(bool need_to_lock)
     }
 
     logining_ = true;
-    call(PS_CB_LOGIN, req, now, event_cb_, event_cb_args_, 0, 0, true,
+    call(PS_CB_TYPE_LOGIN, req, now, event_cb_, event_cb_args_, 0, 0, true,
          need_to_lock);
 }
 
@@ -338,7 +371,7 @@ void PushSDK::rejoin_group(bool need_to_lock)
             log_w("remove all group infos. dump={}", dump_str);
         }
         user_lock.unlock();
-        event_cb_(PS_CB_JOIN_GROUP, PS_CALL_REQ_ENC_FAILED,
+        event_cb_(PS_CB_TYPE_JOIN_GROUP, PS_CB_EVENT_REQ_ENC_FAILED,
                   "inner rejoin group : JoinGroupRequest packet serialize "
                   "failed. you "
                   "should rejoin all group manually",
@@ -346,7 +379,7 @@ void PushSDK::rejoin_group(bool need_to_lock)
         return;
     }
 
-    call(PS_CB_JOIN_GROUP, req, now, event_cb_, event_cb_args_, 0, 0, true,
+    call(PS_CB_TYPE_JOIN_GROUP, req, now, event_cb_, event_cb_args_, 0, 0, true,
          need_to_lock);
 }
 
@@ -426,10 +459,69 @@ void PushSDK::call(PushSDKCBType               type,
     client_->Send(msg);
 }
 
+int PushSDK::call_sync(PushSDKCBType               type,
+                       std::shared_ptr<PushRegReq> msg,
+                       int64_t                     now,
+                       uint64_t                    gtype,
+                       uint64_t                    gid)
+{
+    std::shared_ptr<CallContext> ctx = std::make_shared<CallContext>();
+    ctx->cb_func                     = nullptr;
+    ctx->cb_args                     = nullptr;
+    ctx->type                        = type;
+    ctx->gtype                       = gtype;
+    ctx->gid                         = gid;
+    ctx->is_retry                    = false;
+
+    map_mux_.lock();
+    cb_map_[now] = ctx;
+    map_mux_.unlock();
+
+    client_->Send(msg);
+
+    std::unique_lock<std::mutex> lock(ctx->mux);
+    if (!ctx->call_done) {
+        ctx->cond.wait_for(lock,
+                           std::chrono::milliseconds(
+                               Config::Instance()->call_timeout_interval * 2));
+    }
+    return ctx->res;
+}
+
+void PushSDK::notify(std::shared_ptr<CallContext> ctx,
+                     PushSDKCBEvent               res,
+                     const std::string&           desc)
+{
+    if (!ctx->cb_func && !ctx->cb_args) {
+        ctx->res = res;
+
+        ctx->call_done = true;
+        ctx->cond.notify_all();
+    }
+    else {
+        ctx->cb_func(ctx->type, res, desc.c_str(), ctx->cb_args);
+    }
+}
+
+void PushSDK::handle_notify_to_close()
+{
+    std::unique_lock<std::mutex> user_lock(user_mux_);
+    if (!user_) {
+        return;
+    }
+
+    user_.release();
+    user_ = nullptr;
+    user_lock.unlock();
+
+    event_cb_(PS_CB_TYPE_LOGIN, PS_CB_EVENT_LOGIN_EXPIRE, "user be kicked by the server",
+              event_cb_args_);
+}
+
 void PushSDK::handle_timeout_response(std::shared_ptr<CallContext> ctx)
 {
     switch (ctx->type) {
-        case PS_CB_LOGIN: {
+        case PS_CB_TYPE_LOGIN: {
             logining_ = false;
             log_e("login timeout");
             if (ctx->is_retry) {
@@ -438,7 +530,7 @@ void PushSDK::handle_timeout_response(std::shared_ptr<CallContext> ctx)
             break;
         }
 
-        case PS_CB_JOIN_GROUP: {
+        case PS_CB_TYPE_JOIN_GROUP: {
             log_e("join group timeout");
             if (ctx->is_retry) {
                 rejoin_group(false);
@@ -446,12 +538,12 @@ void PushSDK::handle_timeout_response(std::shared_ptr<CallContext> ctx)
             break;
         }
 
-        case PS_CB_LOGOUT: {
+        case PS_CB_TYPE_LOGOUT: {
             log_e("logout timeout");
             break;
         }
 
-        case PS_CB_LEAVE_GROUP: {
+        case PS_CB_TYPE_LEAVE_GROUP: {
             log_e("leave group timeout");
             break;
         }

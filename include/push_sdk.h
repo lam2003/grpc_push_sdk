@@ -30,22 +30,23 @@ typedef enum {
 
 // Push SDK回调类型
 typedef enum {
-    PS_CB_LOGIN       = 0,  // 登录回调
-    PS_CB_LOGOUT      = 1,  // 登出回调
-    PS_CB_JOIN_GROUP  = 2,  // 加组回调
-    PS_CB_LEAVE_GROUP = 3,  // 离组回调
-    PS_CB_INNER_ERR   = 4   // 内部错误回调
+    PS_CB_TYPE_LOGIN       = 0,  // 登录回调
+    PS_CB_TYPE_LOGOUT      = 1,  // 登出回调
+    PS_CB_TYPE_JOIN_GROUP  = 2,  // 加组回调
+    PS_CB_TYPE_LEAVE_GROUP = 3,  // 离组回调
+    PS_CB_TYPE_INNER_ERR   = 4   // 内部错误回调
 } PushSDKCBType;
 
-// GRPC调用返回码
+// 回调事件返回码
 typedef enum {
-    PS_CALL_RES_OK         = 0,  // 成功
-    PS_CALL_RES_FAILED     = 1,  // 失败
-    PS_CALL_TIMEOUT        = 2,  // 调用超时
-    PS_CALL_REQ_ENC_FAILED = 3,  // 序列化请求包失败
-    PS_CALL_RES_DEC_FAILED = 4   // 去序列化回复包失败
+    PS_CB_EVENT_OK                 = 0,  // 成功
+    PS_CB_EVENT_FAILED             = 1,  // 失败
+    PS_CB_EVENT_TIMEOUT            = 2,  // 调用超时
+    PS_CB_EVENT_REQ_ENC_FAILED     = 3,  // 序列化请求包失败
+    PS_CB_EVENT_DEC_FAILED         = 4,  // 去序列化回复包失败
+    PS_CB_EVENT_USER_KICKED_BY_SRV = 5   // 登录后被踢下线
 
-} PushSDKCallRes;
+} PushSDKCBEvent;
 
 // 网络连接状态
 typedef enum {
@@ -74,7 +75,7 @@ typedef struct
 @param [in] data 自定义指针
 */
 typedef void (*PushSDKCallCB)(PushSDKCBType  type,
-                              PushSDKCallRes res,
+                              PushSDKCBEvent res,
                               const char*    desc,
                               void*          data);
 
@@ -96,7 +97,7 @@ PS_EXPORT PushSDKRetCode PushSDKInitialize(uint32_t      uid,
 // @brief     去初始化，线程安全，可重复调用
 PS_EXPORT void PushSDKDestroy(void);
 
-// @brief     登录，线程安全，必须在SDK初始化之后调用，重复调用返回
+// @brief     异步登录，线程安全，必须在SDK初始化之后调用，重复调用返回
 // PS_RET_ALREADY_LOGIN
 // @param[in] user 用户信息
 // @param[in] cb_func 回调函数
@@ -106,14 +107,24 @@ PS_EXPORT PushSDKRetCode PushSDKLogin(PushSDKUserInfo* user,
                                       PushSDKCallCB    cb_func,
                                       void*            cb_arg);
 
-// @brief     登出，线程安全，必须在SDK初始化之后调用，重复调用返回成功
+// @brief     同步登录，线程安全，必须在SDK初始化之后调用，重复调用返回
+// PS_RET_ALREADY_LOGIN
+// @param[in] user 用户信息
+// @return    SDK API返回码
+PS_EXPORT PushSDKRetCode PushSDKLoginSync(PushSDKUserInfo* user);
+
+// @brief     异步登出，线程安全，必须在SDK初始化之后调用，重复调用返回成功
 // @param[in] cb_func 回调函数
 // @param[in] cb_arg 回调函数args
 // @return    SDK API返回码
 PS_EXPORT PushSDKRetCode PushSDKLogout(PushSDKCallCB cb_func, void* cb_arg);
 
+// @brief     同步登出，线程安全，必须在SDK初始化之后调用，重复调用返回成功
+// @return    SDK API返回码
+PS_EXPORT PushSDKRetCode PushSDKLogoutSync();
+
 // @brief
-// 进组，线程安全，必须在SDK初始化之后调用，重复进组返回PS_RET_ALREADY_JOIN_GROUP
+// 异步进组，线程安全，必须在SDK初始化之后调用，重复进组返回PS_RET_ALREADY_JOIN_GROUP
 // @param[in] group 组信息
 // @param[in] cb_func 回调函数
 // @param[in] cb_arg 回调函数args
@@ -123,7 +134,13 @@ PS_EXPORT PushSDKRetCode PushSDKJoinGroup(PushSDKGroupInfo* group,
                                           void*             cb_arg);
 
 // @brief
-// 离组，线程安全，必须在SDK初始化之后调用，重复离组返回成功
+// 同步进组，线程安全，必须在SDK初始化之后调用，重复进组返回PS_RET_ALREADY_JOIN_GROUP
+// @param[in] group 组信息
+// @return    SDK API返回码
+PS_EXPORT PushSDKRetCode PushSDKJoinGroupSync(PushSDKGroupInfo* group);
+
+// @brief
+// 异步离组，线程安全，必须在SDK初始化之后调用，重复离组返回成功
 // @param[in] group 组信息
 // @param[in] cb_func 回调函数
 // @param[in] cb_arg 回调函数args
@@ -131,6 +148,12 @@ PS_EXPORT PushSDKRetCode PushSDKJoinGroup(PushSDKGroupInfo* group,
 PS_EXPORT PushSDKRetCode PushSDKLeaveGroup(PushSDKGroupInfo* group,
                                            PushSDKCallCB     cb_func,
                                            void*             cb_arg);
+
+// @brief
+// 同步离组，线程安全，必须在SDK初始化之后调用，重复进组返回PS_RET_ALREADY_JOIN_GROUP
+// @param[in] group 组信息
+// @return    SDK API返回码
+PS_EXPORT PushSDKRetCode PushSDKLeaveGroupSync(PushSDKGroupInfo* group);
 
 // typedef void* ps_hdl_t;
 // typedef void (*SmsTransLinkstatus_Callback)(PushSDKConnState state, void*
