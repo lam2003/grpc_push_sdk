@@ -18,7 +18,11 @@ file(
     "${_include_root_path}/*.h*"
 )
 
-add_library(push_sdk STATIC ${_source_list} ${_public_headers_list})
+if(PS_BUILD_SHARED)
+    add_library(push_sdk SHARED ${_source_list} ${_public_headers_list})
+else()
+    add_library(push_sdk STATIC ${_source_list} ${_public_headers_list})
+endif()
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
     target_compile_options(push_sdk PRIVATE /MP)

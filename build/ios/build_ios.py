@@ -35,6 +35,9 @@ for arch in arch_list:
     libs_dir = os.path.abspath('../../out/lib/ios/'+BUILD_MODE + '_'+arch)
     set_build_folder_name(BUILD_MODE + '_' + arch)
 
+    print('Architecture:', arch)
+    print('Build mode:', BUILD_MODE)
+
     # generate projects
     cmake_cmd = ['cmake',
                  '-B',
@@ -48,7 +51,7 @@ for arch in arch_list:
                  '-DCARES_INSTALL=OFF',
                  '-DENABLE_BITCODE=FALSE',
                  '-DENABLE_ARC=TRUE',
-                 '-DBUILD_MODE=' + BUILD_MODE,
+                 '-DPS_BUILD_MODE=' + BUILD_MODE,
                  '-G' + generator,
                  '../..'
                  ]

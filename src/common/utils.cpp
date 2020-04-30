@@ -1,6 +1,11 @@
 #include <chrono>
 #include <common/utils.h>
 
+#ifdef _MSC_VER
+#define strcasecmp stricmp
+#define strncasecmp  strnicmp
+#endif
+
 namespace edu {
 
 std::string Utils::GetSystemTime(const std::string& format)
@@ -27,7 +32,7 @@ LOG_LEVEL Utils::StrToLogLevel(const std::string& s)
         return LOG_LEVEL::WARN;
     }
     else if (strcasecmp(s.c_str(), "error") == 0) {
-        return LOG_LEVEL::ERROR;
+        return LOG_LEVEL::ERROR2;
     }
     else if (strcasecmp(s.c_str(), "critical") == 0) {
         return LOG_LEVEL::CRITICAL;
