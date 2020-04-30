@@ -19,6 +19,8 @@ struct CallContext
     {
         call_done = false;
         res       = PS_CB_EVENT_OK;
+        desc      = "timeout";
+        code      = RES_ETIMEOUT;
     }
 
     PushSDKCBType  type;
