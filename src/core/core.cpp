@@ -106,6 +106,42 @@ void PushSDK::OnClientStatusChange(ClientStatus status)
     }
 }
 
+void PushSDK::OnMessage(std::shared_ptr<PushData> msg)
+{
+    log_d("recv msg. uri={}", stream_uri_to_string(msg->uri()));
+    switch (msg->uri()) {
+        case StreamURI::PPushGateWayLoginResURI: {
+            handle_response<LoginResponse>(msg);
+            break;
+        }
+        case StreamURI::PPushGateWayLogoutResURI: {
+            handle_response<LogoutResponse>(msg);
+            break;
+        }
+        case StreamURI::PPushGateWayJoinGroupResURI: {
+            handle_response<JoinGroupResponse>(msg);
+            break;
+        }
+        case StreamURI::PPushGateWayLeaveGroupResURI: {
+            handle_response<LeaveGroupResponse>(msg);
+            break;
+        }
+        case StreamURI::PPushGateWayNotifyToCloseURI: {
+            handle_notify_to_close();
+            break;
+        }
+        case StreamURI::PPushGateWayPushDataByGroupURI: {
+            handle_group_message(msg);
+            break;
+        }
+        case StreamURI::PPushGateWayPushDataByUidURI: {
+            handle_user_message(msg);
+            break;
+        }
+        default: break;
+    }
+}
+
 void PushSDK::Destroy()
 {
     if (!init_) {
@@ -282,6 +318,8 @@ int PushSDK::LeaveGroup(const PushSDKGroupInfo& group,
         return ret;
     }
 
+    remove_group_info(group.gtype, group.gid);
+
     if (is_sync) {
         user_lock.unlock();
         call_sync(PS_CB_TYPE_LEAVE_GROUP, req, now, group.gtype, group.gid);
@@ -298,34 +336,6 @@ void PushSDK::GetLastError(std::string& desc, int& code)
 {
     desc = desc_;
     code = code_;
-}
-
-void PushSDK::OnMessage(std::shared_ptr<PushData> msg)
-{
-    log_d("recv msg. uri={}", stream_uri_to_string(msg->uri()));
-    switch (msg->uri()) {
-        case StreamURI::PPushGateWayLoginResURI: {
-            handle_response<LoginResponse>(msg);
-            break;
-        }
-        case StreamURI::PPushGateWayLogoutResURI: {
-            handle_response<LogoutResponse>(msg);
-            break;
-        }
-        case StreamURI::PPushGateWayJoinGroupResURI: {
-            handle_response<JoinGroupResponse>(msg);
-            break;
-        }
-        case StreamURI::PPushGateWayLeaveGroupResURI: {
-            handle_response<LeaveGroupResponse>(msg);
-            break;
-        }
-        case StreamURI::PPushGateWayNotifyToCloseURI: {
-            handle_notify_to_close();
-            break;
-        }
-        default: break;
-    }
 }
 
 void PushSDK::relogin(bool need_to_lock)
@@ -407,6 +417,7 @@ void PushSDK::remove_group_info(uint64_t gtype, uint64_t gid)
     for (auto p = sit.first; p != sit.second; p++) {
         if (p->second == gid) {
             groups_.erase(p);
+            break;
         }
     }
 }
@@ -535,6 +546,26 @@ void PushSDK::handle_notify_to_close()
 
     event_cb_(PS_CB_TYPE_LOGIN, PS_CB_EVENT_USER_KICKED_BY_SRV,
               "user be kicked by the server", event_cb_args_);
+}
+
+void PushSDK::handle_group_message(std::shared_ptr<PushData> msg)
+{
+    std::unique_lock<std::mutex> user_lock(user_mux_);
+    if (!is_group_info_exists(msg->grouptype(), msg->groupid())) {
+        // 用户已经退组，由于网络原因服务器没收到，这里再次向服务器发送退组信息
+        client_->Send(
+            make_leave_group_packet(uid_, msg->grouptype(), msg->groupid(), 0));
+        return;
+    }
+}
+void PushSDK::handle_user_message(std::shared_ptr<PushData> msg)
+{
+    std::unique_lock<std::mutex> user_lock(user_mux_);
+    if (!user_) {
+        // 用户已经登出，由于网络原因服务器没收到，这里再次向服务器发送登出信息
+        client_->Send(make_logout_packet(uid_, appid_, appkey_, 0));
+        return;
+    }
 }
 
 void PushSDK::handle_timeout_response(std::shared_ptr<CallContext> ctx)

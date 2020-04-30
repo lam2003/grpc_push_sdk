@@ -112,6 +112,8 @@ class PushSDK : public Singleton<PushSDK>,
 
     void handle_timeout_response(std::shared_ptr<CallContext> ctx);
     void handle_notify_to_close();
+    void handle_group_message(std::shared_ptr<PushData> msg);
+    void handle_user_message(std::shared_ptr<PushData> msg);
 
     template <typename T>
     void handle_failed_response(const T& res, std::shared_ptr<CallContext> ctx)
@@ -197,9 +199,6 @@ class PushSDK : public Singleton<PushSDK>,
         else if (std::is_same<T, LeaveGroupResponse>::value) {
             log_i("leave group successfully. gtype={}, gid={}", ctx->gtype,
                   ctx->gid);
-            user_mux_.lock();
-            remove_group_info(ctx->gid, ctx->gtype);
-            user_mux_.unlock();
         }
         else {
             // ignore
