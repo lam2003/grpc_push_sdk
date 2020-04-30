@@ -158,3 +158,47 @@ void PushSDKGetError(char** desc, int* code)
 
     *code = c;
 }
+
+PS_HANDLER PushSDKCreateHandler()
+{
+    return edu::PushSDK::Instance()->CreateHandler();
+}
+
+void PushSDKDestroyHandler(PS_HANDLER handler)
+{
+    if (!handler) {
+        return;
+    }
+
+    edu::PushSDK::Instance()->DestroyHandler(
+        reinterpret_cast<edu::Handler*>(handler));
+}
+
+void PushSDKAddConnStateCB(PS_HANDLER handler, PushSDKConnStateCB state_cb)
+{
+    if (!handler || !state_cb) {
+        return;
+    }
+
+    edu::PushSDK::Instance()->AddConnStateCBToHandler(
+        reinterpret_cast<edu::Handler*>(handler), state_cb);
+}
+
+void PushSDKAddUserMsgCB(PS_HANDLER handler, PushSDKUserMsgCB msg_cb)
+{
+    if (!handler || !msg_cb) {
+        return;
+    }
+
+    edu::PushSDK::Instance()->AddUserMsgCBToHandler(
+        reinterpret_cast<edu::Handler*>(handler), msg_cb);
+}
+
+void PushSDKAddGroupMsgCB(PS_HANDLER handler, PushSDKGroupMsgCB msg_cb)
+{
+    if (!handler || !msg_cb) {
+        return;
+    }
+    edu::PushSDK::Instance()->AddGroupMsgCBToHandler(
+        reinterpret_cast<edu::Handler*>(handler), msg_cb);
+}

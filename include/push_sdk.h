@@ -79,7 +79,7 @@ typedef void (*PushSDKEventCB)(PushSDKCBType  type,
                                const char*    desc,
                                void*          data);
 
-typedef void* PS_MSG_HANDLER;
+typedef void* PS_HANDLER;
 
 /**
 @brief SDK用户消息回调
@@ -99,6 +99,12 @@ typedef void (*PushSDKGroupMsgCB)(uint64_t    from_gtype,
                                   uint64_t    from_gid,
                                   const char* data,
                                   int         len);
+
+/**
+@brief SDK连接状态回调
+@param [in] state 连接状态
+*/
+typedef void (*PushSDKConnStateCB)(PushSDKConnState state);
 
 // @brief     初始化，必须最先调用，重复调用返 PS_RET_ALREADY_INIT，线程安全
 // @param[in] uid 用户ID，SDK初始化时用于路由
@@ -147,28 +153,34 @@ PS_EXPORT PushSDKRetCode PushSDKLeaveGroup(PushSDKGroupInfo* group);
 PS_EXPORT void PushSDKGetError(char** desc, int* code);
 
 // @brief
-// 生成消息处理器句柄，线程安全
-// @return 消息处理器句柄，用于添加消息回调函数
-PS_EXPORT PS_MSG_HANDLER PushSDKCreateMsgHandler();
+// 生成句柄，线程安全
+// @return 句柄，用于添加回调函数
+PS_EXPORT PS_HANDLER PushSDKCreateHandler();
 
 // @brief
-// 摧毁消息处理器句柄，线程安全
-// @param[in] handle 消息处理器句柄
-PS_EXPORT void PushSDKDestroyMsgHandler(PS_MSG_HANDLER handler);
+// 摧毁句柄，线程安全
+// @param[in] handle 句柄
+PS_EXPORT void PushSDKDestroyHandler(PS_HANDLER handler);
 
 // @brief
-// 添加用户消息处理器
-// @param[in] handler 消息处理器句柄
+// 添加连接状态回调
+// @param[in] handler 句柄
+// @param[in] state_cb 连接状态回调
+PS_EXPORT void PushSDKAddConnStateCB(PS_HANDLER         handler,
+                                     PushSDKConnStateCB state_cb);
+
+// @brief
+// 添加用户消息回调
+// @param[in] handler 句柄
 // @param[in] msg_cb 用户消息回调
-PS_EXPORT void PushSDKAddUserMsgHandler(PS_MSG_HANDLER   handler,
-                                        PushSDKUserMsgCB msg_cb);
+PS_EXPORT void PushSDKAddUserMsgCB(PS_HANDLER handler, PushSDKUserMsgCB msg_cb);
 
 // @brief
-// 添加组消息处理器
-// @param[in] handler 消息处理器句柄
+// 添加组消息回调
+// @param[in] handler 句柄
 // @param[in] msg_cb 组消息回调
-PS_EXPORT void PushSDKAddGroupMsgHandler(PS_MSG_HANDLER    handler,
-                                         PushSDKGroupMsgCB msg_cb);
+PS_EXPORT void PushSDKAddGroupMsgCB(PS_HANDLER        handler,
+                                    PushSDKGroupMsgCB msg_cb);
 
 #ifdef __cplusplus
 }

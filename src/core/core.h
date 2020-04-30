@@ -13,6 +13,20 @@
 
 namespace edu {
 
+struct Handler
+{
+    Handler()
+    {
+        user_msg_cb   = nullptr;
+        group_msg_cb  = nullptr;
+        conn_state_cb = nullptr;
+    }
+
+    PushSDKUserMsgCB   user_msg_cb;
+    PushSDKGroupMsgCB  group_msg_cb;
+    PushSDKConnStateCB conn_state_cb;
+};
+
 struct CallContext
 {
     CallContext()
@@ -78,6 +92,12 @@ class PushSDK : public Singleton<PushSDK>,
                            void*                   cb_args = nullptr);
 
     virtual void GetLastError(std::string& desc, int& code);
+
+    virtual Handler* CreateHandler();
+    virtual void     DestroyHandler(Handler* hdl);
+    virtual void     AddUserMsgCBToHandler(Handler* hdl, PushSDKUserMsgCB cb);
+    virtual void     AddGroupMsgCBToHandler(Handler* hdl, PushSDKGroupMsgCB cb);
+    virtual void AddConnStateCBToHandler(Handler* hdl, PushSDKConnStateCB cb);
 
     virtual void OnChannelStateChange(ChannelState state) override;
     virtual void OnClientStatusChange(ClientStatus status) override;
@@ -221,8 +241,12 @@ class PushSDK : public Singleton<PushSDK>,
         std::shared_ptr<CallContext> ctx;
 
         {
-            std::unique_lock<std::mutex> lock(map_mux_);
-            if (cb_map_.find(ts) == cb_map_.end()) {
+            std::unique_lock<std::mutex> lock(cb_map_mux_);
+            if (ts == 0) {
+                // 这个回复属于客户端重新发送登出、离组请求，直接返回
+                return;
+            }
+            else if (cb_map_.find(ts) == cb_map_.end()) {
                 log_w("response already timeout. uri={}",
                       stream_uri_to_string(msg->uri()));
                 return;
@@ -251,17 +275,19 @@ class PushSDK : public Singleton<PushSDK>,
     uint64_t                                        appkey_;
     PushSDKEventCB                                  event_cb_;
     void*                                           event_cb_args_;
-    std::mutex                                      user_mux_;
-    std::unique_ptr<PushSDKUserInfo>                user_;
     std::shared_ptr<Client>                         client_;
     std::unique_ptr<std::thread>                    thread_;
-    std::mutex                                      map_mux_;
-    std::condition_variable                         map_cond_;
     std::atomic<bool>                               run_;
     std::atomic<bool>                               logining_;
     std::string                                     desc_;
     int                                             code_;
+    std::unique_ptr<PushSDKUserInfo>                user_;
+    std::mutex                                      user_mux_;
+    std::vector<Handler*>                           hdls_;
+    std::mutex                                      hdls_mux_;
     std::map<int64_t, std::shared_ptr<CallContext>> cb_map_;
+    std::mutex                                      cb_map_mux_;
+    std::condition_variable                         cb_map_cond_;
     std::multimap<uint64_t, uint64_t>               groups_;
 };
 

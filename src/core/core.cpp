@@ -15,13 +15,13 @@ PushSDK::PushSDK()
     appkey_        = 0;
     event_cb_      = nullptr;
     event_cb_args_ = nullptr;
-    user_          = nullptr;
     client_        = nullptr;
     thread_        = nullptr;
     run_           = false;
     logining_      = false;
     desc_          = "ok";
     code_          = RES_SUCCESS;
+    user_          = nullptr;
 }
 
 int PushSDK::Initialize(uint32_t       uid,
@@ -56,8 +56,8 @@ int PushSDK::Initialize(uint32_t       uid,
     run_    = true;
     thread_ = std::unique_ptr<std::thread>(new std::thread([this]() {
         while (run_) {
-            std::unique_lock<std::mutex> lock(map_mux_);
-            map_cond_.wait_for(
+            std::unique_lock<std::mutex> lock(cb_map_mux_);
+            cb_map_cond_.wait_for(
                 lock, std::chrono::milliseconds(
                           Config::Instance()->call_check_timeout_interval));
             if (!run_) {
@@ -92,6 +92,13 @@ int PushSDK::Initialize(uint32_t       uid,
 void PushSDK::OnChannelStateChange(ChannelState state)
 {
     log_d("channel state change to {}", channel_state_to_string(state));
+    for (auto it = hdls_.begin(); it != hdls_.end(); it++) {
+        if ((*it)->conn_state_cb) {
+            (*it)->conn_state_cb(state == ChannelState::OK ?
+                                     PushSDKConnState::PS_CONN_STATE_OK :
+                                     PushSDKConnState::PS_CONN_STATE_NO_READY);
+        }
+    }
 }
 
 void PushSDK::OnClientStatusChange(ClientStatus status)
@@ -149,7 +156,7 @@ void PushSDK::Destroy()
     }
 
     run_ = false;
-    map_cond_.notify_one();
+    cb_map_cond_.notify_one();
     thread_->join();
     thread_.reset();
     thread_ = nullptr;
@@ -338,6 +345,58 @@ void PushSDK::GetLastError(std::string& desc, int& code)
     code = code_;
 }
 
+Handler* PushSDK::CreateHandler()
+{
+    Handler* hdl = new Handler;
+    hdls_mux_.lock();
+    hdls_.push_back(hdl);
+    hdls_mux_.unlock();
+    return hdl;
+}
+
+void PushSDK::DestroyHandler(Handler* hdl)
+{
+    std::unique_lock<std::mutex> lock(hdls_mux_);
+    for (auto it = hdls_.begin(); it != hdls_.end(); it++) {
+        if (*it == hdl) {
+            delete hdl;
+            hdls_.erase(it);
+            return;
+        }
+    }
+}
+
+void PushSDK::AddUserMsgCBToHandler(Handler* hdl, PushSDKUserMsgCB cb)
+{
+    std::unique_lock<std::mutex> lock(hdls_mux_);
+    for (auto it = hdls_.begin(); it != hdls_.end(); it++) {
+        if (*it == hdl) {
+            (*it)->user_msg_cb = cb;
+            return;
+        }
+    }
+}
+void PushSDK::AddGroupMsgCBToHandler(Handler* hdl, PushSDKGroupMsgCB cb)
+{
+    std::unique_lock<std::mutex> lock(hdls_mux_);
+    for (auto it = hdls_.begin(); it != hdls_.end(); it++) {
+        if (*it == hdl) {
+            (*it)->group_msg_cb = cb;
+            return;
+        }
+    }
+}
+void PushSDK::AddConnStateCBToHandler(Handler* hdl, PushSDKConnStateCB cb)
+{
+    std::unique_lock<std::mutex> lock(hdls_mux_);
+    for (auto it = hdls_.begin(); it != hdls_.end(); it++) {
+        if (*it == hdl) {
+            (*it)->conn_state_cb = cb;
+            return;
+        }
+    }
+}
+
 void PushSDK::relogin(bool need_to_lock)
 {
     std::unique_lock<std::mutex> user_lock(user_mux_);
@@ -464,9 +523,9 @@ void PushSDK::call(PushSDKCBType               type,
     ctx->is_retry                    = is_retry;
 
     if (need_to_lock) {
-        map_mux_.lock();
+        cb_map_mux_.lock();
         cb_map_[now] = ctx;
-        map_mux_.unlock();
+        cb_map_mux_.unlock();
     }
     else {
         cb_map_[now] = ctx;
@@ -488,9 +547,9 @@ int PushSDK::call_sync(PushSDKCBType               type,
     ctx->gid                         = gid;
     ctx->is_retry                    = false;
 
-    map_mux_.lock();
+    cb_map_mux_.lock();
     cb_map_[now] = ctx;
-    map_mux_.unlock();
+    cb_map_mux_.unlock();
 
     client_->Send(msg);
 
@@ -557,6 +616,17 @@ void PushSDK::handle_group_message(std::shared_ptr<PushData> msg)
             make_leave_group_packet(uid_, msg->grouptype(), msg->groupid(), 0));
         return;
     }
+
+    user_lock.unlock();
+
+    std::unique_lock<std::mutex> lock(hdls_mux_);
+    for (auto it = hdls_.begin(); it != hdls_.end(); it++) {
+        if ((*it)->group_msg_cb) {
+            (*it)->group_msg_cb(msg->grouptype(), msg->groupid(),
+                                msg->msgdata().c_str(),
+                                msg->msgdata().length());
+        }
+    }
 }
 void PushSDK::handle_user_message(std::shared_ptr<PushData> msg)
 {
@@ -565,6 +635,14 @@ void PushSDK::handle_user_message(std::shared_ptr<PushData> msg)
         // 用户已经登出，由于网络原因服务器没收到，这里再次向服务器发送登出信息
         client_->Send(make_logout_packet(uid_, appid_, appkey_, 0));
         return;
+    }
+    user_lock.unlock();
+
+    std::unique_lock<std::mutex> lock(hdls_mux_);
+    for (auto it = hdls_.begin(); it != hdls_.end(); it++) {
+        if ((*it)->user_msg_cb) {
+            (*it)->user_msg_cb(msg->msgdata().c_str(), msg->msgdata().length());
+        }
     }
 }
 
