@@ -110,6 +110,11 @@ void PushSDK::OnClientStatusChange(ClientStatus status)
             relogin();
             break;
         }
+        case ClientStatus::READY_TO_WRITE:
+        case ClientStatus::WAIT_CONNECT:
+        case ClientStatus::WAIT_WRITE_DONE:
+        case ClientStatus::FINISHED:
+        default: break;
     }
 }
 
