@@ -28,5 +28,7 @@ extern std::shared_ptr<PushRegReq> make_leave_group_packet(uint32_t uid,
                                                            uint64_t gtype,
                                                            uint64_t gid,
                                                            int64_t  now);
+
+extern UserTerminalType get_user_terminal_type();
 }  // namespace edu
 #endif

@@ -3,7 +3,7 @@
 
 namespace edu {
 
-static UserTerminalType get_user_terminal_type()
+UserTerminalType get_user_terminal_type()
 {
     UserTerminalType utt;
     switch (Utils::GetTerminalType()) {
@@ -34,11 +34,11 @@ static UserTerminalType get_user_terminal_type()
     return utt;
 }
 
-std::shared_ptr<PushRegReq> make_login_packet(uint32_t         uid,
-                                              uint64_t         appid,
-                                              uint64_t         appkey,
+std::shared_ptr<PushRegReq> make_login_packet(uint32_t               uid,
+                                              uint64_t               appid,
+                                              uint64_t               appkey,
                                               const PushSDKUserInfo* user,
-                                              int64_t          now)
+                                              int64_t                now)
 {
     LoginRequest login_req;
     login_req.set_uid(uid);

@@ -91,7 +91,7 @@ static std::string grpc_channel_state_to_string(grpc_connectivity_state state)
 
 Client::Client()
 {
-    uid_                  = "";
+    suid_                 = 0;
     front_envoy_port_idx_ = 0;
     last_heartbeat_ts_    = -1;
     client_status_        = ClientStatus::FINISHED;
@@ -214,7 +214,7 @@ void Client::create_stream()
 {
     ctx_.reset(new grpc::ClientContext());
     // 填入路由所需header kv
-    ctx_->AddMetadata(HASH_HEADER_KEY, uid_);
+    ctx_->AddMetadata(HASH_HEADER_KEY, std::to_string(suid_));
 
     stream_ = stub_->AsyncPushRegister(
         ctx_.get(), cq_.get(), reinterpret_cast<void*>(ClientEvent::CONNECTED));
@@ -412,7 +412,7 @@ void Client::event_loop()
     cq_ = nullptr;
 }
 
-int Client::Initialize(uint32_t uid)
+int Client::Initialize(uint64_t suid)
 {
     int ret = PS_RET_SUCCESS;
 
@@ -421,9 +421,7 @@ int Client::Initialize(uint32_t uid)
         return ret;
     }
 
-    std::ostringstream oss;
-    oss << uid;
-    uid_ = oss.str();
+    suid_ = suid;
 
     run_    = true;
     thread_ = std::unique_ptr<std::thread>(

@@ -81,7 +81,7 @@ class Client {
     Client();
     virtual ~Client();
 
-    virtual int  Initialize(uint32_t uid);
+    virtual int  Initialize(uint64_t suid);
     virtual void Destroy();
 
     virtual void
@@ -111,7 +111,7 @@ class Client {
     void check_and_notify_channel_state_change(ChannelState new_state);
 
   private:
-    std::string                             uid_;
+    uint64_t                                suid_;
     int                                     front_envoy_port_idx_;
     int64_t                                 last_heartbeat_ts_;
     ClientStatus                            client_status_;
