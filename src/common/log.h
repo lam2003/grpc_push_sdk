@@ -17,16 +17,6 @@
 
 namespace edu {
 
-enum class LOG_LEVEL {
-    TRACE    = 0,
-    DEBUG    = 1,
-    INFO     = 2,
-    WARN     = 3,
-    ERROR2    = 4,
-    CRITICAL = 5,
-    OFF      = 6
-};
-
 class Log final {
   public:
     Log(const std::string& name);
@@ -36,7 +26,7 @@ class Log final {
     // 需要在初始化之前调用
     void LogOnConsole(bool v);
     void SetOutputDir(const std::string& dir);
-    void SetLogLevel(LOG_LEVEL level);
+    void SetLogLevel(const std::string& log_level);
 
     int Initialize();
 
@@ -88,7 +78,7 @@ class Log final {
     std::shared_ptr<spdlog::logger> file_logger_;
     std::shared_ptr<spdlog::logger> console_logger_;
     bool                            log_on_console_;
-    LOG_LEVEL                       log_level_;
+    spdlog::level::level_enum       log_level_;
     std::string                     format_;
     std::string                     dir_;
     std::string                     logger_name_;

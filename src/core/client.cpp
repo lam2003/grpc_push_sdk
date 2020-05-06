@@ -9,7 +9,6 @@
 
 #include <sstream>
 
-#define CQ_WAIT_TIME 50  // ms
 #define HASH_HEADER_KEY "suid"
 
 namespace edu {
@@ -369,7 +368,8 @@ void Client::event_loop()
     create_channel();
     create_stream();
 
-    gpr_timespec tw = gpr_time_from_millis(CQ_WAIT_TIME, GPR_TIMESPAN);
+    gpr_timespec tw =
+        gpr_time_from_millis(Config::Instance()->grpc_cq_timeout, GPR_TIMESPAN);
     grpc::CompletionQueue::NextStatus status;
     while (run_) {
         status = cq_->AsyncNext(reinterpret_cast<void**>(&event), &ok, tw);

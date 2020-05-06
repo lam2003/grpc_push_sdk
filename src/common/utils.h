@@ -24,7 +24,6 @@ enum class TerminalType {
 class Utils {
   public:
     static std::string  GetSystemTime(const std::string& format = "%Y-%m-%d");
-    static LOG_LEVEL    StrToLogLevel(const std::string& s);
     static int64_t      GetSteadyMilliSeconds();
     static int64_t      GetSteadyNanoSeconds();
     static TerminalType GetTerminalType();

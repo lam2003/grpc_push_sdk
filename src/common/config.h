@@ -23,7 +23,7 @@ class Config : public Singleton<Config> {
     std::string grpc_log_level = "trace";
 
     // sdk日志输出到控制台开关
-    bool sdk_log_on_console = true;
+    bool sdk_log_on_console = false;
     // sdl日志等级
     std::string sdk_log_level = "trace";
 
@@ -44,6 +44,8 @@ class Config : public Singleton<Config> {
     int grpc_max_pings_without_data = 0;
     // GRPC发送连续的ping帧而不接收任何数据之间的最短时间(ms)
     int grpc_min_sent_ping_interval_without_data = 1000;
+    // GRPC CQ等待事件超时时间(ms)
+    int grpc_cq_timeout = 50;
 
     // PushGateway call超时时长(ms)
     int call_timeout_interval = 3000;

@@ -14,6 +14,11 @@
 #define GRPC_LOG_PREFIX ": {}"
 #define GRPC_LOG_PREFIX_DEBUG "[{}:{}]: {}"
 
+#ifdef _MSC_VER
+#    define strcasecmp stricmp
+#    define strncasecmp strnicmp
+#endif
+
 namespace edu {
 
 Log::Log(const std::string& name)
@@ -21,7 +26,7 @@ Log::Log(const std::string& name)
     file_logger_    = nullptr;
     console_logger_ = nullptr;
     log_on_console_ = false;
-    log_level_      = LOG_LEVEL::TRACE;
+    log_level_      = spdlog::level::trace;
     format_         = DEFAULT_FORMAT;
     dir_            = "";
     logger_name_    = name;
@@ -61,9 +66,30 @@ void Log::SetOutputDir(const std::string& dir)
     dir_ = s + "/" + logger_name_;
 }
 
-void Log::SetLogLevel(LOG_LEVEL level)
+void Log::SetLogLevel(const std::string& log_level)
 {
-    log_level_ = level;
+    if (strcasecmp(log_level.c_str(), "trace") == 0) {
+        log_level_ = spdlog::level::trace;
+    }
+    else if (strcasecmp(log_level.c_str(), "debug") == 0) {
+        log_level_ = spdlog::level::debug;
+    }
+    else if (strcasecmp(log_level.c_str(), "info") == 0) {
+        log_level_ = spdlog::level::info;
+    }
+    else if (strcasecmp(log_level.c_str(), "warn") == 0) {
+        log_level_ = spdlog::level::warn;
+    }
+    else if (strcasecmp(log_level.c_str(), "error") == 0) {
+        log_level_ = spdlog::level::err;
+    }
+    else if (strcasecmp(log_level.c_str(), "critical") == 0) {
+        log_level_ = spdlog::level::critical;
+    }
+    else {
+        // unknow level, default trace
+        log_level_ = spdlog::level::trace;
+    }
 }
 
 int Log::Initialize()
@@ -74,8 +100,7 @@ int Log::Initialize()
         if (!console_logger_) {
             return PS_RET_INIT_LOG_FAILED;
         }
-        console_logger_->set_level(
-            static_cast<spdlog::level::level_enum>(log_level_));
+        console_logger_->set_level(log_level_);
 
         console_logger_->set_pattern(format_);
     }
@@ -90,8 +115,7 @@ int Log::Initialize()
         if (!file_logger_) {
             return PS_RET_INIT_LOG_FAILED;
         }
-        file_logger_->set_level(
-            static_cast<spdlog::level::level_enum>(log_level_));
+        file_logger_->set_level(log_level_);
 
         file_logger_->set_pattern(format_);
     }
@@ -145,8 +169,7 @@ int init_logger(const std::string& log_dir)
         _sdk_logger = std::make_shared<edu::Log>(SDK_LOGGER_NAME);
         _sdk_logger->LogOnConsole(edu::Config::Instance()->sdk_log_on_console);
         _sdk_logger->SetOutputDir(log_dir);
-        _sdk_logger->SetLogLevel(
-            edu::Utils::StrToLogLevel(edu::Config::Instance()->sdk_log_level));
+        _sdk_logger->SetLogLevel(edu::Config::Instance()->sdk_log_level);
         if ((ret = _sdk_logger->Initialize()) != PS_RET_SUCCESS) {
             return ret;
         }
@@ -156,8 +179,7 @@ int init_logger(const std::string& log_dir)
         _grpc_logger->LogOnConsole(
             edu::Config::Instance()->grpc_log_on_console);
         _grpc_logger->SetOutputDir(log_dir);
-        _grpc_logger->SetLogLevel(
-            edu::Utils::StrToLogLevel(edu::Config::Instance()->grpc_log_level));
+        _grpc_logger->SetLogLevel(edu::Config::Instance()->grpc_log_level);
         if ((ret = _grpc_logger->Initialize()) != PS_RET_SUCCESS) {
             return ret;
         }
