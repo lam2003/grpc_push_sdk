@@ -166,20 +166,20 @@ PS_EXPORT void PushSDKDestroyHandler(PS_HANDLER handler);
 // 添加连接状态回调
 // @param[in] handler 句柄
 // @param[in] state_cb 连接状态回调
-PS_EXPORT void PushSDKAddConnStateCB(PS_HANDLER         handler,
+PS_EXPORT void PushSDKSetConnStateCB(PS_HANDLER         handler,
                                      PushSDKConnStateCB state_cb);
 
 // @brief
 // 添加用户消息回调
 // @param[in] handler 句柄
 // @param[in] msg_cb 用户消息回调
-PS_EXPORT void PushSDKAddUserMsgCB(PS_HANDLER handler, PushSDKUserMsgCB msg_cb);
+PS_EXPORT void PushSDKSetUserMsgCB(PS_HANDLER handler, PushSDKUserMsgCB msg_cb);
 
 // @brief
 // 添加组消息回调
 // @param[in] handler 句柄
 // @param[in] msg_cb 组消息回调
-PS_EXPORT void PushSDKAddGroupMsgCB(PS_HANDLER        handler,
+PS_EXPORT void PushSDKSetGroupMsgCB(PS_HANDLER        handler,
                                     PushSDKGroupMsgCB msg_cb);
 
 #ifdef __cplusplus

@@ -105,7 +105,7 @@ for arch in arch_list:
         make_universal_list.append(cares_libs)
         make_universal_list.append(z_libs)
 
-    def copy_service_mesh_lib():
+    def copy_push_sdk_lib():
         make_universal_list.append(service_mesh_cpp_libs)
 
     makedirs(libs_dir)

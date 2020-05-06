@@ -19,6 +19,7 @@ vs_year = 2019
 toolset = 'v142'
 
 arch_list = ['x86', 'x64']
+build_mode = ['Debug', 'Release']
 
 service_mesh_cpp_libs = []
 grpc_libs = []
@@ -33,36 +34,75 @@ z_libs = []
 
 
 for arch in arch_list:
-    libs_dir = os.path.abspath(
-        '../../out/lib/windows/' + toolset + '_'+BUILD_MODE + '_'+arch)
-    set_build_folder_name(toolset + '_'+BUILD_MODE + '_'+arch)
+    for mode in build_mode:
+        libs_dir = os.path.abspath(
+            '../../out/lib/windows/' + mode + '_'+arch)
+        set_build_folder_name(mode + '_'+arch)
 
-    print('Architecture:', arch)
-    print('Build mode:', BUILD_MODE)
-    print('Toolset:', toolset)
+        print('Architecture:', arch)
+        print('Build mode:', mode)
+        print('Toolset:', toolset)
 
-    if arch == 'x64' and vs_year < 2019:
-        generator += ' Win64'
+        if arch == 'x64' and vs_year < 2019:
+            generator += ' Win64'
 
-    cmake_cmd = ['cmake',
-                 '-B', BUILD_DIR,
-                 '-G', generator,
-                 '-T', toolset,
-                 '-DCMAKE_SYSTEM_VERSION=' + system_version,
-                 '-DPS_BUILD_SHARED=true',
-                 '-DPS_BUILD_MODE='+ BUILD_MODE,
-                 '-config=' + BUILD_MODE
-                 ]
-    if vs_year >= 2019:
-        cmake_cmd.append('-A')
+        cmake_cmd = ['cmake',
+                     '-B', BUILD_DIR,
+                     '-G', generator,
+                     '-T', toolset,
+                     '-DCMAKE_SYSTEM_VERSION=' + system_version,
+                     '-DPS_BUILD_SHARED=true',
+                     '-DPS_BUILD_MODE=' + mode,
+                     '-config=' + mode
+                     ]
+        if vs_year >= 2019:
+            cmake_cmd.append('-A')
 
-        if arch == 'x64':
-            cmake_cmd.append('x64')
+            if arch == 'x64':
+                cmake_cmd.append('x64')
+            else:
+                cmake_cmd.append('Win32')
+
+        cmake_cmd.append('../..')
+        call(cmake_cmd)
+
+        global BUILD_MODE
+        BUILD_MODE = mode
+        build('libprotobuf')
+        build('grpc++')
+        build('push_sdk')
+
+        if mode == 'Debug':
+            libs_postfix = 'd'
         else:
-            cmake_cmd.append('Win32')
+            libs_postfix = ''
 
-    cmake_cmd.append('../..')
-    call(cmake_cmd)
-    build('libprotobuf')
-    build('grpc++')
-    build('push_sdk')
+        def copy_push_sdk_lib():
+            copy_file(BUILD_DIR + '/src/'+mode+'/push_sdk' +
+                      libs_postfix+'.dll', libs_dir)
+
+        def copy_protobuf_lib():
+            copy_file(BUILD_DIR + '/3rdparty/grpc/third_party/protobuf/' +
+                      mode + '/libprotobuf'+libs_postfix+'.lib', libs_dir)
+
+        def copy_ssl_lib():
+            copy_file(BUILD_DIR + '/3rdparty/grpc/third_party/boringssl/ssl/' +
+                      mode + '/ssl'+libs_postfix+'.lib', libs_dir)
+            copy_file(BUILD_DIR + '/3rdparty/grpc/third_party/boringssl/crypto/' +
+                      mode + '/crypto'+libs_postfix+'.lib', libs_dir)
+
+        def copy_grpc_lib():
+            copy_file(BUILD_DIR + '/3rdparty/grpc/' + mode +
+                      '/grpc' + libs_postfix + '.lib', libs_dir)
+            copy_file(BUILD_DIR + '/3rdparty/grpc/' + mode +
+                      '/grpc++' + libs_postfix + '.lib', libs_dir)
+            copy_file(BUILD_DIR + '/3rdparty/grpc/' + mode +
+                      '/gpr' + libs_postfix + '.lib', libs_dir)
+            copy_file(BUILD_DIR + '/3rdparty/grpc/' + mode +
+                      '/address_sorting' + libs_postfix + '.lib', libs_dir)
+            copy_file(BUILD_DIR + '/3rdparty/grpc/third_party/cares/cares/lib/'+mode+'/cares' +
+                      libs_postfix + '.lib', libs_dir)
+            copy_file(BUILD_DIR + '/3rdparty/grpc/third_party/zlib/'+mode+'/zlibstatic' +
+                      libs_postfix + '.lib', libs_dir)
+        makedirs(libs_dir)
+        copy_libs()

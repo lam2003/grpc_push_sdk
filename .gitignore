@@ -4,4 +4,5 @@ build/linux/Debug*
 build/linux/Release*
 build/ios/Debug*
 build/ios/Release*
-build/windows/v*
+build/windows/Debug*
+build/windows/Release*

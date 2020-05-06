@@ -17,12 +17,6 @@ def init_common(build_common_path, target_platform):
         print('please remove spaces from path and try again')
         sys.exit(-1)
 
-    filename = os.path.join(build_common_path, 'build_config.py')
-    if sys.version_info[0] <= 2:
-        execfile(filename, globals())
-    else:
-        exec(compile(open(filename, "rb").read(), filename, 'exec'), globals())
-
     global TARGET_PLATFORM
     TARGET_PLATFORM = target_platform
 
@@ -94,7 +88,7 @@ def copy_libs():
     copy_protobuf_lib()
     copy_ssl_lib()
     copy_grpc_lib()
-    copy_service_mesh_lib()
+    copy_push_sdk_lib()
 
 # for ios
 def create_universal_lib(libs,release_libs_dir):

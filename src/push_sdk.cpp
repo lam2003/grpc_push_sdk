@@ -174,7 +174,7 @@ void PushSDKDestroyHandler(PS_HANDLER handler)
         reinterpret_cast<edu::Handler*>(handler));
 }
 
-void PushSDKAddConnStateCB(PS_HANDLER handler, PushSDKConnStateCB state_cb)
+void PushSDKSetConnStateCB(PS_HANDLER handler, PushSDKConnStateCB state_cb)
 {
     if (!handler || !state_cb) {
         return;
@@ -184,7 +184,7 @@ void PushSDKAddConnStateCB(PS_HANDLER handler, PushSDKConnStateCB state_cb)
         reinterpret_cast<edu::Handler*>(handler), state_cb);
 }
 
-void PushSDKAddUserMsgCB(PS_HANDLER handler, PushSDKUserMsgCB msg_cb)
+void PushSDKSetUserMsgCB(PS_HANDLER handler, PushSDKUserMsgCB msg_cb)
 {
     if (!handler || !msg_cb) {
         return;
@@ -194,7 +194,7 @@ void PushSDKAddUserMsgCB(PS_HANDLER handler, PushSDKUserMsgCB msg_cb)
         reinterpret_cast<edu::Handler*>(handler), msg_cb);
 }
 
-void PushSDKAddGroupMsgCB(PS_HANDLER handler, PushSDKGroupMsgCB msg_cb)
+void PushSDKSetGroupMsgCB(PS_HANDLER handler, PushSDKGroupMsgCB msg_cb)
 {
     if (!handler || !msg_cb) {
         return;

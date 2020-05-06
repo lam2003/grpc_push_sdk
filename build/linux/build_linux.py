@@ -67,7 +67,7 @@ def copy_grpc_lib():
     copy_file(BUILD_DIR + '/3rdparty/grpc/third_party/zlib/libz.a', libs_path)
 
 
-def copy_service_mesh_lib():
+def copy_push_sdk_lib():
     copy_file(BUILD_DIR + '/src/libpush_sdk.a', libs_path)
 
 
