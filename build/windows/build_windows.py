@@ -80,6 +80,8 @@ for arch in arch_list:
         def copy_push_sdk_lib():
             copy_file(BUILD_DIR + '/src/'+mode+'/push_sdk' +
                       libs_postfix+'.dll', libs_dir)
+            copy_file(BUILD_DIR + '/src/'+mode+'/push_sdk' +
+                      libs_postfix+'.lib', libs_dir)
 
         def copy_protobuf_lib():
             copy_file(BUILD_DIR + '/3rdparty/grpc/third_party/protobuf/' +
