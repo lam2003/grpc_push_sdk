@@ -65,28 +65,28 @@ std::string stream_uri_to_string(StreamURI uri)
     }
 }
 
-static std::string client_event_to_string(ClientEvent event)
-{
-    switch (event) {
-        case ClientEvent::CONNECTED: return "CONNECTED";
-        case ClientEvent::FINISHED: return "FINISHED";
-        case ClientEvent::READ_DONE: return "READ_DONE";
-        case ClientEvent::WRITE_DONE: return "WRITE_DONE";
-        default: return "UNKNOW";
-    }
-}
+// static std::string client_event_to_string(ClientEvent event)
+// {
+//     switch (event) {
+//         case ClientEvent::CONNECTED: return "CONNECTED";
+//         case ClientEvent::FINISHED: return "FINISHED";
+//         case ClientEvent::READ_DONE: return "READ_DONE";
+//         case ClientEvent::WRITE_DONE: return "WRITE_DONE";
+//         default: return "UNKNOW";
+//     }
+// }
 
-static std::string grpc_channel_state_to_string(grpc_connectivity_state state)
-{
-    switch (state) {
-        case GRPC_CHANNEL_IDLE: return "IDLE";
-        case GRPC_CHANNEL_CONNECTING: return "CONNECTING";
-        case GRPC_CHANNEL_READY: return "READY";
-        case GRPC_CHANNEL_TRANSIENT_FAILURE: return "TRANSIENT_FAILURE";
-        case GRPC_CHANNEL_SHUTDOWN: return "SHUTDOWN";
-        default: return "UNKNOW";
-    }
-}
+// static std::string grpc_channel_state_to_string(grpc_connectivity_state state)
+// {
+//     switch (state) {
+//         case GRPC_CHANNEL_IDLE: return "IDLE";
+//         case GRPC_CHANNEL_CONNECTING: return "CONNECTING";
+//         case GRPC_CHANNEL_READY: return "READY";
+//         case GRPC_CHANNEL_TRANSIENT_FAILURE: return "TRANSIENT_FAILURE";
+//         case GRPC_CHANNEL_SHUTDOWN: return "SHUTDOWN";
+//         default: return "UNKNOW";
+//     }
+// }
 
 Client::Client()
 {

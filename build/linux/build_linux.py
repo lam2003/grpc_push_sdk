@@ -22,54 +22,53 @@ elif bits == '32bit':
 else:
     arch = bits
 
-set_build_folder_name(BUILD_MODE + '_' + arch)
+build_mode = ["Debug", "Release"]
 
-libs_path = os.path.abspath(os.path.join(
-    '../../out/lib/linux/'+BUILD_MODE + '_'+arch))
+for mode in build_mode:
+    set_build_folder_name(mode + '_' + arch)
 
-print('Architecture:', arch)
-print('Build mode:', BUILD_MODE)
+    libs_dir = os.path.abspath(os.path.join(
+        '../../out/lib/linux/'+mode + '_'+arch))
 
-cmake_cmd = [
-    'cmake',
-    '-B', BUILD_DIR,
-    '-DPS_BUILD_MODE=' + BUILD_MODE,
-    '../..'
-]
+    print('Architecture:', arch)
+    print('Build mode:', mode)
 
-call(cmake_cmd)
-build('libprotobuf')
-build('grpc++')
-build('push_sdk')
+    cmake_cmd = [
+        'cmake',
+        '-B', BUILD_DIR,
+        '-DPS_BUILD_MODE=' + mode,
+        '../..'
+    ]
 
+    call(cmake_cmd)
 
-def copy_protobuf_lib():
-    protobuf_lib = BUILD_DIR + '/3rdparty/grpc/third_party/protobuf/libprotobuf.a'
-    if not os.path.exists(protobuf_lib):
-        protobuf_lib = BUILD_DIR + '/3rdparty/grpc/third_party/protobuf/cmake/libprotobuf.a'
-    copy_file(protobuf_lib, libs_path)
+    global BUILD_MODE
+    BUILD_MODE = mode
+    build('libprotobuf')
+    build('grpc++')
+    build('push_sdk')
 
+    def copy_protobuf_lib():
+        copy_file(
+            BUILD_DIR + '/3rdparty/grpc/third_party/protobuf/libprotobuf.a', libs_dir)
 
-def copy_ssl_lib():
-    copy_file(
-        BUILD_DIR + '/3rdparty/grpc/third_party/boringssl/crypto/libcrypto.a', libs_path)
-    copy_file(
-        BUILD_DIR + '/3rdparty/grpc/third_party/boringssl/ssl/libssl.a', libs_path)
+    def copy_ssl_lib():
+        copy_file(
+            BUILD_DIR + '/3rdparty/grpc/third_party/boringssl/crypto/libcrypto.a', libs_dir)
+        copy_file(
+            BUILD_DIR + '/3rdparty/grpc/third_party/boringssl/ssl/libssl.a', libs_dir)
 
+    def copy_grpc_lib():
+        copy_file(BUILD_DIR + '/3rdparty/grpc/libaddress_sorting.a', libs_dir)
+        copy_file(BUILD_DIR + '/3rdparty/grpc/libgpr.a', libs_dir)
+        copy_file(BUILD_DIR + '/3rdparty/grpc/libgrpc++.a', libs_dir)
+        copy_file(BUILD_DIR + '/3rdparty/grpc/libgrpc.a', libs_dir)
+        copy_file(
+            BUILD_DIR + '/3rdparty/grpc/third_party/cares/cares/lib/libcares.a', libs_dir)
+        copy_file(BUILD_DIR + '/3rdparty/grpc/third_party/zlib/libz.a', libs_dir)
 
-def copy_grpc_lib():
-    copy_file(BUILD_DIR + '/3rdparty/grpc/libaddress_sorting.a', libs_path)
-    copy_file(BUILD_DIR + '/3rdparty/grpc/libgpr.a', libs_path)
-    copy_file(BUILD_DIR + '/3rdparty/grpc/libgrpc++.a', libs_path)
-    copy_file(BUILD_DIR + '/3rdparty/grpc/libgrpc.a', libs_path)
-    copy_file(
-        BUILD_DIR + '/3rdparty/grpc/third_party/cares/cares/lib/libcares.a', libs_path)
-    copy_file(BUILD_DIR + '/3rdparty/grpc/third_party/zlib/libz.a', libs_path)
+    def copy_push_sdk_lib():
+        copy_file(BUILD_DIR + '/src/libpush_sdk.a', libs_dir)
 
-
-def copy_push_sdk_lib():
-    copy_file(BUILD_DIR + '/src/libpush_sdk.a', libs_path)
-
-
-makedirs(libs_path)
-copy_libs()
+    makedirs(libs_dir)
+    copy_libs()
