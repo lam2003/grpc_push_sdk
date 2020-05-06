@@ -21,18 +21,6 @@ toolset = 'v142'
 arch_list = ['x86', 'x64']
 build_mode = ['Debug', 'Release']
 
-service_mesh_cpp_libs = []
-grpc_libs = []
-grpcpp_libs = []
-gpr_libs = []
-address_sorting_libs = []
-cares_libs = []
-crypto_libs = []
-ssl_libs = []
-protobuf_libs = []
-z_libs = []
-
-
 for arch in arch_list:
     for mode in build_mode:
         libs_dir = os.path.abspath(
