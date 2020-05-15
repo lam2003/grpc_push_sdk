@@ -36,7 +36,7 @@ for mode in build_mode:
 
     for arch in arch_list:
         libs_dir = os.path.abspath('../../out/lib/ios/' + mode)
-        set_build_folder_name(mode)
+        set_build_folder_name(mode+'_'+arch)
 
         print('Architecture:', arch)
         print('Build mode:', mode)
