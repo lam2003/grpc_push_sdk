@@ -92,7 +92,7 @@ for mode in build_mode:
         if not os.path.exists(protobuf_lib):
             protobuf_lib = BUILD_DIR + \
                 '/3rdparty/grpc/third_party/protobuf/cmake/libprotobuf.a'
-            protobuf_libs.append(protobuf_lib)
+        protobuf_libs.append(protobuf_lib)
 
     def copy_protobuf_lib():
         make_universal_list.append(protobuf_libs)
