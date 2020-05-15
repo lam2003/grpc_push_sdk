@@ -16,36 +16,48 @@ arch_list = ['arm64',
              'armv7s',
              'x86_64'
              ]
-build_mode = ['Debug','Release']
+build_mode = ['Debug', 'Release']
 
 deployment_target = '8.0'
 generator = 'Unix Makefiles'
 
-for arch in arch_list:
-    for mode in build_mode:
-        libs_dir = os.path.abspath('../../out/lib/ios/'+ mode + '_'+arch)
-        set_build_folder_name(mode + '_' + arch)
+for mode in build_mode:
+    make_universal_list = []
+    service_mesh_cpp_libs = []
+    grpc_libs = []
+    grpcpp_libs = []
+    gpr_libs = []
+    address_sorting_libs = []
+    cares_libs = []
+    crypto_libs = []
+    ssl_libs = []
+    protobuf_libs = []
+    z_libs = []
+
+    for arch in arch_list:
+        libs_dir = os.path.abspath('../../out/lib/ios/' + mode)
+        set_build_folder_name(mode)
 
         print('Architecture:', arch)
         print('Build mode:', mode)
 
         # generate projects
         cmake_cmd = ['cmake',
-                    '-B',
-                    BUILD_DIR,
-                    '-DCMAKE_SYSTEM_NAME=iOS',
-                    '-DAPPLE_IOS=YES',
-                    '-DCMAKE_OSX_DEPLOYMENT_TARGET=' + deployment_target,
-                    '-DCMAKE_OSX_ARCHITECTURES=' + arch,
-                    '-Dprotobuf_BUILD_PROTOC_BINARIES=OFF',
-                    '-DgRPC_BUILD_CODEGEN=OFF',
-                    '-DCARES_INSTALL=OFF',
-                    '-DENABLE_BITCODE=FALSE',
-                    '-DENABLE_ARC=TRUE',
-                    '-DPS_BUILD_MODE=' + mode,
-                    '-G' + generator,
-                    '../..'
-                    ]
+                     '-B',
+                     BUILD_DIR,
+                     '-DCMAKE_SYSTEM_NAME=iOS',
+                     '-DAPPLE_IOS=YES',
+                     '-DCMAKE_OSX_DEPLOYMENT_TARGET=' + deployment_target,
+                     '-DCMAKE_OSX_ARCHITECTURES=' + arch,
+                     '-Dprotobuf_BUILD_PROTOC_BINARIES=OFF',
+                     '-DgRPC_BUILD_CODEGEN=OFF',
+                     '-DCARES_INSTALL=OFF',
+                     '-DENABLE_BITCODE=FALSE',
+                     '-DENABLE_ARC=TRUE',
+                     '-DPS_BUILD_MODE=' + mode,
+                     '-G' + generator,
+                     '../..'
+                     ]
         if arch == 'x86_64':
             cmake_cmd.append('-DCMAKE_OSX_SYSROOT=iphonesimulator')
 
@@ -56,17 +68,6 @@ for arch in arch_list:
         build('libprotobuf')
         build('grpc++')
         build('push_sdk')
-
-        service_mesh_cpp_libs = []
-        grpc_libs = []
-        grpcpp_libs = []
-        gpr_libs = []
-        address_sorting_libs = []
-        cares_libs = []
-        crypto_libs = []
-        ssl_libs = []
-        protobuf_libs = []
-        z_libs = []
 
         service_mesh_cpp_libs     .append(
             BUILD_DIR + '/src/libpush_sdk.a')
@@ -91,30 +92,27 @@ for arch in arch_list:
         if not os.path.exists(protobuf_lib):
             protobuf_lib = BUILD_DIR + \
                 '/3rdparty/grpc/third_party/protobuf/cmake/libprotobuf.a'
-        protobuf_libs.append(protobuf_lib)
+            protobuf_libs.append(protobuf_lib)
 
-        make_universal_list = []
+    def copy_protobuf_lib():
+        make_universal_list.append(protobuf_libs)
 
-        def copy_protobuf_lib():
-            make_universal_list.append(protobuf_libs)
+    def copy_ssl_lib():
+        make_universal_list.append(ssl_libs)
+        make_universal_list.append(crypto_libs)
 
-        def copy_ssl_lib():
-            make_universal_list.append(ssl_libs)
-            make_universal_list.append(crypto_libs)
+    def copy_grpc_lib():
+        make_universal_list.append(address_sorting_libs)
+        make_universal_list.append(gpr_libs)
+        make_universal_list.append(grpcpp_libs)
+        make_universal_list.append(grpc_libs)
+        make_universal_list.append(cares_libs)
+        make_universal_list.append(z_libs)
 
-        def copy_grpc_lib():
-            make_universal_list.append(address_sorting_libs)
-            make_universal_list.append(gpr_libs)
-            make_universal_list.append(grpcpp_libs)
-            make_universal_list.append(grpc_libs)
-            make_universal_list.append(cares_libs)
-            make_universal_list.append(z_libs)
+    def copy_push_sdk_lib():
+        make_universal_list.append(service_mesh_cpp_libs)
 
-        def copy_push_sdk_lib():
-            make_universal_list.append(service_mesh_cpp_libs)
-
-        makedirs(libs_dir)
-        copy_libs()
-
-        for libs_list in make_universal_list:
-            create_universal_lib(libs_list, libs_dir)
+    makedirs(libs_dir)
+    copy_libs()
+    for libs_list in make_universal_list:
+        create_universal_lib(libs_list, libs_dir)
