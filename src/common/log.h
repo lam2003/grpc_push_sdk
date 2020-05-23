@@ -86,9 +86,9 @@ class Log final {
 
 }  // namespace edu
 
-extern std::shared_ptr<edu::Log> _sdk_logger;
-extern std::shared_ptr<edu::Log> _grpc_logger;
-extern int                       init_logger(const std::string& log_dir);
+extern edu::Log* _sdk_logger;
+extern edu::Log* _grpc_logger;
+extern int       init_logger(const std::string& log_dir);
 
 #if PUSH_SDK_DEBUG
 #    define log_e(msg, ...)                                                    \

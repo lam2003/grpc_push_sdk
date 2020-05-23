@@ -48,8 +48,9 @@ int PushSDK::Initialize(uint32_t       uid,
     client_->SetChannelStateListener(this->shared_from_this());
     client_->SetClientStatusListener(this->shared_from_this());
     client_->SetMessageHandler(this->shared_from_this());
-    if ((ret = client_->Initialize(Utils::GetSUID(
-             uid_, get_user_terminal_type()))) != PS_RET_SUCCESS) {
+    if ((ret = client_->Initialize(
+             uid_, Utils::GetSUID(uid_, get_user_terminal_type()))) !=
+        PS_RET_SUCCESS) {
         log_e("client create channel failed. ret={}", PS_RET_SUCCESS);
         return ret;
     }

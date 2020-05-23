@@ -40,6 +40,7 @@ Log::~Log()
     }
 
     if (file_logger_) {
+        file_logger_->flush();
         file_logger_.reset();
         file_logger_ = nullptr;
     }
@@ -111,7 +112,7 @@ int Log::Initialize()
         file_logger_ =
             spdlog::rotating_logger_mt(logger_name_ + "_f", oss.str(),
                                        1024 * 1024 * 5,  // 5MB
-                                       10);
+                                       10, false);
         if (!file_logger_) {
             return PS_RET_INIT_LOG_FAILED;
         }
@@ -125,8 +126,8 @@ int Log::Initialize()
 
 }  // namespace edu
 
-std::shared_ptr<edu::Log> _sdk_logger  = nullptr;
-std::shared_ptr<edu::Log> _grpc_logger = nullptr;
+edu::Log* _sdk_logger  = nullptr;
+edu::Log* _grpc_logger = nullptr;
 
 static void grpc_log_func(gpr_log_func_args* args)
 {
@@ -165,8 +166,10 @@ int init_logger(const std::string& log_dir)
     int ret = PS_RET_SUCCESS;
 
     try {
+        spdlog::flush_every(std::chrono::seconds(
+            edu::Config::Instance()->logger_flush_interval_sec));
         // initializing sdk logger
-        _sdk_logger = std::make_shared<edu::Log>(SDK_LOGGER_NAME);
+        _sdk_logger = new edu::Log(SDK_LOGGER_NAME);
         _sdk_logger->LogOnConsole(edu::Config::Instance()->sdk_log_on_console);
         _sdk_logger->SetOutputDir(log_dir);
         _sdk_logger->SetLogLevel(edu::Config::Instance()->sdk_log_level);
@@ -175,7 +178,7 @@ int init_logger(const std::string& log_dir)
         }
 
         // initializing grpc logger
-        _grpc_logger = std::make_shared<edu::Log>(GRPC_LOGGER_NAME);
+        _grpc_logger = new edu::Log(GRPC_LOGGER_NAME);
         _grpc_logger->LogOnConsole(
             edu::Config::Instance()->grpc_log_on_console);
         _grpc_logger->SetOutputDir(log_dir);

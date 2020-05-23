@@ -10,6 +10,7 @@
 #include <sstream>
 
 #define HASH_HEADER_KEY "suid"
+#define UID_HEADER_KEY "uid"
 
 namespace edu {
 
@@ -76,7 +77,8 @@ std::string stream_uri_to_string(StreamURI uri)
 //     }
 // }
 
-// static std::string grpc_channel_state_to_string(grpc_connectivity_state state)
+// static std::string grpc_channel_state_to_string(grpc_connectivity_state
+// state)
 // {
 //     switch (state) {
 //         case GRPC_CHANNEL_IDLE: return "IDLE";
@@ -214,6 +216,7 @@ void Client::create_stream()
     ctx_.reset(new grpc::ClientContext());
     // 填入路由所需header kv
     ctx_->AddMetadata(HASH_HEADER_KEY, std::to_string(suid_));
+    ctx_->AddMetadata(UID_HEADER_KEY, std::to_string(uid_));
 
     stream_ = stub_->AsyncPushRegister(
         ctx_.get(), cq_.get(), reinterpret_cast<void*>(ClientEvent::CONNECTED));
@@ -412,7 +415,7 @@ void Client::event_loop()
     cq_ = nullptr;
 }
 
-int Client::Initialize(uint64_t suid)
+int Client::Initialize(uint32_t uid, uint64_t suid)
 {
     int ret = PS_RET_SUCCESS;
 
@@ -421,6 +424,7 @@ int Client::Initialize(uint64_t suid)
         return ret;
     }
 
+    uid_  = uid;
     suid_ = suid;
 
     run_    = true;
