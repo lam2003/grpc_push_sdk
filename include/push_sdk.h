@@ -58,8 +58,11 @@ typedef enum {
 typedef struct
 {
     char token[256];
+    int  token_size;
     char account[256];
+    int  account_size;
     char passwd[256];
+    int  passwd_size;
 } PushSDKUserInfo;
 
 typedef struct

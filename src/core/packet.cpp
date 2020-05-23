@@ -46,9 +46,9 @@ std::shared_ptr<PushRegReq> make_login_packet(uint32_t               uid,
     login_req.set_appid(std::to_string(appid));
     login_req.set_appkey(appkey);
     login_req.set_termnialtype(get_user_terminal_type());
-    login_req.set_account(std::string(user->account, strlen(user->account)));
-    login_req.set_password(std::string(user->passwd, strlen(user->passwd)));
-    login_req.set_cookie(std::string(user->token, strlen(user->token)));
+    login_req.set_account(std::string(user->account, user->account_size));
+    login_req.set_password(std::string(user->passwd, user->passwd_size));
+    login_req.set_cookie(std::string(user->token, user->token_size));
     login_req.set_context(std::to_string(now));
 
     std::string msg_data;
