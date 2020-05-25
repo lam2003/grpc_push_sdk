@@ -242,7 +242,7 @@ int PushSDK::Login(const PushSDKUserInfo& user,
 
     if (is_sync) {
         user_lock.unlock();
-        call_sync(PS_CB_TYPE_LOGIN, req, now);
+        ret = call_sync(PS_CB_TYPE_LOGIN, req, now);
     }
     else {
         call(PS_CB_TYPE_LOGIN, req, now, cb_func, cb_args);
@@ -277,7 +277,7 @@ int PushSDK::Logout(bool is_sync, PushSDKEventCB cb_func, void* cb_args)
 
     if (is_sync) {
         user_lock.unlock();
-        call_sync(PS_CB_TYPE_LOGOUT, req, now);
+        ret = call_sync(PS_CB_TYPE_LOGOUT, req, now);
     }
     else {
         call(PS_CB_TYPE_LOGOUT, req, now, cb_func, cb_args);
@@ -319,7 +319,8 @@ int PushSDK::JoinGroup(const PushSDKGroupInfo& group,
 
     if (is_sync) {
         user_lock.unlock();
-        call_sync(PS_CB_TYPE_JOIN_GROUP, req, now, group.gtype, group.gid);
+        ret =
+            call_sync(PS_CB_TYPE_JOIN_GROUP, req, now, group.gtype, group.gid);
     }
     else {
         call(PS_CB_TYPE_JOIN_GROUP, req, now, cb_func, cb_args, group.gtype,
@@ -360,7 +361,8 @@ int PushSDK::LeaveGroup(const PushSDKGroupInfo& group,
 
     if (is_sync) {
         user_lock.unlock();
-        call_sync(PS_CB_TYPE_LEAVE_GROUP, req, now, group.gtype, group.gid);
+        ret =
+            call_sync(PS_CB_TYPE_LEAVE_GROUP, req, now, group.gtype, group.gid);
     }
     else {
         call(PS_CB_TYPE_LEAVE_GROUP, req, now, cb_func, cb_args, group.gtype,
