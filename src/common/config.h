@@ -20,12 +20,12 @@ class Config : public Singleton<Config> {
     // logger flush到文件的时间间隔
     int logger_flush_interval_sec = 1;
     // grpc日志输出到控制台开关
-    bool grpc_log_on_console = true;
+    bool grpc_log_on_console = false;
     // grpc日志等级
     std::string grpc_log_level = "trace";
 
     // sdk日志输出到控制台开关
-    bool sdk_log_on_console = true;
+    bool sdk_log_on_console = false;
     // sdk日志等级
     std::string sdk_log_level = "trace";
 
