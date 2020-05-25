@@ -256,6 +256,7 @@ void Client::handle_event(ClientEvent event)
                 queue_.pop();
                 lock.unlock();
 
+                last_req_ = req;
                 stream_->Write(
                     *req, reinterpret_cast<void*>(ClientEvent::WRITE_DONE));
 
@@ -276,6 +277,7 @@ void Client::handle_event(ClientEvent event)
                 queue_.pop();
                 lock.unlock();
 
+                last_req_ = req;
                 stream_->Write(
                     *req, reinterpret_cast<void*>(ClientEvent::WRITE_DONE));
 
@@ -344,8 +346,8 @@ void Client::check_channel_and_stream(bool ok)
 
     if (state == GRPC_CHANNEL_READY && !ok) {
         log_e("stream error. going to rebuild stream");
-        destroy_stream();
-        create_stream();
+        stream_->Finish(&status_,
+                        reinterpret_cast<void*>(ClientEvent::FINISHED));
     }
 }
 
@@ -357,6 +359,8 @@ void Client::handle_cq_timeout()
         std::shared_ptr<PushRegReq> req = queue_.front();
         queue_.pop();
         lock.unlock();
+
+        last_req_ = req;
         stream_->Write(*req, reinterpret_cast<void*>(ClientEvent::WRITE_DONE));
     }
 }
@@ -391,10 +395,19 @@ void Client::event_loop()
                 break;
             }
             case grpc::CompletionQueue::GOT_EVENT: {
-                check_channel_and_stream(ok);
-                if (ok) {
-                    try_to_send_ping();
-                    handle_event(event);
+                if (event == ClientEvent::FINISHED) {
+                    if (status_listener_) {
+                        status_listener_->OnFinish(last_req_, status_);
+                    }
+                    destroy_stream();
+                    create_stream();
+                }
+                else {
+                    check_channel_and_stream(ok);
+                    if (ok) {
+                        try_to_send_ping();
+                        handle_event(event);
+                    }
                 }
                 break;
             }

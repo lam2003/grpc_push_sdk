@@ -120,6 +120,30 @@ void PushSDK::OnClientStatusChange(ClientStatus status)
     }
 }
 
+void PushSDK::OnFinish(std::shared_ptr<PushRegReq> last_req,
+                       grpc::Status                status)
+{
+    switch (last_req->uri()) {
+        case StreamURI::PPushGateWayLoginURI: {
+            on_finish<LoginRequest, LoginResponse>(last_req, status);
+            break;
+        }
+        case StreamURI::PPushGateWayLogoutURI: {
+            on_finish<LogoutRequest, LogoutResponse>(last_req, status);
+            break;
+        }
+        case StreamURI::PPushGateWayJoinGroupURI: {
+            on_finish<JoinGroupRequest, JoinGroupResponse>(last_req, status);
+            break;
+        }
+        case StreamURI::PPushGateWayLeaveGroupURI: {
+            on_finish<LeaveGroupRequest, LeaveGroupResponse>(last_req, status);
+            break;
+        }
+        default: break;
+    }
+}
+
 void PushSDK::OnMessage(std::shared_ptr<PushData> msg)
 {
     log_d("recv msg. uri={}", stream_uri_to_string(msg->uri()));

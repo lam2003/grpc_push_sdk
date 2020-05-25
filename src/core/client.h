@@ -68,6 +68,8 @@ class ClientStatusListener {
 
   public:
     virtual void OnClientStatusChange(ClientStatus statue) = 0;
+    virtual void OnFinish(std::shared_ptr<PushRegReq> last_req,
+                          grpc::Status                status)             = 0;
 };
 
 class MessageHandler {
@@ -131,6 +133,8 @@ class Client {
     std::unique_ptr<std::thread>            thread_;
     std::atomic<bool>                       run_;
     bool                                    init_;
+    grpc::Status                            status_;
+    std::shared_ptr<PushRegReq>             last_req_;
 };
 }  // namespace edu
 #endif
