@@ -154,7 +154,6 @@ class PushSDK : public Singleton<PushSDK>,
                 log_w("remove all group infos. dump={}", dump_str);
             }
             remove_all_group_info();
-            user_.release();
             user_ = nullptr;
             user_mux_.unlock();
         }

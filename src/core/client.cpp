@@ -194,7 +194,6 @@ void Client::CleanQueue()
 
 void Client::destroy_channel()
 {
-    stub_.release();
     stub_ = nullptr;
 
     channel_.reset();
@@ -231,10 +230,8 @@ void Client::destroy_stream()
         ctx_->TryCancel();
     }
 
-    stream_.release();
     stream_ = nullptr;
 
-    ctx_.release();
     ctx_ = nullptr;
 
     check_and_notify_client_status_change(ClientStatus::FINISHED);
@@ -424,7 +421,6 @@ void Client::event_loop()
     destroy_channel();
 
     cq_->Shutdown();
-    cq_.release();
     cq_ = nullptr;
 }
 
@@ -460,7 +456,6 @@ void Client::Destroy()
         thread_->join();
     }
 
-    thread_.release();
     thread_ = nullptr;
 
     CleanQueue();

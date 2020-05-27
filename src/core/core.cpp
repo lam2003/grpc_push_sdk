@@ -235,7 +235,6 @@ int PushSDK::Login(const PushSDKUserInfo& user,
 
     PushSDKUserInfo* user_ptr = new PushSDKUserInfo;
     *user_ptr                 = user;
-    user_.release();
     user_.reset(user_ptr);
 
     logining_ = true;
@@ -272,7 +271,6 @@ int PushSDK::Logout(bool is_sync, PushSDKEventCB cb_func, void* cb_args)
 
     // 清理登录信息
     remove_all_group_info();
-    user_.release();
     user_ = nullptr;
 
     if (is_sync) {
@@ -443,8 +441,7 @@ void PushSDK::relogin(bool need_to_lock)
     std::shared_ptr<PushRegReq> req =
         make_login_packet(uid_, appid_, appkey_, user_.get(), now);
     if (!req) {
-        user_.release();
-        user_.reset(nullptr);
+        user_ = nullptr;
         user_lock.unlock();
         log_e("encode login request packet failed");
         event_cb_(PS_CB_TYPE_LOGIN, PS_CB_EVENT_REQ_ENC_FAILED,
@@ -632,7 +629,6 @@ void PushSDK::handle_notify_to_close()
         return;
     }
 
-    user_.release();
     user_ = nullptr;
     user_lock.unlock();
 
