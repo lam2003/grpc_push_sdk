@@ -33,8 +33,6 @@ class Stream {
   private:
     std::shared_ptr<Client>               client_;
     std::shared_ptr<grpc::ClientContext>  ctx_;
-    std::shared_ptr<grpc::Channel>        channel_;
-    std::unique_ptr<Stub>                 stub_;
     std::unique_ptr<PushData>             push_data_;
     std::shared_ptr<StreamEeventListener> listener_;
     std::unique_ptr<RW>                   rw_;
@@ -47,7 +45,7 @@ class Stream {
     std::deque<std::shared_ptr<PushRegReq>> msg_queue_;
     grpc::Status                            grpc_status_;
 
-    static std::atomic<uint32_t> port_index_;
+
 };
 
 }  // namespace edu

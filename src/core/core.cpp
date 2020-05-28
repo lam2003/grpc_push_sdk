@@ -91,7 +91,7 @@ int PushSDK::Initialize(uint32_t       uid,
     return ret;
 }
 
-void PushSDK::OnChannelStateChange(ChannelState state)
+void PushSDK::NotifyChannelState(ChannelState state)
 {
     log_d("channel state change to {}", channel_state_to_string(state));
     for (auto it = hdls_.begin(); it != hdls_.end(); it++) {

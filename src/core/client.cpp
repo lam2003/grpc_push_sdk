@@ -9,52 +9,53 @@
 
 #include <sstream>
 
+#include <core/stream.h>
+
 #define HASH_HEADER_KEY "suid"
 #define UID_HEADER_KEY "uid"
 
 namespace edu {
 
+std::atomic<uint32_t> Client::port_index_(0);
+
 Client::Client()
 {
-    suid_                 = 0;
-    front_envoy_port_idx_ = 0;
-    last_heartbeat_ts_    = -1;
-    client_status_        = StreamStatus::FINISHED;
-    channel_state_        = ChannelState::NO_READY;
-    state_listener_       = nullptr;
-    status_listener_      = nullptr;
-    msg_hdl_              = nullptr;
-    msg_cache_            = nullptr;
-    cq_                   = nullptr;
-    channel_              = nullptr;
-    stub_                 = nullptr;
-    stream_               = nullptr;
-    ctx_                  = nullptr;
-    thread_               = nullptr;
-    run_                  = false;
-    init_                 = false;
+    cq      = std::unique_ptr<grpc::CompletionQueue>(new grpc::CompletionQueue);
+    stub    = nullptr;
+    channel = nullptr;
+
+    st_   = nullptr;
+    init_ = false;
+
+    uid_  = 0;
+    suid_ = 0;
 }
 
-Client ::~Client()
-{
-    Destroy();
-}
+Client ::~Client() {}
 
 void Client::SetChannelStateListener(
     std::shared_ptr<ChannelStateListener> listener)
 {
-    state_listener_ = listener;
+    // state_listener_ = listener;
 }
 
 void Client::SetClientStatusListener(
     std::shared_ptr<ClientStatusListener> listener)
 {
-    status_listener_ = listener;
+    // status_listener_ = listener;
 }
 
 void Client::SetMessageHandler(std::shared_ptr<MessageHandler> hdl)
 {
-    msg_hdl_ = hdl;
+    // msg_hdl_ = hdl;
+}
+
+void Client::CleanQueue()
+{
+    // std::unique_lock<std::mutex> lock(mux_);
+    // while (!queue_.empty()) {
+    //     queue_.pop();
+    // }
 }
 
 static grpc::ChannelArguments get_channel_args()
@@ -79,273 +80,49 @@ static grpc::ChannelArguments get_channel_args()
     return args;
 }
 
-void Client::create_channel()
+void Client::create_channel_and_stub()
 {
     std::ostringstream oss;
     oss << Config::Instance()->front_envoy_host << ":"
         << Config::Instance()->front_envoy_ports
-               [front_envoy_port_idx_ %
-                Config::Instance()->front_envoy_ports.size()];
-    front_envoy_port_idx_++;
+               [port_index_++ % Config::Instance()->front_envoy_ports.size()];
 
-    log_i("connect to {}", oss.str());
-    channel_ = grpc::CreateCustomChannel(
+    channel = grpc::CreateCustomChannel(
         oss.str(), grpc::InsecureChannelCredentials(), get_channel_args());
-    stub_ = PushGateway::NewStub(channel_);
+
+    assert(channel);
+
+    stub = PushGateway::NewStub(channel);
+
+    assert(stub);
 }
 
-void Client::check_and_notify_channel_state_change(ChannelState new_state)
+void Client::create_and_init_stream()
 {
-    if (channel_state_ != new_state && state_listener_) {
-        state_listener_->OnChannelStateChange(new_state);
-        channel_state_ = new_state;
-    }
+    assert(stub);
+    st_ = std::unique_ptr<Stream>(new Stream(shared_from_this()));
+    assert(st_);
+    st_->Init();
 }
 
-void Client::Send(std::shared_ptr<PushRegReq> req)
+void Client::check_and_notify_channel_state()
 {
-    std::unique_lock<std::mutex> lock(mux_);
-    queue_.push(req);
-}
-
-void Client::CleanQueue()
-{
-    std::unique_lock<std::mutex> lock(mux_);
-    while (!queue_.empty()) {
-        queue_.pop();
+    assert(channel);
+    grpc_connectivity_state state = channel->GetState(false);
+    if (channel_state_lis_) {
+        channel_state_lis_->NotifyChannelState(state == GRPC_CHANNEL_READY ?
+                                                   ChannelState::OK :
+                                                   ChannelState::NO_READY);
     }
 }
-
-void Client::destroy_channel()
+void Client::check_and_reconnect()
 {
-    stub_ = nullptr;
-
-    channel_.reset();
-    channel_ = nullptr;
-
-    check_and_notify_channel_state_change(ChannelState::NO_READY);
-}
-
-void Client::check_and_notify_client_status_change(StreamStatus new_status)
-{
-    if (client_status_ != new_status && status_listener_) {
-        status_listener_->OnClientStatusChange(new_status);
-        client_status_ = new_status;
+    assert(channel);
+    grpc_connectivity_state state = channel->GetState(false);
+    if (state == GRPC_CHANNEL_SHUTDOWN ||
+        state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+        create_channel_and_stub();
     }
-}
-
-void Client::create_stream()
-{
-    ctx_.reset(new grpc::ClientContext());
-    // 填入路由所需header kv
-    ctx_->AddMetadata(HASH_HEADER_KEY, std::to_string(suid_));
-    ctx_->AddMetadata(UID_HEADER_KEY, std::to_string(uid_));
-
-    stream_ = stub_->AsyncPushRegister(
-        ctx_.get(), cq_.get(), reinterpret_cast<void*>(ClientEvent::CONNECTED));
-    check_and_notify_client_status_change(StreamStatus::WAIT_CONNECT);
-
-    last_heartbeat_ts_ = Utils::GetSteadyMilliSeconds();
-}
-
-void Client::destroy_stream()
-{
-    if (ctx_) {
-        ctx_->TryCancel();
-    }
-
-    stream_ = nullptr;
-
-    ctx_ = nullptr;
-
-    check_and_notify_client_status_change(StreamStatus::FINISHED);
-}
-
-void Client::handle_event(ClientEvent event)
-{
-    switch (event) {
-        case ClientEvent::CONNECTED: {
-            check_and_notify_client_status_change(StreamStatus::CONNECTED);
-
-            msg_cache_ = std::make_shared<PushData>();
-            stream_->Read(msg_cache_.get(),
-                          reinterpret_cast<void*>(ClientEvent::READ_DONE));
-
-            std::unique_lock<std::mutex> lock(mux_);
-            if (!queue_.empty()) {
-                std::shared_ptr<PushRegReq> req = queue_.front();
-                queue_.pop();
-                lock.unlock();
-
-                last_req_ = req;
-                stream_->Write(
-                    *req, reinterpret_cast<void*>(ClientEvent::WRITE_DONE));
-
-                check_and_notify_client_status_change(
-                    StreamStatus::WAIT_WRITE_DONE);
-            }
-            else {
-                check_and_notify_client_status_change(
-                    StreamStatus::READY_TO_WRITE);
-            }
-
-            break;
-        }
-        case ClientEvent::WRITE_DONE: {
-            std::unique_lock<std::mutex> lock(mux_);
-            if (!queue_.empty()) {
-                std::shared_ptr<PushRegReq> req = queue_.front();
-                queue_.pop();
-                lock.unlock();
-
-                last_req_ = req;
-                stream_->Write(
-                    *req, reinterpret_cast<void*>(ClientEvent::WRITE_DONE));
-
-                check_and_notify_client_status_change(
-                    StreamStatus::WAIT_WRITE_DONE);
-            }
-            else {
-                check_and_notify_client_status_change(
-                    StreamStatus::READY_TO_WRITE);
-            }
-
-            break;
-        }
-        case ClientEvent::READ_DONE: {
-            if (msg_hdl_ &&
-                msg_cache_->uri() != StreamURI::PPushGateWayPongURI) {
-                msg_hdl_->OnMessage(msg_cache_);
-            }
-            msg_cache_ = std::make_shared<PushData>();
-
-            stream_->Read(msg_cache_.get(),
-                          reinterpret_cast<void*>(ClientEvent::READ_DONE));
-            break;
-        }
-        default: break;
-    }
-}
-
-void Client::try_to_send_ping()
-{
-    int64_t now = Utils::GetSteadyMilliSeconds();
-
-    if (now - last_heartbeat_ts_ >= Config::Instance()->heart_beat_interval) {
-        std::shared_ptr<PushRegReq> req = std::make_shared<PushRegReq>();
-        req->set_uri(StreamURI::PPushGateWayPingURI);
-        mux_.lock();
-        queue_.push(req);
-        mux_.unlock();
-        last_heartbeat_ts_ = now;
-    }
-}
-
-void Client::check_channel_and_stream(bool ok)
-{
-    grpc_connectivity_state state = channel_->GetState(true);
-
-    ChannelState new_channel_state;
-    if (state == GRPC_CHANNEL_READY) {
-        new_channel_state = ChannelState::OK;
-    }
-    else {
-        new_channel_state = ChannelState::NO_READY;
-    }
-
-    check_and_notify_channel_state_change(new_channel_state);
-
-    if (state == GRPC_CHANNEL_TRANSIENT_FAILURE ||
-        state == GRPC_CHANNEL_SHUTDOWN) {
-        // 使用其他端口重连,避免某些端口被封
-        log_e("channel error. going to rebuild channel and stream");
-        destroy_stream();
-        destroy_channel();
-        create_channel();
-        create_stream();
-    }
-
-    if (state == GRPC_CHANNEL_READY && !ok) {
-        log_e("stream error. going to rebuild stream");
-        stream_->Finish(&status_,
-                        reinterpret_cast<void*>(ClientEvent::FINISHED));
-    }
-}
-
-void Client::handle_cq_timeout()
-{
-    std::unique_lock<std::mutex> lock(mux_);
-    if (client_status_ == StreamStatus::READY_TO_WRITE && !queue_.empty()) {
-        check_and_notify_client_status_change(StreamStatus::WAIT_WRITE_DONE);
-        std::shared_ptr<PushRegReq> req = queue_.front();
-        queue_.pop();
-        lock.unlock();
-
-        last_req_ = req;
-        stream_->Write(*req, reinterpret_cast<void*>(ClientEvent::WRITE_DONE));
-    }
-}
-
-void Client::event_loop()
-{
-    ClientEvent event;
-    bool        ok;
-
-    cq_ = std::unique_ptr<grpc::CompletionQueue>(new grpc::CompletionQueue);
-
-    create_channel();
-    create_stream();
-
-    gpr_timespec tw =
-        gpr_time_from_millis(Config::Instance()->grpc_cq_timeout, GPR_TIMESPAN);
-    grpc::CompletionQueue::NextStatus status;
-    while (run_) {
-        status = cq_->AsyncNext(reinterpret_cast<void**>(&event), &ok, tw);
-        switch (status) {
-            case grpc::CompletionQueue::SHUTDOWN: {
-                log_w("completion queue shutdown");
-                run_ = false;
-                break;
-            }
-            case grpc::CompletionQueue::TIMEOUT: {
-                check_channel_and_stream(ok);
-                if (ok) {
-                    try_to_send_ping();
-                    handle_cq_timeout();
-                }
-                break;
-            }
-            case grpc::CompletionQueue::GOT_EVENT: {
-                if (event == ClientEvent::FINISHED) {
-                    if (status_listener_) {
-                        status_listener_->OnFinish(last_req_, status_);
-                    }
-                    destroy_stream();
-                    create_stream();
-                }
-                else {
-                    check_channel_and_stream(ok);
-                    if (ok) {
-                        try_to_send_ping();
-                        handle_event(event);
-                    }
-                }
-                break;
-            }
-            default:
-                log_e("completion queue return unknow status={}", status);
-                break;
-        }
-    }
-
-    // 收尾工作....
-    log_i("event loop thread going to quit");
-
-    destroy_stream();
-    destroy_channel();
-
-    cq_->Shutdown();
-    cq_ = nullptr;
 }
 
 int Client::Initialize(uint32_t uid, uint64_t suid)
@@ -353,49 +130,49 @@ int Client::Initialize(uint32_t uid, uint64_t suid)
     int ret = PS_RET_SUCCESS;
 
     if (init_) {
-        ret = PS_RET_ALREADY_INIT;
-        return ret;
+        log_w("client already initialized");
+        return PS_RET_ALREADY_INIT;
     }
 
     uid_  = uid;
     suid_ = suid;
 
-    run_    = true;
-    thread_ = std::unique_ptr<std::thread>(
-        new std::thread(std::bind(&Client::event_loop, this)));
+    // 创建Channel
+    create_channel_and_stub();
 
-    init_ = true;
+    thread_ = std::unique_ptr<std::thread>(new std::thread([this]() {
+        ClientEvent event;
+        bool        ok;
+
+        while (cq->Next(reinterpret_cast<void**>(&event), &ok)) {
+            check_and_notify_channel_state();
+
+            if (event == ClientEvent::FINISHED) {
+                check_and_reconnect();
+                create_and_init_stream();
+                continue;
+            }
+
+            if (!ok) {
+                assert(st_);
+                st_->Finish();
+                continue;
+            }
+
+            assert(st_);
+            st_->Process(event);
+        }
+    }));
+
     return ret;
 }
 
-void Client::Destroy()
+void Client::Send(std::shared_ptr<PushRegReq> req)
 {
-    if (!init_) {
-        return;
+    if (st_) {
+        st_->Send(req);
     }
-
-    run_ = false;
-
-    if (thread_) {
-        thread_->join();
-    }
-
-    thread_ = nullptr;
-
-    CleanQueue();
-
-    state_listener_.reset();
-    state_listener_ = nullptr;
-
-    status_listener_.reset();
-    status_listener_ = nullptr;
-
-    msg_hdl_.reset();
-    msg_hdl_ = nullptr;
-
-    msg_cache_.reset();
-    msg_cache_ = nullptr;
-
-    init_ = false;
 }
+
+void Client::Destroy() {}
 }  // namespace edu

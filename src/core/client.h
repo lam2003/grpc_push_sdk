@@ -12,13 +12,15 @@
 
 namespace edu {
 
+class Stream;
+
 class ChannelStateListener {
   public:
     ChannelStateListener() {}
     virtual ~ChannelStateListener() {}
 
   public:
-    virtual void OnChannelStateChange(ChannelState state) = 0;
+    virtual void NotifyChannelState(ChannelState state) = 0;
 };
 
 class ClientStatusListener {
@@ -38,7 +40,7 @@ class MessageHandler {
     virtual void OnMessage(std::shared_ptr<PushData> msg) = 0;
 };
 
-class Client {
+class Client : std::enable_shared_from_this<Client> {
   public:
     Client();
     virtual ~Client();
@@ -57,47 +59,28 @@ class Client {
     virtual void Send(std::shared_ptr<PushRegReq> req);
     virtual void CleanQueue();
 
+  private:
+    void create_and_init_stream();
+    void create_channel_and_stub();
+    void check_and_notify_channel_state();
+    void check_and_reconnect();
+
   public:
-    std::shared_ptr<grpc::CompletionQueue> cq;
+    std::unique_ptr<grpc::CompletionQueue> cq;
+    std::unique_ptr<Stub>                  stub;
+    std::shared_ptr<grpc::Channel>         channel;
 
   private:
-    void create_channel();
-    void destroy_channel();
-    void create_stream();
-    void destroy_stream();
+    std::unique_ptr<Stream>               st_;
+    bool                                  init_;
+    std::unique_ptr<std::thread>          thread_;
+    std::atomic<bool>                     run_;
+    std::shared_ptr<ChannelStateListener> channel_state_lis_;
 
-    void event_loop();
-    void handle_event(ClientEvent event);
-    void handle_cq_timeout();
-    void check_channel_and_stream(bool ok);
-    void try_to_send_ping();
+    uint32_t uid_;
+    uint64_t suid_;
 
-    void check_and_notify_client_status_change(StreamStatus new_status);
-    void check_and_notify_channel_state_change(ChannelState new_state);
-
-  private:
-    uint32_t                                uid_;
-    uint64_t                                suid_;
-    int                                     front_envoy_port_idx_;
-    int64_t                                 last_heartbeat_ts_;
-    StreamStatus                            client_status_;
-    ChannelState                            channel_state_;
-    std::shared_ptr<ChannelStateListener>   state_listener_;
-    std::shared_ptr<ClientStatusListener>   status_listener_;
-    std::shared_ptr<MessageHandler>         msg_hdl_;
-    std::shared_ptr<PushData>               msg_cache_;
-    std::queue<std::shared_ptr<PushRegReq>> queue_;
-    std::mutex                              mux_;
-    std::unique_ptr<grpc::CompletionQueue>  cq_;
-    std::shared_ptr<grpc::Channel>          channel_;
-    std::unique_ptr<Stub>                   stub_;
-    std::unique_ptr<RW>                     stream_;
-    std::unique_ptr<grpc::ClientContext>    ctx_;
-    std::unique_ptr<std::thread>            thread_;
-    std::atomic<bool>                       run_;
-    bool                                    init_;
-    grpc::Status                            status_;
-    std::shared_ptr<PushRegReq>             last_req_;
+    static std::atomic<uint32_t> port_index_;
 };
 }  // namespace edu
 #endif

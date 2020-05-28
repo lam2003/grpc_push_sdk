@@ -99,7 +99,7 @@ class PushSDK : public Singleton<PushSDK>,
     virtual void     AddGroupMsgCBToHandler(Handler* hdl, PushSDKGroupMsgCB cb);
     virtual void AddConnStateCBToHandler(Handler* hdl, PushSDKConnStateCB cb);
 
-    virtual void OnChannelStateChange(ChannelState state) override;
+    virtual void NotifyChannelState(ChannelState state) override;
     virtual void OnClientStatusChange(StreamStatus status) override;
     virtual void OnFinish(std::shared_ptr<PushRegReq> last_req,
                           grpc::Status                status) override;
