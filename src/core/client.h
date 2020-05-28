@@ -1,7 +1,7 @@
 #ifndef PUSH_SDK_CLIENT_H
 #define PUSH_SDK_CLIENT_H
 
-#include <proto/pushGateWay.grpc.pb.h>
+#include <core/type.h>
 
 #include <atomic>
 #include <memory>
@@ -10,47 +10,11 @@
 #include <thread>
 #include <vector>
 
-using PushGateway        = grpc::push::gateway::PushGateway;
-using Stub               = grpc::push::gateway::PushGateway::Stub;
-using PushRegReq         = grpc::push::gateway::PushRegReq;
-using LoginRequest       = grpc::push::gateway::LoginRequest;
-using LoginResponse      = grpc::push::gateway::LoginResponse;
-using LogoutRequest      = grpc::push::gateway::LogoutRequest;
-using LogoutResponse     = grpc::push::gateway::LogoutResponse;
-using JoinGroupRequest   = grpc::push::gateway::JoinGroupRequest;
-using JoinGroupResponse  = grpc::push::gateway::JoinGroupResponse;
-using LeaveGroupRequest  = grpc::push::gateway::LeaveGroupRequest;
-using LeaveGroupResponse = grpc::push::gateway::LeaveGroupResponse;
-using UserGroup          = grpc::push::gateway::UserGroup;
-using PushData           = grpc::push::gateway::PushData;
-using StreamURI          = grpc::push::gateway::StreamURI;
-using UserTerminalType   = grpc::push::gateway::UserTerminalType;
-using Stream =
-    grpc::ClientAsyncReaderWriterInterface<grpc::push::gateway::PushRegReq,
-                                           grpc::push::gateway::PushData>;
 
 namespace edu {
 
-enum class ClientEvent {
-    CONNECTED  = 1,
-    READ_DONE  = 2,
-    WRITE_DONE = 3,
-    FINISHED   = 4
-};
 
-enum class ClientStatus {
-    WAIT_CONNECT    = 100,
-    CONNECTED       = 101,
-    READY_TO_WRITE  = 102,
-    WAIT_WRITE_DONE = 103,
-    FINISHED        = 104
-};
 
-enum class ChannelState { OK, NO_READY };
-
-extern std::string channel_state_to_string(ChannelState state);
-extern std::string client_status_to_string(ClientStatus status);
-extern std::string stream_uri_to_string(StreamURI uri);
 
 class ChannelStateListener {
   public:
@@ -104,7 +68,7 @@ class Client {
     void destroy_stream();
 
     void event_loop();
-    void handle_event(ClientEvent event);
+    void handle_event(StreamEvent event);
     void handle_cq_timeout();
     void check_channel_and_stream(bool ok);
     void try_to_send_ping();
@@ -128,7 +92,7 @@ class Client {
     std::unique_ptr<grpc::CompletionQueue>  cq_;
     std::shared_ptr<grpc::Channel>          channel_;
     std::unique_ptr<Stub>                   stub_;
-    std::unique_ptr<Stream>                 stream_;
+    std::unique_ptr<RW>                 stream_;
     std::unique_ptr<grpc::ClientContext>    ctx_;
     std::unique_ptr<std::thread>            thread_;
     std::atomic<bool>                       run_;

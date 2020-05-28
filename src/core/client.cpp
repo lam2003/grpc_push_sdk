@@ -14,82 +14,6 @@
 
 namespace edu {
 
-std::string channel_state_to_string(ChannelState state)
-{
-    switch (state) {
-        case ChannelState::OK: return "OK";
-        case ChannelState::NO_READY: return "NO_READY";
-        default: return "UNKNOW";
-    }
-}
-
-std::string client_status_to_string(ClientStatus status)
-{
-    switch (status) {
-        case ClientStatus::FINISHED: return "FINISHED";
-        case ClientStatus::READY_TO_WRITE: return "READY_TO_WRITE";
-        case ClientStatus::WAIT_CONNECT: return "WAIT_CONNECT";
-        case ClientStatus::WAIT_WRITE_DONE: return "WAIT_WRITE_DONE";
-        case ClientStatus::CONNECTED: return "CONNECTED";
-        default: return "UNKNOW";
-    }
-}
-
-std::string stream_uri_to_string(StreamURI uri)
-{
-    switch (uri) {
-        case StreamURI::PPushGateWayLoginURI: return "PPushGateWayLoginURI";
-        case StreamURI::PPushGateWayLoginResURI:
-            return "PPushGateWayLoginResURI";
-        case StreamURI::PPushGateWayLogoutURI: return "PPushGateWayLogoutURI";
-
-        case StreamURI::PPushGateWayLogoutResURI:
-            return "PPushGateWayLogoutResURI";
-        case StreamURI::PPushGateWayJoinGroupURI:
-            return "PPushGateWayJoinGroupURI";
-        case StreamURI::PPushGateWayJoinGroupResURI:
-            return "PPushGateWayJoinGroupResURI";
-        case StreamURI::PPushGateWayLeaveGroupURI:
-            return "PPushGateWayLeaveGroupURI";
-        case StreamURI::PPushGateWayLeaveGroupResURI:
-            return "PPushGateWayLeaveGroupResURI";
-        case StreamURI::PPushGateWayPingURI: return "PPushGateWayPingURI";
-        case StreamURI::PPushGateWayPongURI: return "PPushGateWayPongURI";
-        case StreamURI::PPushGateWayNotifyToCloseURI:
-            return "PPushGateWayNotifyToCloseURI";
-        case StreamURI::PPushGateWayPushDataByUidURI:
-            return "PPushGateWayPushDataByUidURI";
-        case StreamURI::PPushGateWayPushDataByGroupURI:
-            return "PPushGateWayPushDataByGroupURI";
-        case StreamURI::PPushGateWayUNKNOWN:
-        default: return "UNKNOW";
-    }
-}
-
-// static std::string client_event_to_string(ClientEvent event)
-// {
-//     switch (event) {
-//         case ClientEvent::CONNECTED: return "CONNECTED";
-//         case ClientEvent::FINISHED: return "FINISHED";
-//         case ClientEvent::READ_DONE: return "READ_DONE";
-//         case ClientEvent::WRITE_DONE: return "WRITE_DONE";
-//         default: return "UNKNOW";
-//     }
-// }
-
-// static std::string grpc_channel_state_to_string(grpc_connectivity_state
-// state)
-// {
-//     switch (state) {
-//         case GRPC_CHANNEL_IDLE: return "IDLE";
-//         case GRPC_CHANNEL_CONNECTING: return "CONNECTING";
-//         case GRPC_CHANNEL_READY: return "READY";
-//         case GRPC_CHANNEL_TRANSIENT_FAILURE: return "TRANSIENT_FAILURE";
-//         case GRPC_CHANNEL_SHUTDOWN: return "SHUTDOWN";
-//         default: return "UNKNOW";
-//     }
-// }
-
 Client::Client()
 {
     suid_                 = 0;
@@ -218,7 +142,7 @@ void Client::create_stream()
     ctx_->AddMetadata(UID_HEADER_KEY, std::to_string(uid_));
 
     stream_ = stub_->AsyncPushRegister(
-        ctx_.get(), cq_.get(), reinterpret_cast<void*>(ClientEvent::CONNECTED));
+        ctx_.get(), cq_.get(), reinterpret_cast<void*>(StreamEvent::CONNECTED));
     check_and_notify_client_status_change(ClientStatus::WAIT_CONNECT);
 
     last_heartbeat_ts_ = Utils::GetSteadyMilliSeconds();
@@ -237,15 +161,15 @@ void Client::destroy_stream()
     check_and_notify_client_status_change(ClientStatus::FINISHED);
 }
 
-void Client::handle_event(ClientEvent event)
+void Client::handle_event(StreamEvent event)
 {
     switch (event) {
-        case ClientEvent::CONNECTED: {
+        case StreamEvent::CONNECTED: {
             check_and_notify_client_status_change(ClientStatus::CONNECTED);
 
             msg_cache_ = std::make_shared<PushData>();
             stream_->Read(msg_cache_.get(),
-                          reinterpret_cast<void*>(ClientEvent::READ_DONE));
+                          reinterpret_cast<void*>(StreamEvent::READ_DONE));
 
             std::unique_lock<std::mutex> lock(mux_);
             if (!queue_.empty()) {
@@ -255,7 +179,7 @@ void Client::handle_event(ClientEvent event)
 
                 last_req_ = req;
                 stream_->Write(
-                    *req, reinterpret_cast<void*>(ClientEvent::WRITE_DONE));
+                    *req, reinterpret_cast<void*>(StreamEvent::WRITE_DONE));
 
                 check_and_notify_client_status_change(
                     ClientStatus::WAIT_WRITE_DONE);
@@ -267,7 +191,7 @@ void Client::handle_event(ClientEvent event)
 
             break;
         }
-        case ClientEvent::WRITE_DONE: {
+        case StreamEvent::WRITE_DONE: {
             std::unique_lock<std::mutex> lock(mux_);
             if (!queue_.empty()) {
                 std::shared_ptr<PushRegReq> req = queue_.front();
@@ -276,7 +200,7 @@ void Client::handle_event(ClientEvent event)
 
                 last_req_ = req;
                 stream_->Write(
-                    *req, reinterpret_cast<void*>(ClientEvent::WRITE_DONE));
+                    *req, reinterpret_cast<void*>(StreamEvent::WRITE_DONE));
 
                 check_and_notify_client_status_change(
                     ClientStatus::WAIT_WRITE_DONE);
@@ -288,7 +212,7 @@ void Client::handle_event(ClientEvent event)
 
             break;
         }
-        case ClientEvent::READ_DONE: {
+        case StreamEvent::READ_DONE: {
             if (msg_hdl_ &&
                 msg_cache_->uri() != StreamURI::PPushGateWayPongURI) {
                 msg_hdl_->OnMessage(msg_cache_);
@@ -296,7 +220,7 @@ void Client::handle_event(ClientEvent event)
             msg_cache_ = std::make_shared<PushData>();
 
             stream_->Read(msg_cache_.get(),
-                          reinterpret_cast<void*>(ClientEvent::READ_DONE));
+                          reinterpret_cast<void*>(StreamEvent::READ_DONE));
             break;
         }
         default: break;
@@ -344,7 +268,7 @@ void Client::check_channel_and_stream(bool ok)
     if (state == GRPC_CHANNEL_READY && !ok) {
         log_e("stream error. going to rebuild stream");
         stream_->Finish(&status_,
-                        reinterpret_cast<void*>(ClientEvent::FINISHED));
+                        reinterpret_cast<void*>(StreamEvent::FINISHED));
     }
 }
 
@@ -358,13 +282,13 @@ void Client::handle_cq_timeout()
         lock.unlock();
 
         last_req_ = req;
-        stream_->Write(*req, reinterpret_cast<void*>(ClientEvent::WRITE_DONE));
+        stream_->Write(*req, reinterpret_cast<void*>(StreamEvent::WRITE_DONE));
     }
 }
 
 void Client::event_loop()
 {
-    ClientEvent event;
+    StreamEvent event;
     bool        ok;
 
     cq_ = std::unique_ptr<grpc::CompletionQueue>(new grpc::CompletionQueue);
@@ -392,7 +316,7 @@ void Client::event_loop()
                 break;
             }
             case grpc::CompletionQueue::GOT_EVENT: {
-                if (event == ClientEvent::FINISHED) {
+                if (event == StreamEvent::FINISHED) {
                     if (status_listener_) {
                         status_listener_->OnFinish(last_req_, status_);
                     }
