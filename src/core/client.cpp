@@ -19,7 +19,7 @@ Client::Client()
     suid_                 = 0;
     front_envoy_port_idx_ = 0;
     last_heartbeat_ts_    = -1;
-    client_status_        = ClientStatus::FINISHED;
+    client_status_        = StreamStatus::FINISHED;
     channel_state_        = ChannelState::NO_READY;
     state_listener_       = nullptr;
     status_listener_      = nullptr;
@@ -126,7 +126,7 @@ void Client::destroy_channel()
     check_and_notify_channel_state_change(ChannelState::NO_READY);
 }
 
-void Client::check_and_notify_client_status_change(ClientStatus new_status)
+void Client::check_and_notify_client_status_change(StreamStatus new_status)
 {
     if (client_status_ != new_status && status_listener_) {
         status_listener_->OnClientStatusChange(new_status);
@@ -142,8 +142,8 @@ void Client::create_stream()
     ctx_->AddMetadata(UID_HEADER_KEY, std::to_string(uid_));
 
     stream_ = stub_->AsyncPushRegister(
-        ctx_.get(), cq_.get(), reinterpret_cast<void*>(StreamEvent::CONNECTED));
-    check_and_notify_client_status_change(ClientStatus::WAIT_CONNECT);
+        ctx_.get(), cq_.get(), reinterpret_cast<void*>(ClientEvent::CONNECTED));
+    check_and_notify_client_status_change(StreamStatus::WAIT_CONNECT);
 
     last_heartbeat_ts_ = Utils::GetSteadyMilliSeconds();
 }
@@ -158,18 +158,18 @@ void Client::destroy_stream()
 
     ctx_ = nullptr;
 
-    check_and_notify_client_status_change(ClientStatus::FINISHED);
+    check_and_notify_client_status_change(StreamStatus::FINISHED);
 }
 
-void Client::handle_event(StreamEvent event)
+void Client::handle_event(ClientEvent event)
 {
     switch (event) {
-        case StreamEvent::CONNECTED: {
-            check_and_notify_client_status_change(ClientStatus::CONNECTED);
+        case ClientEvent::CONNECTED: {
+            check_and_notify_client_status_change(StreamStatus::CONNECTED);
 
             msg_cache_ = std::make_shared<PushData>();
             stream_->Read(msg_cache_.get(),
-                          reinterpret_cast<void*>(StreamEvent::READ_DONE));
+                          reinterpret_cast<void*>(ClientEvent::READ_DONE));
 
             std::unique_lock<std::mutex> lock(mux_);
             if (!queue_.empty()) {
@@ -179,19 +179,19 @@ void Client::handle_event(StreamEvent event)
 
                 last_req_ = req;
                 stream_->Write(
-                    *req, reinterpret_cast<void*>(StreamEvent::WRITE_DONE));
+                    *req, reinterpret_cast<void*>(ClientEvent::WRITE_DONE));
 
                 check_and_notify_client_status_change(
-                    ClientStatus::WAIT_WRITE_DONE);
+                    StreamStatus::WAIT_WRITE_DONE);
             }
             else {
                 check_and_notify_client_status_change(
-                    ClientStatus::READY_TO_WRITE);
+                    StreamStatus::READY_TO_WRITE);
             }
 
             break;
         }
-        case StreamEvent::WRITE_DONE: {
+        case ClientEvent::WRITE_DONE: {
             std::unique_lock<std::mutex> lock(mux_);
             if (!queue_.empty()) {
                 std::shared_ptr<PushRegReq> req = queue_.front();
@@ -200,19 +200,19 @@ void Client::handle_event(StreamEvent event)
 
                 last_req_ = req;
                 stream_->Write(
-                    *req, reinterpret_cast<void*>(StreamEvent::WRITE_DONE));
+                    *req, reinterpret_cast<void*>(ClientEvent::WRITE_DONE));
 
                 check_and_notify_client_status_change(
-                    ClientStatus::WAIT_WRITE_DONE);
+                    StreamStatus::WAIT_WRITE_DONE);
             }
             else {
                 check_and_notify_client_status_change(
-                    ClientStatus::READY_TO_WRITE);
+                    StreamStatus::READY_TO_WRITE);
             }
 
             break;
         }
-        case StreamEvent::READ_DONE: {
+        case ClientEvent::READ_DONE: {
             if (msg_hdl_ &&
                 msg_cache_->uri() != StreamURI::PPushGateWayPongURI) {
                 msg_hdl_->OnMessage(msg_cache_);
@@ -220,7 +220,7 @@ void Client::handle_event(StreamEvent event)
             msg_cache_ = std::make_shared<PushData>();
 
             stream_->Read(msg_cache_.get(),
-                          reinterpret_cast<void*>(StreamEvent::READ_DONE));
+                          reinterpret_cast<void*>(ClientEvent::READ_DONE));
             break;
         }
         default: break;
@@ -268,27 +268,27 @@ void Client::check_channel_and_stream(bool ok)
     if (state == GRPC_CHANNEL_READY && !ok) {
         log_e("stream error. going to rebuild stream");
         stream_->Finish(&status_,
-                        reinterpret_cast<void*>(StreamEvent::FINISHED));
+                        reinterpret_cast<void*>(ClientEvent::FINISHED));
     }
 }
 
 void Client::handle_cq_timeout()
 {
     std::unique_lock<std::mutex> lock(mux_);
-    if (client_status_ == ClientStatus::READY_TO_WRITE && !queue_.empty()) {
-        check_and_notify_client_status_change(ClientStatus::WAIT_WRITE_DONE);
+    if (client_status_ == StreamStatus::READY_TO_WRITE && !queue_.empty()) {
+        check_and_notify_client_status_change(StreamStatus::WAIT_WRITE_DONE);
         std::shared_ptr<PushRegReq> req = queue_.front();
         queue_.pop();
         lock.unlock();
 
         last_req_ = req;
-        stream_->Write(*req, reinterpret_cast<void*>(StreamEvent::WRITE_DONE));
+        stream_->Write(*req, reinterpret_cast<void*>(ClientEvent::WRITE_DONE));
     }
 }
 
 void Client::event_loop()
 {
-    StreamEvent event;
+    ClientEvent event;
     bool        ok;
 
     cq_ = std::unique_ptr<grpc::CompletionQueue>(new grpc::CompletionQueue);
@@ -316,7 +316,7 @@ void Client::event_loop()
                 break;
             }
             case grpc::CompletionQueue::GOT_EVENT: {
-                if (event == StreamEvent::FINISHED) {
+                if (event == ClientEvent::FINISHED) {
                     if (status_listener_) {
                         status_listener_->OnFinish(last_req_, status_);
                     }

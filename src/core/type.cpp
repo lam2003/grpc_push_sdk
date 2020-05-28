@@ -17,22 +17,22 @@ std::string channel_state_to_string(ChannelState state)
     }
 }
 
-std::string client_status_to_string(ClientStatus status)
+std::string client_status_to_string(StreamStatus status)
 {
     switch (status) {
-        case ClientStatus::FINISHED: {
+        case StreamStatus::FINISHED: {
             return "FINISHED";
         }
-        case ClientStatus::READY_TO_WRITE: {
+        case StreamStatus::READY_TO_WRITE: {
             return "READY_TO_WRITE";
         }
-        case ClientStatus::WAIT_CONNECT: {
+        case StreamStatus::WAIT_CONNECT: {
             return "WAIT_CONNECT";
         }
-        case ClientStatus::WAIT_WRITE_DONE: {
+        case StreamStatus::WAIT_WRITE_DONE: {
             return "WAIT_WRITE_DONE";
         }
-        case ClientStatus::CONNECTED: {
+        case StreamStatus::CONNECTED: {
             return "CONNECTED";
         }
         default: {

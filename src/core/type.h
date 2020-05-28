@@ -24,14 +24,14 @@ using RW =
 
 namespace edu {
 
-enum class StreamEvent {
+enum class ClientEvent {
     CONNECTED  = 1,
     READ_DONE  = 2,
     WRITE_DONE = 3,
     FINISHED   = 4
 };
 
-enum class ClientStatus {
+enum class StreamStatus {
     WAIT_CONNECT    = 100,
     CONNECTED       = 101,
     READY_TO_WRITE  = 102,
@@ -42,7 +42,7 @@ enum class ClientStatus {
 enum class ChannelState { OK, NO_READY };
 
 extern std::string channel_state_to_string(ChannelState state);
-extern std::string client_status_to_string(ClientStatus status);
+extern std::string client_status_to_string(StreamStatus status);
 extern std::string stream_uri_to_string(StreamURI uri);
 
 }  // namespace edu

@@ -103,19 +103,19 @@ void PushSDK::OnChannelStateChange(ChannelState state)
     }
 }
 
-void PushSDK::OnClientStatusChange(ClientStatus status)
+void PushSDK::OnClientStatusChange(StreamStatus status)
 {
     log_d("client status change to {}", client_status_to_string(status));
 
     switch (status) {
-        case ClientStatus::CONNECTED: {
+        case StreamStatus::CONNECTED: {
             relogin();
             break;
         }
-        case ClientStatus::READY_TO_WRITE:
-        case ClientStatus::WAIT_CONNECT:
-        case ClientStatus::WAIT_WRITE_DONE:
-        case ClientStatus::FINISHED:
+        case StreamStatus::READY_TO_WRITE:
+        case StreamStatus::WAIT_CONNECT:
+        case StreamStatus::WAIT_WRITE_DONE:
+        case StreamStatus::FINISHED:
         default: break;
     }
 }
