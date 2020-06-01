@@ -103,21 +103,9 @@ void PushSDK::NotifyChannelState(ChannelState state)
     }
 }
 
-void PushSDK::OnClientStatusChange(StreamStatus status)
+void PushSDK::OnConnected()
 {
-    log_d("client status change to {}", client_status_to_string(status));
-
-    switch (status) {
-        case StreamStatus::CONNECTED: {
-            relogin();
-            break;
-        }
-        case StreamStatus::READY_TO_WRITE:
-        case StreamStatus::WAIT_CONNECT:
-        case StreamStatus::WAIT_WRITE_DONE:
-        case StreamStatus::FINISHED:
-        default: break;
-    }
+    relogin();
 }
 
 void PushSDK::OnFinish(std::shared_ptr<PushRegReq> last_req,

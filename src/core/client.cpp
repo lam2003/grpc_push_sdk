@@ -42,20 +42,19 @@ void Client::SetChannelStateListener(
 void Client::SetClientStatusListener(
     std::shared_ptr<ClientStatusListener> listener)
 {
-    // status_listener_ = listener;
+    status_lis_ = listener;
 }
 
 void Client::SetMessageHandler(std::shared_ptr<MessageHandler> hdl)
 {
-    // msg_hdl_ = hdl;
+    msg_hdl_ = hdl;
 }
 
 void Client::CleanQueue()
 {
-    // std::unique_lock<std::mutex> lock(mux_);
-    // while (!queue_.empty()) {
-    //     queue_.pop();
-    // }
+    mux_.lock();
+    msg_queue_.clear();
+    mux_.unlock();
 }
 
 static grpc::ChannelArguments get_channel_args()
@@ -136,9 +135,19 @@ void Client::check_and_reconnect()
     }
 }
 
-void Client::on_connected() {}
+void Client::on_connected()
+{
+    if (status_lis_) {
+        status_lis_->OnConnected();
+    }
+}
 
-void Client::on_read(std::shared_ptr<PushData> push_data) {}
+void Client::on_read(std::shared_ptr<PushData> push_data)
+{
+    if (msg_hdl_) {
+        msg_hdl_->OnMessage(push_data);
+    }
+}
 
 void Client::send_all_msgs()
 {
@@ -207,6 +216,10 @@ int Client::Initialize(uint32_t uid, uint64_t suid)
                 case grpc::CompletionQueue::GOT_EVENT: {
                     log_t("stream event={}", event);
                     if (event == ClientEvent::FINISHED) {
+                        if (status_lis_) {
+                            status_lis_->OnFinish(st_->LastRequest(),
+                                                  st_->GrpcStatus());
+                        }
                         check_and_reconnect();
                         create_and_init_stream();
                         continue;

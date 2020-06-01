@@ -61,7 +61,9 @@ void Stream::Process(ClientEvent event)
                 status_ = StreamStatus::READY_TO_WRITE;
             }
             else {
-                rw_->Write(*msg_queue_.front(),
+                std::shared_ptr<PushRegReq> r = msg_queue_.front();
+                last_req_                     = r;
+                rw_->Write(*r,
                            reinterpret_cast<void*>(ClientEvent::WRITE_DONE));
                 status_ = StreamStatus::WAIT_WRITE_DONE;
                 msg_queue_.pop_front();
@@ -83,6 +85,7 @@ void Stream::Send(std::shared_ptr<PushRegReq> req)
     if (status_ == StreamStatus::READY_TO_WRITE) {
         std::shared_ptr<PushRegReq> r = msg_queue_.front();
         msg_queue_.pop_front();
+        last_req_ = r;
         rw_->Write(*r, reinterpret_cast<void*>(ClientEvent::WRITE_DONE));
         status_ = StreamStatus::WAIT_WRITE_DONE;
     }
@@ -103,6 +106,7 @@ void Stream::SendMsgs(std::deque<std::shared_ptr<PushRegReq>>& msgs)
         }
         std::shared_ptr<PushRegReq> r = msg_queue_.front();
         msg_queue_.pop_front();
+        last_req_ = r;
         rw_->Write(*r, reinterpret_cast<void*>(ClientEvent::WRITE_DONE));
         status_ = StreamStatus::WAIT_WRITE_DONE;
     }
@@ -129,6 +133,16 @@ bool Stream::IsReadyToSend()
     }
 
     return false;
+}
+
+grpc::Status Stream::GrpcStatus()
+{
+    return grpc_status_;
+}
+
+std::shared_ptr<PushRegReq> Stream::LastRequest()
+{
+    return last_req_;
 }
 
 void Stream::Finish()

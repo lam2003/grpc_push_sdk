@@ -23,6 +23,8 @@ class Stream {
     virtual void Cancel();
     virtual bool IsConnected();
     virtual bool IsReadyToSend();
+    virtual grpc::Status                GrpcStatus();
+    virtual std::shared_ptr<PushRegReq> LastRequest();
 
   private:
     std::shared_ptr<Client>              client_;
@@ -31,6 +33,7 @@ class Stream {
     std::unique_ptr<RW>                  rw_;
     StreamStatus                         status_;
     grpc::Status                         grpc_status_;
+    std::shared_ptr<PushRegReq>          last_req_;
 
     std::mutex                              mux_;
     std::deque<std::shared_ptr<PushRegReq>> msg_queue_;

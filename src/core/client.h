@@ -29,9 +29,9 @@ class ClientStatusListener {
     ~ClientStatusListener() {}
 
   public:
-    virtual void OnClientStatusChange(StreamStatus statue) = 0;
+    virtual void OnConnected()                 = 0;
     virtual void OnFinish(std::shared_ptr<PushRegReq> last_req,
-                          grpc::Status                status)             = 0;
+                          grpc::Status                status) = 0;
 };
 
 class MessageHandler {
@@ -81,6 +81,8 @@ class Client : public std::enable_shared_from_this<Client> {
     std::unique_ptr<std::thread>          thread_;
     std::atomic<bool>                     run_;
     std::shared_ptr<ChannelStateListener> channel_state_lis_;
+    std::shared_ptr<MessageHandler>       msg_hdl_;
+    std::shared_ptr<ClientStatusListener> status_lis_;
 
     ChannelState last_channel_state_;
     int64_t      last_heartbeat_ts_;
