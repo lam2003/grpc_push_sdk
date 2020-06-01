@@ -39,7 +39,7 @@ enum class StreamStatus {
     FINISHED        = 104
 };
 
-enum class ChannelState { OK, NO_READY };
+enum class ChannelState { UNKNOW, OK, NO_READY };
 
 extern std::string channel_state_to_string(ChannelState state);
 extern std::string client_status_to_string(StreamStatus status);

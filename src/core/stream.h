@@ -9,16 +9,6 @@ namespace edu {
 
 class Client;
 
-class StreamEeventListener {
-  public:
-    StreamEeventListener();
-    virtual ~StreamEeventListener();
-
-  public:
-    virtual void OnConnected()                               = 0;
-    virtual void OnRead(std::shared_ptr<PushData> push_data) = 0;
-};
-
 class Stream {
   public:
     Stream(std::shared_ptr<Client> client);
@@ -29,23 +19,21 @@ class Stream {
     virtual void Process(ClientEvent event);
     virtual void Finish();
     virtual void Send(std::shared_ptr<PushRegReq> req);
+    virtual void SendMsgs(std::deque<std::shared_ptr<PushRegReq>>& msgs);
+    virtual void Cancel();
+    virtual bool IsConnected();
+    virtual bool IsReadyToSend();
 
   private:
-    std::shared_ptr<Client>               client_;
-    std::shared_ptr<grpc::ClientContext>  ctx_;
-    std::unique_ptr<PushData>             push_data_;
-    std::shared_ptr<StreamEeventListener> listener_;
-    std::unique_ptr<RW>                   rw_;
-
-    StreamStatus status_;
-    bool         need_to_finish_;
-    int64_t      last_heart_beat_ts_;
+    std::shared_ptr<Client>              client_;
+    std::shared_ptr<grpc::ClientContext> ctx_;
+    std::unique_ptr<PushData>            push_data_;
+    std::unique_ptr<RW>                  rw_;
+    StreamStatus                         status_;
+    grpc::Status                         grpc_status_;
 
     std::mutex                              mux_;
     std::deque<std::shared_ptr<PushRegReq>> msg_queue_;
-    grpc::Status                            grpc_status_;
-
-
 };
 
 }  // namespace edu

@@ -36,7 +36,7 @@ Client ::~Client() {}
 void Client::SetChannelStateListener(
     std::shared_ptr<ChannelStateListener> listener)
 {
-    // state_listener_ = listener;
+    channel_state_lis_ = listener;
 }
 
 void Client::SetClientStatusListener(
@@ -87,6 +87,8 @@ void Client::create_channel_and_stub()
         << Config::Instance()->front_envoy_ports
                [port_index_++ % Config::Instance()->front_envoy_ports.size()];
 
+    log_t("trying connect to {}", oss.str());
+
     channel = grpc::CreateCustomChannel(
         oss.str(), grpc::InsecureChannelCredentials(), get_channel_args());
 
@@ -109,10 +111,19 @@ void Client::check_and_notify_channel_state()
 {
     assert(channel);
     grpc_connectivity_state state = channel->GetState(false);
+
+    ChannelState new_state =
+        state == GRPC_CHANNEL_READY ? ChannelState::OK : ChannelState::NO_READY;
+
+    if (new_state != last_channel_state_) {
+        last_channel_state_ = new_state;
+    }
+    else {
+        return;
+    }
+
     if (channel_state_lis_) {
-        channel_state_lis_->NotifyChannelState(state == GRPC_CHANNEL_READY ?
-                                                   ChannelState::OK :
-                                                   ChannelState::NO_READY);
+        channel_state_lis_->NotifyChannelState(last_channel_state_);
     }
 }
 void Client::check_and_reconnect()
@@ -125,6 +136,26 @@ void Client::check_and_reconnect()
     }
 }
 
+void Client::on_connected() {}
+
+void Client::on_read(std::shared_ptr<PushData> push_data) {}
+
+void Client::send_all_msgs()
+{
+    int64_t now = Utils::GetSteadyMilliSeconds();
+
+    if (now - last_heartbeat_ts_ >= Config::Instance()->heart_beat_interval) {
+        std::shared_ptr<PushRegReq> req = std::make_shared<PushRegReq>();
+        req->set_uri(StreamURI::PPushGateWayPingURI);
+        st_->Send(req);
+        last_heartbeat_ts_ = now;
+    }
+
+    mux_.lock();
+    st_->SendMsgs(msg_queue_);
+    mux_.unlock();
+}
+
 int Client::Initialize(uint32_t uid, uint64_t suid)
 {
     int ret = PS_RET_SUCCESS;
@@ -134,33 +165,70 @@ int Client::Initialize(uint32_t uid, uint64_t suid)
         return PS_RET_ALREADY_INIT;
     }
 
-    uid_  = uid;
-    suid_ = suid;
+    last_heartbeat_ts_ = 0;
+    uid_               = uid;
+    suid_              = suid;
 
-    // 创建Channel
-    create_channel_and_stub();
+    run_ = true;
 
     thread_ = std::unique_ptr<std::thread>(new std::thread([this]() {
-        ClientEvent event;
-        bool        ok;
+        gpr_timespec tw = gpr_time_from_millis(
+            Config::Instance()->grpc_cq_timeout_ms, GPR_TIMESPAN);
+        grpc::CompletionQueue::NextStatus status;
+        ClientEvent                       event;
+        bool                              ok;
 
-        while (cq->Next(reinterpret_cast<void**>(&event), &ok)) {
+        create_channel_and_stub();
+        create_and_init_stream();
+
+        while (run_) {
+            status = cq->AsyncNext(reinterpret_cast<void**>(&event), &ok, tw);
+
             check_and_notify_channel_state();
 
-            if (event == ClientEvent::FINISHED) {
-                check_and_reconnect();
-                create_and_init_stream();
-                continue;
-            }
+            switch (status) {
+                case grpc::CompletionQueue::SHUTDOWN: {
+                    log_w("completion queue shutdown");
+                    run_ = false;
+                    break;
+                }
+                case grpc::CompletionQueue::TIMEOUT: {
+                    if (!ok && st_->IsConnected()) {
+                        st_->Finish();
+                        continue;
+                    }
 
-            if (!ok) {
-                assert(st_);
-                st_->Finish();
-                continue;
-            }
+                    if (st_->IsReadyToSend()) {
+                        send_all_msgs();
+                    }
 
-            assert(st_);
-            st_->Process(event);
+                    break;
+                }
+                case grpc::CompletionQueue::GOT_EVENT: {
+                    log_t("stream event={}", event);
+                    if (event == ClientEvent::FINISHED) {
+                        check_and_reconnect();
+                        create_and_init_stream();
+                        continue;
+                    }
+
+                    if (!ok && st_->IsConnected()) {
+                        st_->Finish();
+                        continue;
+                    }
+
+                    if (st_->IsReadyToSend()) {
+                        send_all_msgs();
+                    }
+
+                    st_->Process(event);
+
+                    break;
+                }
+                default: {
+                    break;
+                }
+            }
         }
     }));
 
@@ -169,9 +237,9 @@ int Client::Initialize(uint32_t uid, uint64_t suid)
 
 void Client::Send(std::shared_ptr<PushRegReq> req)
 {
-    if (st_) {
-        st_->Send(req);
-    }
+    mux_.lock();
+    msg_queue_.emplace_back(req);
+    mux_.unlock();
 }
 
 void Client::Destroy() {}

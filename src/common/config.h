@@ -25,7 +25,7 @@ class Config : public Singleton<Config> {
     std::string grpc_log_level = "trace";
 
     // sdk日志输出到控制台开关
-    bool sdk_log_on_console = false;
+    bool sdk_log_on_console = true;
     // sdk日志等级
     std::string sdk_log_level = "trace";
 

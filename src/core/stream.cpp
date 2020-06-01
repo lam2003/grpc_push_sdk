@@ -9,25 +9,21 @@
 
 namespace edu {
 
-
-
-
 Stream::Stream(std::shared_ptr<Client> client)
 {
     client_    = client;
     ctx_       = std::unique_ptr<grpc::ClientContext>(new grpc::ClientContext);
     push_data_ = std::unique_ptr<PushData>(new PushData);
-    listener_  = nullptr;
     rw_        = nullptr;
+    status_    = StreamStatus::WAIT_CONNECT;
+    grpc_status_ = grpc::Status::OK;
 }
 
 Stream::~Stream() {}
 
 void Stream::Init()
 {
-    status_             = StreamStatus::WAIT_CONNECT;
-    need_to_finish_     = false;
-    last_heart_beat_ts_ = Utils::GetSteadyMilliSeconds();
+    status_ = StreamStatus::WAIT_CONNECT;
 
     rw_ = client_->stub->AsyncPushRegister(
         ctx_.get(), client_->cq.get(),
@@ -45,9 +41,8 @@ void Stream::Process(ClientEvent event)
             status_ = StreamStatus::READY_TO_WRITE;
             lock.unlock();
 
-            if (listener_) {
-                listener_->OnConnected();
-            }
+            client_->on_connected();
+
             break;
         }
         case ClientEvent::READ_DONE: {
@@ -55,20 +50,15 @@ void Stream::Process(ClientEvent event)
                       reinterpret_cast<void*>(ClientEvent::READ_DONE));
             lock.unlock();
 
-            if (listener_) {
-                PushData*                 p = new PushData(*push_data_.get());
-                std::shared_ptr<PushData> push_data(p);
-                listener_->OnRead(push_data);
-            }
+            PushData*                 p = new PushData(*push_data_.get());
+            std::shared_ptr<PushData> push_data(p);
+            client_->on_read(push_data);
+
             break;
         }
         case ClientEvent::WRITE_DONE: {
             if (msg_queue_.empty()) {
                 status_ = StreamStatus::READY_TO_WRITE;
-                if (need_to_finish_) {
-                    lock.unlock();
-                    Finish();
-                }
             }
             else {
                 rw_->Write(*msg_queue_.front(),
@@ -88,23 +78,61 @@ void Stream::Send(std::shared_ptr<PushRegReq> req)
 {
     std::unique_lock<std::mutex> lock(mux_);
 
-    if (status_ != StreamStatus::READY_TO_WRITE &&
-        status_ != StreamStatus::WAIT_WRITE_DONE) {
-        return;
-    }
+    msg_queue_.emplace_back(req);
 
-    if (status_ != StreamStatus::READY_TO_WRITE) {
-        msg_queue_.emplace_back(req);
-    }
-    else {
-        rw_->Write(*req, reinterpret_cast<void*>(ClientEvent::WRITE_DONE));
+    if (status_ == StreamStatus::READY_TO_WRITE) {
+        std::shared_ptr<PushRegReq> r = msg_queue_.front();
+        msg_queue_.pop_front();
+        rw_->Write(*r, reinterpret_cast<void*>(ClientEvent::WRITE_DONE));
         status_ = StreamStatus::WAIT_WRITE_DONE;
     }
 }
 
+void Stream::SendMsgs(std::deque<std::shared_ptr<PushRegReq>>& msgs)
+{
+    std::unique_lock<std::mutex> lock(mux_);
+
+    for (auto it = msgs.begin(); it != msgs.end(); it++) {
+        msg_queue_.emplace_back(*it);
+    }
+    msgs.clear();
+
+    if (status_ == StreamStatus::READY_TO_WRITE) {
+        if (msg_queue_.empty()) {
+            return;
+        }
+        std::shared_ptr<PushRegReq> r = msg_queue_.front();
+        msg_queue_.pop_front();
+        rw_->Write(*r, reinterpret_cast<void*>(ClientEvent::WRITE_DONE));
+        status_ = StreamStatus::WAIT_WRITE_DONE;
+    }
+}
+
+void Stream::Cancel()
+{
+    ctx_->TryCancel();
+}
+
+bool Stream::IsConnected()
+{
+    if (status_ == StreamStatus::WAIT_CONNECT) {
+        return false;
+    }
+    return true;
+}
+
+bool Stream::IsReadyToSend()
+{
+    if (status_ == StreamStatus::READY_TO_WRITE ||
+        status_ == StreamStatus::WAIT_WRITE_DONE) {
+        return true;
+    }
+
+    return false;
+}
+
 void Stream::Finish()
 {
-    // 在CQ返回不OK时，也尝试发送finish
     std::unique_lock<std::mutex> lock(mux_);
 
     if (status_ == StreamStatus::WAIT_CONNECT ||
@@ -112,18 +140,8 @@ void Stream::Finish()
         return;
     }
 
-    if (status_ == StreamStatus::READY_TO_WRITE) {
-        // 此时队列为空,直接finish,否则设置退出标志
-        rw_->Finish(&grpc_status_,
-                    reinterpret_cast<void*>(ClientEvent::FINISHED));
-
-        status_ = StreamStatus::FINISHED;
-
-        lock.unlock();
-    }
-    else {
-        need_to_finish_ = true;
-    }
+    rw_->Finish(&grpc_status_, reinterpret_cast<void*>(ClientEvent::FINISHED));
+    status_ = StreamStatus::FINISHED;
 }
 
 }  // namespace edu
