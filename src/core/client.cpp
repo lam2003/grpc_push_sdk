@@ -24,11 +24,17 @@ Client::Client()
     stub    = nullptr;
     channel = nullptr;
 
-    st_   = nullptr;
-    init_ = false;
-
-    uid_  = 0;
-    suid_ = 0;
+    st_                 = nullptr;
+    init_               = false;
+    thread_             = nullptr;
+    run_                = false;
+    channel_state_lis_  = nullptr;
+    msg_hdl_            = nullptr;
+    stream_status_lis_  = nullptr;
+    last_channel_state_ = ChannelState::UNKNOW;
+    last_heartbeat_ts_  = 0;
+    uid_                = 0;
+    suid_               = 0;
 }
 
 Client ::~Client() {}
@@ -40,9 +46,9 @@ void Client::SetChannelStateListener(
 }
 
 void Client::SetClientStatusListener(
-    std::shared_ptr<ClientStatusListener> listener)
+    std::shared_ptr<StreamStatusListener> listener)
 {
-    status_lis_ = listener;
+    stream_status_lis_ = listener;
 }
 
 void Client::SetMessageHandler(std::shared_ptr<MessageHandler> hdl)
@@ -137,8 +143,8 @@ void Client::check_and_reconnect()
 
 void Client::on_connected()
 {
-    if (status_lis_) {
-        status_lis_->OnConnected();
+    if (stream_status_lis_) {
+        stream_status_lis_->OnConnected();
     }
 }
 
@@ -216,9 +222,9 @@ int Client::Initialize(uint32_t uid, uint64_t suid)
                 case grpc::CompletionQueue::GOT_EVENT: {
                     log_t("stream event={}", event);
                     if (event == ClientEvent::FINISHED) {
-                        if (status_lis_) {
-                            status_lis_->OnFinish(st_->LastRequest(),
-                                                  st_->GrpcStatus());
+                        if (stream_status_lis_) {
+                            stream_status_lis_->OnFinish(st_->LastRequest(),
+                                                         st_->GrpcStatus());
                         }
                         check_and_reconnect();
                         create_and_init_stream();

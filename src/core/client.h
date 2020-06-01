@@ -23,10 +23,10 @@ class ChannelStateListener {
     virtual void NotifyChannelState(ChannelState state) = 0;
 };
 
-class ClientStatusListener {
+class StreamStatusListener {
   public:
-    ClientStatusListener() {}
-    ~ClientStatusListener() {}
+    StreamStatusListener() {}
+    ~StreamStatusListener() {}
 
   public:
     virtual void OnConnected()                 = 0;
@@ -54,7 +54,7 @@ class Client : public std::enable_shared_from_this<Client> {
     SetChannelStateListener(std::shared_ptr<ChannelStateListener> listener);
 
     virtual void
-    SetClientStatusListener(std::shared_ptr<ClientStatusListener> listener);
+    SetClientStatusListener(std::shared_ptr<StreamStatusListener> listener);
 
     virtual void SetMessageHandler(std::shared_ptr<MessageHandler> hdl);
 
@@ -82,12 +82,11 @@ class Client : public std::enable_shared_from_this<Client> {
     std::atomic<bool>                     run_;
     std::shared_ptr<ChannelStateListener> channel_state_lis_;
     std::shared_ptr<MessageHandler>       msg_hdl_;
-    std::shared_ptr<ClientStatusListener> status_lis_;
-
-    ChannelState last_channel_state_;
-    int64_t      last_heartbeat_ts_;
-    uint32_t     uid_;
-    uint64_t     suid_;
+    std::shared_ptr<StreamStatusListener> stream_status_lis_;
+    ChannelState                          last_channel_state_;
+    int64_t                               last_heartbeat_ts_;
+    uint32_t                              uid_;
+    uint64_t                              suid_;
 
     std::deque<std::shared_ptr<PushRegReq>> msg_queue_;
     std::mutex                              mux_;

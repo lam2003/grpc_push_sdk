@@ -17,6 +17,7 @@ Stream::Stream(std::shared_ptr<Client> client)
     rw_        = nullptr;
     status_    = StreamStatus::WAIT_CONNECT;
     grpc_status_ = grpc::Status::OK;
+    last_req_    = nullptr;
 }
 
 Stream::~Stream() {}

@@ -56,7 +56,7 @@ struct CallContext
 
 class PushSDK : public Singleton<PushSDK>,
                 public ChannelStateListener,
-                public ClientStatusListener,
+                public StreamStatusListener,
                 public MessageHandler,
                 public std::enable_shared_from_this<PushSDK> {
     friend class Singleton<PushSDK>;
