@@ -58,12 +58,14 @@ int PushSDK::Initialize(uint32_t       uid,
     run_    = true;
     thread_ = std::unique_ptr<std::thread>(new std::thread([this]() {
         while (run_) {
-            std::unique_lock<std::mutex> lock(cb_map_mux_);
-            cb_map_cond_.wait_for(
-                lock, std::chrono::milliseconds(
-                          Config::Instance()->call_check_timeout_interval));
-            if (!run_) {
-                return;
+            {
+                std::unique_lock<std::mutex> lock(cb_map_mux_);
+                cb_map_cond_.wait_for(
+                    lock, std::chrono::milliseconds(
+                              Config::Instance()->call_check_timeout_interval));
+                if (!run_) {
+                    return;
+                }
             }
             int64_t now = Utils::GetSteadyNanoSeconds();
             std::map<int64_t, std::shared_ptr<CallContext>>::iterator it;
@@ -174,8 +176,10 @@ void PushSDK::Destroy()
         return;
     }
 
+    cb_map_mux_.lock();
     run_ = false;
     cb_map_cond_.notify_one();
+    cb_map_mux_.unlock();
     thread_->join();
     thread_.reset();
     thread_ = nullptr;

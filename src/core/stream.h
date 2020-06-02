@@ -20,11 +20,12 @@ class Stream {
     virtual void Finish();
     virtual void Send(std::shared_ptr<PushRegReq> req);
     virtual void SendMsgs(std::deque<std::shared_ptr<PushRegReq>>& msgs);
-    virtual void Cancel();
+    virtual void Destroy();
     virtual bool IsConnected();
     virtual bool IsReadyToSend();
     virtual grpc::Status                GrpcStatus();
     virtual std::shared_ptr<PushRegReq> LastRequest();
+    virtual void                        HalfClose();
 
   private:
     std::shared_ptr<Client>              client_;

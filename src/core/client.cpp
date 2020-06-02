@@ -37,7 +37,10 @@ Client::Client()
     suid_               = 0;
 }
 
-Client ::~Client() {}
+Client ::~Client()
+{
+    Destroy();
+}
 
 void Client::SetChannelStateListener(
     std::shared_ptr<ChannelStateListener> listener)
@@ -58,9 +61,9 @@ void Client::SetMessageHandler(std::shared_ptr<MessageHandler> hdl)
 
 void Client::CleanQueue()
 {
-    mux_.lock();
+    msg_queue_mux_.lock();
     msg_queue_.clear();
-    mux_.unlock();
+    msg_queue_mux_.unlock();
 }
 
 static grpc::ChannelArguments get_channel_args()
@@ -166,9 +169,9 @@ void Client::send_all_msgs()
         last_heartbeat_ts_ = now;
     }
 
-    mux_.lock();
+    msg_queue_mux_.lock();
     st_->SendMsgs(msg_queue_);
-    mux_.unlock();
+    msg_queue_mux_.unlock();
 }
 
 int Client::Initialize(uint32_t uid, uint64_t suid)
@@ -187,26 +190,27 @@ int Client::Initialize(uint32_t uid, uint64_t suid)
     run_ = true;
 
     thread_ = std::unique_ptr<std::thread>(new std::thread([this]() {
-        gpr_timespec tw = gpr_time_from_millis(
+        bool         going_to_quit = false;
+        gpr_timespec tw            = gpr_time_from_millis(
             Config::Instance()->grpc_cq_timeout_ms, GPR_TIMESPAN);
         grpc::CompletionQueue::NextStatus status;
         ClientEvent                       event;
         bool                              ok;
 
         create_channel_and_stub();
+
+        stream_mux_.lock();
         create_and_init_stream();
+        stream_mux_.unlock();
 
         while (run_) {
             status = cq->AsyncNext(reinterpret_cast<void**>(&event), &ok, tw);
 
             check_and_notify_channel_state();
 
+            std::unique_lock<std::mutex> lock(stream_mux_);
+
             switch (status) {
-                case grpc::CompletionQueue::SHUTDOWN: {
-                    log_w("completion queue shutdown");
-                    run_ = false;
-                    break;
-                }
                 case grpc::CompletionQueue::TIMEOUT: {
                     if (!ok && st_->IsConnected()) {
                         st_->Finish();
@@ -222,13 +226,24 @@ int Client::Initialize(uint32_t uid, uint64_t suid)
                 case grpc::CompletionQueue::GOT_EVENT: {
                     log_t("stream event={}", event);
                     if (event == ClientEvent::FINISHED) {
-                        if (stream_status_lis_) {
+                        if (stream_status_lis_ &&
+                            st_->LastRequest() != nullptr) {
                             stream_status_lis_->OnFinish(st_->LastRequest(),
                                                          st_->GrpcStatus());
                         }
+
+                        if (going_to_quit) {
+                            run_ = false;
+                            continue;
+                        }
+
                         check_and_reconnect();
                         create_and_init_stream();
                         continue;
+                    }
+                    else if (event == ClientEvent::HALF_CLOSE) {
+                        st_->Finish();
+                        going_to_quit = true;
                     }
 
                     if (!ok && st_->IsConnected()) {
@@ -245,7 +260,7 @@ int Client::Initialize(uint32_t uid, uint64_t suid)
                     break;
                 }
                 default: {
-                    break;
+                    assert(0);
                 }
             }
         }
@@ -256,10 +271,34 @@ int Client::Initialize(uint32_t uid, uint64_t suid)
 
 void Client::Send(std::shared_ptr<PushRegReq> req)
 {
-    mux_.lock();
+    msg_queue_mux_.lock();
     msg_queue_.emplace_back(req);
-    mux_.unlock();
+    msg_queue_mux_.unlock();
 }
 
-void Client::Destroy() {}
+void Client::Destroy()
+{
+    stream_mux_.lock();
+    if (st_) {
+        st_->HalfClose();
+    }
+    stream_mux_.unlock();
+
+    if (thread_) {
+        thread_->join();
+        thread_ = nullptr;
+    }
+    cq                  = nullptr;
+    stub                = nullptr;
+    channel             = nullptr;
+    st_                 = nullptr;
+    init_               = false;
+    channel_state_lis_  = nullptr;
+    msg_hdl_            = nullptr;
+    stream_status_lis_  = nullptr;
+    last_channel_state_ = ChannelState::UNKNOW;
+    last_heartbeat_ts_  = 0;
+    uid_                = 0;
+    suid_               = 0;
+}
 }  // namespace edu

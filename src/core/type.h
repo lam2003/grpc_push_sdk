@@ -28,7 +28,8 @@ enum class ClientEvent {
     CONNECTED  = 1,
     READ_DONE  = 2,
     WRITE_DONE = 3,
-    FINISHED   = 4
+    HALF_CLOSE = 4,
+    FINISHED   = 5
 };
 
 enum class StreamStatus {
@@ -36,7 +37,8 @@ enum class StreamStatus {
     CONNECTED       = 101,
     READY_TO_WRITE  = 102,
     WAIT_WRITE_DONE = 103,
-    FINISHED        = 104
+    HALF_CLOSE      = 104,
+    FINISHED        = 105
 };
 
 enum class ChannelState { UNKNOW, OK, NO_READY };

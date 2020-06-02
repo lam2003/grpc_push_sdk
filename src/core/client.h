@@ -89,7 +89,8 @@ class Client : public std::enable_shared_from_this<Client> {
     uint64_t                              suid_;
 
     std::deque<std::shared_ptr<PushRegReq>> msg_queue_;
-    std::mutex                              mux_;
+    std::mutex                              msg_queue_mux_;
+    std::mutex                              stream_mux_;
 
     static std::atomic<uint32_t> port_index_;
 };

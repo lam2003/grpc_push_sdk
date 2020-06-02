@@ -30,7 +30,7 @@ class Config : public Singleton<Config> {
     std::string sdk_log_level = "trace";
 
     // front_envoy 域名
-    std::string      front_envoy_host  = "front.100.com";
+    std::string      front_envoy_host  = "183.36.117.51";
     std::vector<int> front_envoy_ports = {15000, 14000, 5000, 1500, 500};
 
     // 与PushGateway心跳间隔(ms)
