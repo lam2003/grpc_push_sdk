@@ -136,33 +136,39 @@ void PushSDK::OnFinish(std::shared_ptr<PushRegReq> last_req,
 
 void PushSDK::OnMessage(std::shared_ptr<PushData> msg)
 {
-    log_d("recv msg. uri={}", stream_uri_to_string(msg->uri()));
     switch (msg->uri()) {
         case StreamURI::PPushGateWayLoginResURI: {
+            log_d("recv msg. uri={}", stream_uri_to_string(msg->uri()));
             handle_response<LoginResponse>(msg);
             break;
         }
         case StreamURI::PPushGateWayLogoutResURI: {
+            log_d("recv msg. uri={}", stream_uri_to_string(msg->uri()));
             handle_response<LogoutResponse>(msg);
             break;
         }
         case StreamURI::PPushGateWayJoinGroupResURI: {
+            log_d("recv msg. uri={}", stream_uri_to_string(msg->uri()));
             handle_response<JoinGroupResponse>(msg);
             break;
         }
         case StreamURI::PPushGateWayLeaveGroupResURI: {
+            log_d("recv msg. uri={}", stream_uri_to_string(msg->uri()));
             handle_response<LeaveGroupResponse>(msg);
             break;
         }
         case StreamURI::PPushGateWayNotifyToCloseURI: {
+            log_d("recv msg. uri={}", stream_uri_to_string(msg->uri()));
             handle_notify_to_close();
             break;
         }
         case StreamURI::PPushGateWayPushDataByGroupURI: {
+            log_d("recv msg. uri={}", stream_uri_to_string(msg->uri()));
             handle_group_message(msg);
             break;
         }
         case StreamURI::PPushGateWayPushDataByUidURI: {
+            log_d("recv msg. uri={}", stream_uri_to_string(msg->uri()));
             handle_user_message(msg);
             break;
         }
@@ -427,8 +433,6 @@ void PushSDK::relogin(bool need_to_lock)
         return;
     }
 
-    client_->CleanQueue();
-
     int64_t                     now = Utils::GetSteadyNanoSeconds();
     std::shared_ptr<PushRegReq> req =
         make_login_packet(uid_, appid_, appkey_, user_.get(), now);
@@ -603,11 +607,13 @@ void PushSDK::notify(std::shared_ptr<CallContext> ctx,
                      int                          code)
 {
     if (!ctx->cb_func && !ctx->cb_args) {
-        ctx->res       = res;
-        ctx->desc      = desc;
-        ctx->code      = code;
+        ctx->res  = res;
+        ctx->desc = desc;
+        ctx->code = code;
+        ctx->mux.lock();
         ctx->call_done = true;
         ctx->cond.notify_all();
+        ctx->mux.unlock();
     }
     else {
         ctx->cb_func(ctx->type, res, desc.c_str(), ctx->cb_args);

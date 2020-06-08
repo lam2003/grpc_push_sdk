@@ -79,7 +79,7 @@ class Client : public std::enable_shared_from_this<Client> {
     std::unique_ptr<Stream>               st_;
     bool                                  init_;
     std::unique_ptr<std::thread>          thread_;
-    std::atomic<bool>                     run_;
+    bool                                  run_;
     std::shared_ptr<ChannelStateListener> channel_state_lis_;
     std::shared_ptr<MessageHandler>       msg_hdl_;
     std::shared_ptr<StreamStatusListener> stream_status_lis_;

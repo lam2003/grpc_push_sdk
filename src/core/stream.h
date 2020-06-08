@@ -25,7 +25,7 @@ class Stream {
     virtual bool IsReadyToSend();
     virtual grpc::Status                GrpcStatus();
     virtual std::shared_ptr<PushRegReq> LastRequest();
-    virtual void                        HalfClose();
+    virtual bool                        HalfClose();
 
   private:
     std::shared_ptr<Client>              client_;

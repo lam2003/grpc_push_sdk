@@ -161,19 +161,20 @@ std::shared_ptr<PushRegReq> Stream::LastRequest()
     return last_req_;
 }
 
-void Stream::HalfClose()
+bool Stream::HalfClose()
 {
     std::unique_lock<std::mutex> lock(mux_);
 
     if (status_ == StreamStatus::WAIT_CONNECT ||
         status_ == StreamStatus::FINISHED ||
         status_ == StreamStatus::HALF_CLOSE) {
-        return;
+        return false;
     }
 
     rw_->WritesDone(reinterpret_cast<void*>(ClientEvent::HALF_CLOSE));
     status_ = StreamStatus::HALF_CLOSE;
     log_t("stream status change to HALF_CLOSE");
+    return true;
 }
 
 void Stream::Finish()

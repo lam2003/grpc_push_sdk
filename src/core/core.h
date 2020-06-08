@@ -48,7 +48,7 @@ struct CallContext
     // 同步接口使用
     std::mutex              mux;
     std::condition_variable cond;
-    std::atomic<bool>       call_done;
+    bool                    call_done;
     PushSDKCBEvent          res;
     std::string             desc;
     int                     code;

@@ -48,6 +48,8 @@ class Config : public Singleton<Config> {
     int grpc_min_sent_ping_interval_without_data = 1000;
     // GRPC CQ等待事件超时时间(ms)
     int grpc_cq_timeout_ms = 50;
+    // GRPC 等待连接成功的时间(ms)
+    int grpc_wait_connect_ms = 500;
 
     // PushGateway call超时时长(ms)
     int call_timeout_interval = 3000;

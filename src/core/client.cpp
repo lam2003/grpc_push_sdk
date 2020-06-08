@@ -102,6 +102,10 @@ void Client::create_channel_and_stub()
 
     assert(channel);
 
+    channel->WaitForConnected(
+        std::chrono::system_clock::now() +
+        std::chrono::milliseconds(Config::Instance()->grpc_wait_connect_ms));
+
     stub = PushGateway::NewStub(channel);
 
     assert(stub);
@@ -212,6 +216,10 @@ int Client::Initialize(uint32_t uid, uint64_t suid)
 
             switch (status) {
                 case grpc::CompletionQueue::TIMEOUT: {
+                    if (!run_) {
+                        continue;
+                    }
+
                     if (!ok && st_->IsConnected()) {
                         st_->Finish();
                         continue;
@@ -224,8 +232,15 @@ int Client::Initialize(uint32_t uid, uint64_t suid)
                     break;
                 }
                 case grpc::CompletionQueue::GOT_EVENT: {
+                    if (!run_) {
+                        continue;
+                    }
+
                     log_t("stream event={}", event);
                     if (event == ClientEvent::FINISHED) {
+                        
+                        CleanQueue();
+
                         if (stream_status_lis_ &&
                             st_->LastRequest() != nullptr) {
                             stream_status_lis_->OnFinish(st_->LastRequest(),
@@ -280,7 +295,9 @@ void Client::Destroy()
 {
     stream_mux_.lock();
     if (st_) {
-        st_->HalfClose();
+        if (!st_->HalfClose()) {
+            run_ = false;
+        }
     }
     stream_mux_.unlock();
 
