@@ -73,8 +73,10 @@ typedef struct
 
 /**
 @brief SDK全局事件回调函数
-@param [in] code 错误码
-@param [in] desc 错误描述
+@param [in] type 事件类型
+@param [in] res  回调事件返回码，除了PS_CB_EVENT_TIMEOUT(超时) 和
+PS_CB_EVENT_USER_KICKED_BY_SRV(被挤下线)外都需要处理
+@param [in] desc 服务器返回的错误描述
 @param [in] data 自定义指针
 */
 typedef void (*PushSDKEventCB)(PushSDKCBType  type,

@@ -262,7 +262,7 @@ class PushSDK : public Singleton<PushSDK>,
         }
         else {
             handle_success_response<T2>(ctx);
-            notify(ctx, PS_CB_EVENT_OK, res.errmsg().c_str(), res.rescode());
+            notify(ctx, PS_CB_EVENT_OK, "ok", 0);
         }
     }
 
@@ -301,7 +301,7 @@ class PushSDK : public Singleton<PushSDK>,
         }
         else {
             handle_success_response<T>(ctx);
-            notify(ctx, PS_CB_EVENT_OK, res.errmsg().c_str(), res.rescode());
+            notify(ctx, PS_CB_EVENT_OK, "ok", 0);
         }
     }
 

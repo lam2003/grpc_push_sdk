@@ -200,6 +200,10 @@ void PushSDK::Destroy()
     init_   = false;
 
     cb_map_.clear();
+
+    user_.reset();
+    user_ = nullptr;
+    groups_.clear();
 }
 
 PushSDK::~PushSDK()
@@ -684,7 +688,7 @@ void PushSDK::handle_timeout_response(std::shared_ptr<CallContext> ctx)
     switch (ctx->type) {
         case PS_CB_TYPE_LOGIN: {
             logining_ = false;
-            log_e("login timeout");
+            log_w("login timeout");
             if (ctx->is_retry) {
                 relogin(false);
             }
@@ -692,7 +696,7 @@ void PushSDK::handle_timeout_response(std::shared_ptr<CallContext> ctx)
         }
 
         case PS_CB_TYPE_JOIN_GROUP: {
-            log_e("join group timeout");
+            log_w("join group timeout");
             if (ctx->is_retry) {
                 rejoin_group(false);
             }
@@ -700,12 +704,12 @@ void PushSDK::handle_timeout_response(std::shared_ptr<CallContext> ctx)
         }
 
         case PS_CB_TYPE_LOGOUT: {
-            log_e("logout timeout");
+            log_w("logout timeout");
             break;
         }
 
         case PS_CB_TYPE_LEAVE_GROUP: {
-            log_e("leave group timeout");
+            log_w("leave group timeout");
             break;
         }
         default: break;
