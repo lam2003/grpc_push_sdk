@@ -17,7 +17,8 @@ class Config : public Singleton<Config> {
     Config() {}
 
   public:
-    // logger flush到文件的时间间隔
+#ifdef __linux__
+    // logger flush到文件的时间间隔(sec)
     int logger_flush_interval_sec = 1;
     // grpc日志输出到控制台开关
     bool grpc_log_on_console = false;
@@ -30,7 +31,23 @@ class Config : public Singleton<Config> {
     std::string sdk_log_level = "trace";
 
     // front_envoy 域名
-    std::string      front_envoy_host  = "183.36.117.51";
+    std::string front_envoy_host = "183.36.117.51";
+#elif
+    // logger flush到文件的时间间隔(sec)
+    int logger_flush_interval_sec = 1;
+    // grpc日志输出到控制台开关
+    bool grpc_log_on_console = false;
+    // grpc日志等级
+    std::string grpc_log_level = "trace";
+
+    // sdk日志输出到控制台开关
+    bool sdk_log_on_console = false;
+    // sdk日志等级
+    std::string sdk_log_level = "trace";
+
+    // front_envoy 域名
+    std::string front_envoy_host = "front.100.com";
+#endif
     std::vector<int> front_envoy_ports = {15000, 14000, 5000, 1500, 500};
 
     // 与PushGateway心跳间隔(ms)

@@ -59,6 +59,9 @@ void PushSDKDestroy()
     }
 
     edu::PushSDK::Instance()->Destroy();
+
+    flush_logger();
+    
     _initialized = false;
 }
 

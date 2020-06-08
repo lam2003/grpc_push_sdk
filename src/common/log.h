@@ -30,6 +30,8 @@ class Log final {
 
     int Initialize();
 
+    void Flush();
+
     template <typename... ARGS> void Trace(const std::string& fmt, ARGS... args)
     {
         if (console_logger_)
@@ -89,6 +91,7 @@ class Log final {
 extern edu::Log* _sdk_logger;
 extern edu::Log* _grpc_logger;
 extern int       init_logger(const std::string& log_dir);
+extern void      flush_logger();
 
 #if PUSH_SDK_DEBUG
 #    define log_e(msg, ...)                                                    \

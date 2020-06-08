@@ -124,6 +124,13 @@ int Log::Initialize()
     return PS_RET_SUCCESS;
 }
 
+void Log::Flush()
+{
+    if (file_logger_) {
+        file_logger_->flush();
+    }
+}
+
 }  // namespace edu
 
 edu::Log* _sdk_logger  = nullptr;
@@ -215,4 +222,14 @@ int init_logger(const std::string& log_dir)
         return ret;
     }
     return ret;
+}
+
+void flush_logger()
+{
+    if (_sdk_logger) {
+        _sdk_logger->Flush();
+    }
+    if (_grpc_logger) {
+        _grpc_logger->Flush();
+    }
 }
