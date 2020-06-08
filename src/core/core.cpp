@@ -60,9 +60,13 @@ int PushSDK::Initialize(uint32_t       uid,
         while (run_) {
             {
                 std::unique_lock<std::mutex> lock(cb_map_mux_);
-                cb_map_cond_.wait_for(
-                    lock, std::chrono::milliseconds(
-                              Config::Instance()->call_check_timeout_interval));
+
+                if (run_) {
+                    cb_map_cond_.wait_for(
+                        lock,
+                        std::chrono::milliseconds(
+                            Config::Instance()->call_check_timeout_interval));
+                }
                 if (!run_) {
                     return;
                 }
@@ -579,11 +583,13 @@ int PushSDK::call_sync(PushSDKCBType               type,
 
     client_->Send(msg);
 
-    std::unique_lock<std::mutex> lock(ctx->mux);
-    if (!ctx->call_done) {
-        ctx->cond.wait_for(lock,
-                           std::chrono::milliseconds(
-                               Config::Instance()->call_timeout_interval * 2));
+    {
+        std::unique_lock<std::mutex> lock(ctx->mux);
+        if (!ctx->call_done) {
+            ctx->cond.wait_for(
+                lock, std::chrono::milliseconds(
+                          Config::Instance()->call_timeout_interval * 2));
+        }
     }
 
     if (ctx->res == PS_CB_EVENT_OK) {
