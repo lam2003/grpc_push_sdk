@@ -25,12 +25,12 @@ class Config : public Singleton<Config> {
     std::string grpc_log_level = "trace";
 
     // sdk日志输出到控制台开关
-    bool sdk_log_on_console = false;
+    bool sdk_log_on_console = true;
     // sdk日志等级
     std::string sdk_log_level = "trace";
 
     // front_envoy 域名
-    std::string      front_envoy_host  = "front.100.com";
+    std::string      front_envoy_host  = "183.36.117.51";
     std::vector<int> front_envoy_ports = {15000, 14000, 5000, 1500, 500};
 
     // 与PushGateway心跳间隔(ms)
@@ -47,7 +47,9 @@ class Config : public Singleton<Config> {
     // GRPC发送连续的ping帧而不接收任何数据之间的最短时间(ms)
     int grpc_min_sent_ping_interval_without_data = 1000;
     // GRPC CQ等待事件超时时间(ms)
-    int grpc_cq_timeout = 50;
+    int grpc_cq_timeout_ms = 50;
+    // GRPC 等待连接成功的时间(ms)
+    int grpc_wait_connect_ms = 500;
 
     // PushGateway call超时时长(ms)
     int call_timeout_interval = 3000;

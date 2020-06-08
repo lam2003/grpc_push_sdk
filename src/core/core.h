@@ -48,7 +48,7 @@ struct CallContext
     // 同步接口使用
     std::mutex              mux;
     std::condition_variable cond;
-    std::atomic<bool>       call_done;
+    bool                    call_done;
     PushSDKCBEvent          res;
     std::string             desc;
     int                     code;
@@ -56,7 +56,7 @@ struct CallContext
 
 class PushSDK : public Singleton<PushSDK>,
                 public ChannelStateListener,
-                public ClientStatusListener,
+                public StreamStatusListener,
                 public MessageHandler,
                 public std::enable_shared_from_this<PushSDK> {
     friend class Singleton<PushSDK>;
@@ -99,8 +99,8 @@ class PushSDK : public Singleton<PushSDK>,
     virtual void     AddGroupMsgCBToHandler(Handler* hdl, PushSDKGroupMsgCB cb);
     virtual void AddConnStateCBToHandler(Handler* hdl, PushSDKConnStateCB cb);
 
-    virtual void OnChannelStateChange(ChannelState state) override;
-    virtual void OnClientStatusChange(ClientStatus status) override;
+    virtual void NotifyChannelState(ChannelState state) override;
+    virtual void OnConnected() override;
     virtual void OnFinish(std::shared_ptr<PushRegReq> last_req,
                           grpc::Status                status) override;
     virtual void OnMessage(std::shared_ptr<PushData> msg) override;
@@ -262,7 +262,7 @@ class PushSDK : public Singleton<PushSDK>,
         }
         else {
             handle_success_response<T2>(ctx);
-            notify(ctx, PS_CB_EVENT_OK, res.errmsg().c_str(), res.rescode());
+            notify(ctx, PS_CB_EVENT_OK, "ok", 0);
         }
     }
 
@@ -301,7 +301,7 @@ class PushSDK : public Singleton<PushSDK>,
         }
         else {
             handle_success_response<T>(ctx);
-            notify(ctx, PS_CB_EVENT_OK, res.errmsg().c_str(), res.rescode());
+            notify(ctx, PS_CB_EVENT_OK, "ok", 0);
         }
     }
 

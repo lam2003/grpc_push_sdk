@@ -22,7 +22,9 @@ elif bits == '32bit':
 else:
     arch = bits
 
-build_mode = ["Debug", "Release"]
+# build_mode = ["Debug", "Release"]
+# linux只编译Debug
+build_mode = ["Debug"]
 
 for mode in build_mode:
     set_build_folder_name(mode + '_' + arch)

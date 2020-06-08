@@ -58,12 +58,18 @@ int PushSDK::Initialize(uint32_t       uid,
     run_    = true;
     thread_ = std::unique_ptr<std::thread>(new std::thread([this]() {
         while (run_) {
-            std::unique_lock<std::mutex> lock(cb_map_mux_);
-            cb_map_cond_.wait_for(
-                lock, std::chrono::milliseconds(
-                          Config::Instance()->call_check_timeout_interval));
-            if (!run_) {
-                return;
+            {
+                std::unique_lock<std::mutex> lock(cb_map_mux_);
+
+                if (run_) {
+                    cb_map_cond_.wait_for(
+                        lock,
+                        std::chrono::milliseconds(
+                            Config::Instance()->call_check_timeout_interval));
+                }
+                if (!run_) {
+                    return;
+                }
             }
             int64_t now = Utils::GetSteadyNanoSeconds();
             std::map<int64_t, std::shared_ptr<CallContext>>::iterator it;
@@ -91,7 +97,7 @@ int PushSDK::Initialize(uint32_t       uid,
     return ret;
 }
 
-void PushSDK::OnChannelStateChange(ChannelState state)
+void PushSDK::NotifyChannelState(ChannelState state)
 {
     log_d("channel state change to {}", channel_state_to_string(state));
     for (auto it = hdls_.begin(); it != hdls_.end(); it++) {
@@ -103,21 +109,9 @@ void PushSDK::OnChannelStateChange(ChannelState state)
     }
 }
 
-void PushSDK::OnClientStatusChange(ClientStatus status)
+void PushSDK::OnConnected()
 {
-    log_d("client status change to {}", client_status_to_string(status));
-
-    switch (status) {
-        case ClientStatus::CONNECTED: {
-            relogin();
-            break;
-        }
-        case ClientStatus::READY_TO_WRITE:
-        case ClientStatus::WAIT_CONNECT:
-        case ClientStatus::WAIT_WRITE_DONE:
-        case ClientStatus::FINISHED:
-        default: break;
-    }
+    relogin();
 }
 
 void PushSDK::OnFinish(std::shared_ptr<PushRegReq> last_req,
@@ -146,33 +140,39 @@ void PushSDK::OnFinish(std::shared_ptr<PushRegReq> last_req,
 
 void PushSDK::OnMessage(std::shared_ptr<PushData> msg)
 {
-    log_d("recv msg. uri={}", stream_uri_to_string(msg->uri()));
     switch (msg->uri()) {
         case StreamURI::PPushGateWayLoginResURI: {
+            log_d("recv msg. uri={}", stream_uri_to_string(msg->uri()));
             handle_response<LoginResponse>(msg);
             break;
         }
         case StreamURI::PPushGateWayLogoutResURI: {
+            log_d("recv msg. uri={}", stream_uri_to_string(msg->uri()));
             handle_response<LogoutResponse>(msg);
             break;
         }
         case StreamURI::PPushGateWayJoinGroupResURI: {
+            log_d("recv msg. uri={}", stream_uri_to_string(msg->uri()));
             handle_response<JoinGroupResponse>(msg);
             break;
         }
         case StreamURI::PPushGateWayLeaveGroupResURI: {
+            log_d("recv msg. uri={}", stream_uri_to_string(msg->uri()));
             handle_response<LeaveGroupResponse>(msg);
             break;
         }
         case StreamURI::PPushGateWayNotifyToCloseURI: {
+            log_d("recv msg. uri={}", stream_uri_to_string(msg->uri()));
             handle_notify_to_close();
             break;
         }
         case StreamURI::PPushGateWayPushDataByGroupURI: {
+            log_d("recv msg. uri={}", stream_uri_to_string(msg->uri()));
             handle_group_message(msg);
             break;
         }
         case StreamURI::PPushGateWayPushDataByUidURI: {
+            log_d("recv msg. uri={}", stream_uri_to_string(msg->uri()));
             handle_user_message(msg);
             break;
         }
@@ -186,8 +186,10 @@ void PushSDK::Destroy()
         return;
     }
 
+    cb_map_mux_.lock();
     run_ = false;
     cb_map_cond_.notify_one();
+    cb_map_mux_.unlock();
     thread_->join();
     thread_.reset();
     thread_ = nullptr;
@@ -198,6 +200,10 @@ void PushSDK::Destroy()
     init_   = false;
 
     cb_map_.clear();
+
+    user_.reset();
+    user_ = nullptr;
+    groups_.clear();
 }
 
 PushSDK::~PushSDK()
@@ -435,8 +441,6 @@ void PushSDK::relogin(bool need_to_lock)
         return;
     }
 
-    client_->CleanQueue();
-
     int64_t                     now = Utils::GetSteadyNanoSeconds();
     std::shared_ptr<PushRegReq> req =
         make_login_packet(uid_, appid_, appkey_, user_.get(), now);
@@ -583,11 +587,13 @@ int PushSDK::call_sync(PushSDKCBType               type,
 
     client_->Send(msg);
 
-    std::unique_lock<std::mutex> lock(ctx->mux);
-    if (!ctx->call_done) {
-        ctx->cond.wait_for(lock,
-                           std::chrono::milliseconds(
-                               Config::Instance()->call_timeout_interval * 2));
+    {
+        std::unique_lock<std::mutex> lock(ctx->mux);
+        if (!ctx->call_done) {
+            ctx->cond.wait_for(
+                lock, std::chrono::milliseconds(
+                          Config::Instance()->call_timeout_interval * 2));
+        }
     }
 
     if (ctx->res == PS_CB_EVENT_OK) {
@@ -611,11 +617,13 @@ void PushSDK::notify(std::shared_ptr<CallContext> ctx,
                      int                          code)
 {
     if (!ctx->cb_func && !ctx->cb_args) {
-        ctx->res       = res;
-        ctx->desc      = desc;
-        ctx->code      = code;
+        ctx->res  = res;
+        ctx->desc = desc;
+        ctx->code = code;
+        ctx->mux.lock();
         ctx->call_done = true;
         ctx->cond.notify_all();
+        ctx->mux.unlock();
     }
     else {
         ctx->cb_func(ctx->type, res, desc.c_str(), ctx->cb_args);
@@ -680,7 +688,7 @@ void PushSDK::handle_timeout_response(std::shared_ptr<CallContext> ctx)
     switch (ctx->type) {
         case PS_CB_TYPE_LOGIN: {
             logining_ = false;
-            log_e("login timeout");
+            log_w("login timeout");
             if (ctx->is_retry) {
                 relogin(false);
             }
@@ -688,7 +696,7 @@ void PushSDK::handle_timeout_response(std::shared_ptr<CallContext> ctx)
         }
 
         case PS_CB_TYPE_JOIN_GROUP: {
-            log_e("join group timeout");
+            log_w("join group timeout");
             if (ctx->is_retry) {
                 rejoin_group(false);
             }
@@ -696,12 +704,12 @@ void PushSDK::handle_timeout_response(std::shared_ptr<CallContext> ctx)
         }
 
         case PS_CB_TYPE_LOGOUT: {
-            log_e("logout timeout");
+            log_w("logout timeout");
             break;
         }
 
         case PS_CB_TYPE_LEAVE_GROUP: {
-            log_e("leave group timeout");
+            log_w("leave group timeout");
             break;
         }
         default: break;

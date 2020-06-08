@@ -80,7 +80,9 @@ PushSDKRetCode PushSDKLogin(PushSDKUserInfo* user)
 
     if ((ret = static_cast<PushSDKRetCode>(
              edu::PushSDK::Instance()->Login(*user))) != PS_RET_SUCCESS) {
-        log_e("login failed. ret={}", ret);
+        if (ret != PS_RET_CALL_TIMEOUT) {
+            log_e("login failed. ret={}", ret);
+        }
         return ret;
     }
 
@@ -99,7 +101,9 @@ PushSDKRetCode PushSDKLogout()
 
     if ((ret = static_cast<PushSDKRetCode>(
              edu::PushSDK::Instance()->Logout())) != PS_RET_SUCCESS) {
-        log_e("logout failed. ret={}", ret);
+        if (ret != PS_RET_CALL_TIMEOUT) {
+            log_e("logout failed. ret={}", ret);
+        }
         return ret;
     }
 
@@ -118,7 +122,9 @@ PushSDKRetCode PushSDKJoinGroup(PushSDKGroupInfo* group)
 
     if ((ret = static_cast<PushSDKRetCode>(
              edu::PushSDK::Instance()->JoinGroup(*group))) != PS_RET_SUCCESS) {
-        log_e("join group failed. ret={}", ret);
+        if (ret != PS_RET_CALL_TIMEOUT) {
+            log_e("join group failed. ret={}", ret);
+        }
         return ret;
     }
 
@@ -137,7 +143,9 @@ PushSDKRetCode PushSDKLeaveGroup(PushSDKGroupInfo* group)
 
     if ((ret = static_cast<PushSDKRetCode>(
              edu::PushSDK::Instance()->LeaveGroup(*group))) != PS_RET_SUCCESS) {
-        log_e("leave group failed. ret={}", ret);
+        if (ret != PS_RET_CALL_TIMEOUT) {
+            log_e("leave group failed. ret={}", ret);
+        }
         return ret;
     }
 
