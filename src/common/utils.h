@@ -29,6 +29,7 @@ class Utils {
     static TerminalType GetTerminalType();
     static uint64_t     GetSUID(uint32_t uid, uint64_t terminal_type);
     static int64_t      NanoSecondsToMilliSeconds(int64_t t);
+    static std::string  CutFilePath(const std::string& filepath);
 };
 
 }  // namespace edu

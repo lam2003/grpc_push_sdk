@@ -28,14 +28,14 @@ Stream::~Stream()
 void Stream::Init()
 {
     status_ = StreamStatus::WAIT_CONNECT;
-    log_t("stream status change to WAIT_CONNECT");
+    log_t("WAIT_CONNECT");
 
     rw_ = client_->stub->AsyncPushRegister(
         ctx_.get(), client_->cq.get(),
         reinterpret_cast<void*>(ClientEvent::CONNECTED));
 }
 
-void Stream::Process(ClientEvent event)
+void Stream::Process(ClientEvent event, bool ok)
 {
     std::unique_lock<std::mutex> lock(mux_);
 
@@ -44,11 +44,12 @@ void Stream::Process(ClientEvent event)
             rw_->Read(push_data_.get(),
                       reinterpret_cast<void*>(ClientEvent::READ_DONE));
             status_ = StreamStatus::READY_TO_WRITE;
-            log_t("stream status change to READY_TO_WRITE");
             lock.unlock();
 
-            client_->on_connected();
-
+            if (ok) {
+                log_t("CONNECTED");
+                client_->on_connected();
+            }
             break;
         }
         case ClientEvent::READ_DONE: {
@@ -56,6 +57,7 @@ void Stream::Process(ClientEvent event)
                       reinterpret_cast<void*>(ClientEvent::READ_DONE));
             lock.unlock();
 
+            log_t("READ_DONE");
             PushData*                 p = new PushData(*push_data_.get());
             std::shared_ptr<PushData> push_data(p);
             client_->on_read(push_data);
@@ -65,7 +67,8 @@ void Stream::Process(ClientEvent event)
         case ClientEvent::WRITE_DONE: {
             if (msg_queue_.empty()) {
                 status_ = StreamStatus::READY_TO_WRITE;
-                log_t("stream status change to READY_TO_WRITE");
+                lock.unlock();
+                log_t("WRITE_DONE");
             }
             else {
                 std::shared_ptr<PushRegReq> r = msg_queue_.front();
@@ -73,7 +76,6 @@ void Stream::Process(ClientEvent event)
                 rw_->Write(*r,
                            reinterpret_cast<void*>(ClientEvent::WRITE_DONE));
                 status_ = StreamStatus::WAIT_WRITE_DONE;
-                log_t("stream status change to WAIT_WRITE_DONE");
                 msg_queue_.pop_front();
             }
             break;
@@ -96,7 +98,6 @@ void Stream::Send(std::shared_ptr<PushRegReq> req)
         last_req_ = r;
         rw_->Write(*r, reinterpret_cast<void*>(ClientEvent::WRITE_DONE));
         status_ = StreamStatus::WAIT_WRITE_DONE;
-        log_t("stream status change to WAIT_WRITE_DONE");
     }
 }
 
@@ -118,7 +119,6 @@ void Stream::SendMsgs(std::deque<std::shared_ptr<PushRegReq>>& msgs)
         last_req_ = r;
         rw_->Write(*r, reinterpret_cast<void*>(ClientEvent::WRITE_DONE));
         status_ = StreamStatus::WAIT_WRITE_DONE;
-        log_t("stream status change to WAIT_WRITE_DONE");
     }
 }
 
@@ -173,7 +173,7 @@ bool Stream::HalfClose()
 
     rw_->WritesDone(reinterpret_cast<void*>(ClientEvent::HALF_CLOSE));
     status_ = StreamStatus::HALF_CLOSE;
-    log_t("stream status change to HALF_CLOSE");
+    log_t("HALF_CLOSE");
     return true;
 }
 
@@ -188,7 +188,7 @@ void Stream::Finish()
 
     rw_->Finish(&grpc_status_, reinterpret_cast<void*>(ClientEvent::FINISHED));
     status_ = StreamStatus::FINISHED;
-    log_t("stream status change to FINISHED");
+    log_t("FINISHED");
 }
 
 }  // namespace edu

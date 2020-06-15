@@ -79,4 +79,14 @@ int64_t Utils::NanoSecondsToMilliSeconds(int64_t t)
     return (t / 1000000);
 }
 
+std::string Utils::CutFilePath(const std::string& filepath)
+{
+    size_t pos = filepath.rfind("/");
+    if (pos != std::string::npos) {
+        return filepath.substr(pos + 1);
+    }
+
+    return filepath;
+}
+
 }  // namespace edu

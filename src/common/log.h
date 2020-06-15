@@ -1,6 +1,8 @@
 #ifndef EDU_PUSH_SDK_LOG_H
 #define EDU_PUSH_SDK_LOG_H
 
+#include <common/utils.h>
+
 #include <memory>
 #include <string>
 
@@ -93,98 +95,53 @@ extern edu::Log* _grpc_logger;
 extern int       init_logger(const std::string& log_dir);
 extern void      flush_logger();
 
-#if PUSH_SDK_DEBUG
-#    define log_e(msg, ...)                                                    \
-        do {                                                                   \
-            if (_sdk_logger) {                                                 \
-                _sdk_logger->Error(SDK_LOG_PREFIX_DEBUG + std::string(msg),    \
-                                   __FILE__, __LINE__, __FUNCTION__,           \
-                                   ##__VA_ARGS__);                             \
-            }                                                                  \
-        } while (0)
-#    define log_t(msg, ...)                                                    \
-        do {                                                                   \
-            if (_sdk_logger) {                                                 \
-                _sdk_logger->Trace(SDK_LOG_PREFIX_DEBUG + std::string(msg),    \
-                                   __FILE__, __LINE__, __FUNCTION__,           \
-                                   ##__VA_ARGS__);                             \
-            }                                                                  \
-        } while (0)
-#    define log_i(msg, ...)                                                    \
-        do {                                                                   \
-            if (_sdk_logger) {                                                 \
-                _sdk_logger->Info(SDK_LOG_PREFIX_DEBUG + std::string(msg),     \
-                                  __FILE__, __LINE__, __FUNCTION__,            \
-                                  ##__VA_ARGS__);                              \
-            }                                                                  \
-        } while (0)
-#    define log_w(msg, ...)                                                    \
-        do {                                                                   \
-            if (_sdk_logger) {                                                 \
-                _sdk_logger->Warn(SDK_LOG_PREFIX_DEBUG + std::string(msg),     \
-                                  __FILE__, __LINE__, __FUNCTION__,            \
-                                  ##__VA_ARGS__);                              \
-            }                                                                  \
-        } while (0)
-#    define log_c(msg, ...)                                                    \
-        do {                                                                   \
-            if (_sdk_logger) {                                                 \
-                _sdk_logger->Critical(SDK_LOG_PREFIX_DEBUG + std::string(msg), \
-                                      __FILE__, __LINE__, __FUNCTION__,        \
-                                      ##__VA_ARGS__);                          \
-            }                                                                  \
-        } while (0)
-#    define log_d(msg, ...)                                                    \
-        do {                                                                   \
-            if (_sdk_logger) {                                                 \
-                _sdk_logger->Debug(SDK_LOG_PREFIX_DEBUG + std::string(msg),    \
-                                   __FILE__, __LINE__, __FUNCTION__,           \
-                                   ##__VA_ARGS__);                             \
-            }                                                                  \
-        } while (0)
-#else
-#    define log_e(msg, ...)                                                    \
-        do {                                                                   \
-            if (_sdk_logger) {                                                 \
-                _sdk_logger->Error(SDK_LOG_PREFIX + std::string(msg),          \
-                                   ##__VA_ARGS__);                             \
-            }                                                                  \
-        } while (0)
-#    define log_t(msg, ...)                                                    \
-        do {                                                                   \
-            if (_sdk_logger) {                                                 \
-                _sdk_logger->Trace(SDK_LOG_PREFIX + std::string(msg),          \
-                                   ##__VA_ARGS__);                             \
-            }                                                                  \
-        } while (0)
-#    define log_i(msg, ...)                                                    \
-        do {                                                                   \
-            if (_sdk_logger) {                                                 \
-                _sdk_logger->Info(SDK_LOG_PREFIX + std::string(msg),           \
-                                  ##__VA_ARGS__);                              \
-            }                                                                  \
-        } while (0)
-#    define log_w(msg, ...)                                                    \
-        do {                                                                   \
-            if (_sdk_logger) {                                                 \
-                _sdk_logger->Warn(SDK_LOG_PREFIX + std::string(msg),           \
-                                  ##__VA_ARGS__);                              \
-            }                                                                  \
-        } while (0)
-#    define log_c(msg, ...)                                                    \
-        do {                                                                   \
-            if (_sdk_logger) {                                                 \
-                _sdk_logger->Critical(SDK_LOG_PREFIX + std::string(msg),       \
-                                      ##__VA_ARGS__);                          \
-            }                                                                  \
-        } while (0)
-#    define log_d(msg, ...)                                                    \
-        do {                                                                   \
-            if (_sdk_logger) {                                                 \
-                _sdk_logger->Debug(SDK_LOG_PREFIX + std::string(msg),          \
-                                   ##__VA_ARGS__);                             \
-            }                                                                  \
-        } while (0)
-#endif
+#define log_e(msg, ...)                                                        \
+    do {                                                                       \
+        if (_sdk_logger) {                                                     \
+            _sdk_logger->Error(SDK_LOG_PREFIX_DEBUG + std::string(msg),        \
+                               edu::Utils::CutFilePath(__FILE__), __LINE__,    \
+                               __FUNCTION__, ##__VA_ARGS__);                   \
+        }                                                                      \
+    } while (0)
+#define log_t(msg, ...)                                                        \
+    do {                                                                       \
+        if (_sdk_logger) {                                                     \
+            _sdk_logger->Trace(SDK_LOG_PREFIX_DEBUG + std::string(msg),        \
+                               edu::Utils::CutFilePath(__FILE__), __LINE__,    \
+                               __FUNCTION__, ##__VA_ARGS__);                   \
+        }                                                                      \
+    } while (0)
+#define log_i(msg, ...)                                                        \
+    do {                                                                       \
+        if (_sdk_logger) {                                                     \
+            _sdk_logger->Info(SDK_LOG_PREFIX_DEBUG + std::string(msg),         \
+                              edu::Utils::CutFilePath(__FILE__), __LINE__,     \
+                              __FUNCTION__, ##__VA_ARGS__);                    \
+        }                                                                      \
+    } while (0)
+#define log_w(msg, ...)                                                        \
+    do {                                                                       \
+        if (_sdk_logger) {                                                     \
+            _sdk_logger->Warn(SDK_LOG_PREFIX_DEBUG + std::string(msg),         \
+                              edu::Utils::CutFilePath(__FILE__), __LINE__,     \
+                              __FUNCTION__, ##__VA_ARGS__);                    \
+        }                                                                      \
+    } while (0)
+#define log_c(msg, ...)                                                        \
+    do {                                                                       \
+        if (_sdk_logger) {                                                     \
+            _sdk_logger->Critical(SDK_LOG_PREFIX_DEBUG + std::string(msg),     \
+                                  edu::Utils::CutFilePath(__FILE__), __LINE__, \
+                                  __FUNCTION__, ##__VA_ARGS__);                \
+        }                                                                      \
+    } while (0)
+#define log_d(msg, ...)                                                        \
+    do {                                                                       \
+        if (_sdk_logger) {                                                     \
+            _sdk_logger->Debug(SDK_LOG_PREFIX_DEBUG + std::string(msg),        \
+                               edu::Utils::CutFilePath(__FILE__), __LINE__,    \
+                               __FUNCTION__, ##__VA_ARGS__);                   \
+        }                                                                      \
+    } while (0)
 
 #endif

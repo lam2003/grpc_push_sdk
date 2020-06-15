@@ -138,7 +138,6 @@ edu::Log* _grpc_logger = nullptr;
 
 static void grpc_log_func(gpr_log_func_args* args)
 {
-#if PUSH_SDK_DEBUG
     switch (args->severity) {
         case GPR_LOG_SEVERITY_DEBUG:
             _grpc_logger->Debug(GRPC_LOG_PREFIX_DEBUG, args->file, args->line,
@@ -153,19 +152,6 @@ static void grpc_log_func(gpr_log_func_args* args)
                                 args->message);
             break;
     }
-#else
-    switch (args->severity) {
-        case GPR_LOG_SEVERITY_DEBUG:
-            _grpc_logger->Debug(GRPC_LOG_PREFIX, args->message);
-            break;
-        case GPR_LOG_SEVERITY_INFO:
-            _grpc_logger->Info(GRPC_LOG_PREFIX, args->message);
-            break;
-        case GPR_LOG_SEVERITY_ERROR:
-            _grpc_logger->Error(GRPC_LOG_PREFIX, args->message);
-            break;
-    }
-#endif
 }
 
 int init_logger(const std::string& log_dir)

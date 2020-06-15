@@ -16,7 +16,7 @@ class Stream {
 
   public:
     virtual void Init();
-    virtual void Process(ClientEvent event);
+    virtual void Process(ClientEvent event, bool ok);
     virtual void Finish();
     virtual void Send(std::shared_ptr<PushRegReq> req);
     virtual void SendMsgs(std::deque<std::shared_ptr<PushRegReq>>& msgs);

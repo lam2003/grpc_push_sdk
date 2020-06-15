@@ -236,9 +236,7 @@ int Client::Initialize(uint32_t uid, uint64_t suid)
                         continue;
                     }
 
-                    log_t("stream event={}", event);
                     if (event == ClientEvent::FINISHED) {
-                        
                         CleanQueue();
 
                         if (stream_status_lis_ &&
@@ -266,11 +264,11 @@ int Client::Initialize(uint32_t uid, uint64_t suid)
                         continue;
                     }
 
-                    if (st_->IsReadyToSend()) {
+                    if (ok && st_->IsReadyToSend()) {
                         send_all_msgs();
                     }
 
-                    st_->Process(event);
+                    st_->Process(event, ok);
 
                     break;
                 }
