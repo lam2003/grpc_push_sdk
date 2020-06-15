@@ -9,19 +9,19 @@ namespace edu {
 
 PushSDK::PushSDK()
 {
-    init_          = false;
-    uid_           = 0;
-    appid_         = 0;
-    appkey_        = 0;
-    event_cb_      = nullptr;
-    event_cb_args_ = nullptr;
-    client_        = nullptr;
-    thread_        = nullptr;
-    run_           = false;
-    logining_      = false;
-    desc_          = "ok";
-    code_          = RES_SUCCESS;
-    user_          = nullptr;
+    init_         = false;
+    uid_          = 0;
+    appid_        = 0;
+    appkey_       = 0;
+    event_cb_     = nullptr;
+    event_cb_arg_ = nullptr;
+    client_       = nullptr;
+    thread_       = nullptr;
+    run_          = false;
+    logining_     = false;
+    desc_         = "ok";
+    code_         = RES_SUCCESS;
+    user_         = nullptr;
 }
 
 int PushSDK::Initialize(uint32_t       uid,
@@ -38,11 +38,11 @@ int PushSDK::Initialize(uint32_t       uid,
         return ret;
     }
 
-    uid_           = uid;
-    appid_         = appid;
-    appkey_        = appkey;
-    event_cb_      = cb_func;
-    event_cb_args_ = cb_args;
+    uid_          = uid;
+    appid_        = appid;
+    appkey_       = appkey;
+    event_cb_     = cb_func;
+    event_cb_arg_ = cb_args;
 
     client_ = std::make_shared<Client>();
     client_->SetChannelStateListener(this->shared_from_this());
@@ -89,6 +89,26 @@ int PushSDK::Initialize(uint32_t       uid,
                 else {
                     break;
                 }
+            }
+        }
+    }));
+
+    event_cb_thread_ = std::unique_ptr<std::thread>(new std::thread([this]() {
+        std::deque<std::shared_ptr<EventCBContext>> temp_pctxs;
+        while (run_) {
+            {
+                std::unique_lock<std::mutex> lock(event_cb_mux_);
+                if (run_) {
+                    event_cb_cond_.wait(lock);
+                }
+                std::swap(event_cb_pctxs, temp_pctxs);
+            }
+
+            while (!temp_pctxs.empty()) {
+                std::shared_ptr<EventCBContext>& ctx = temp_pctxs.front();
+                event_cb_(ctx->type, ctx->res, ctx->desc.c_str(),
+                          event_cb_arg_);
+                temp_pctxs.pop_front();
             }
         }
     }));
@@ -186,13 +206,23 @@ void PushSDK::Destroy()
         return;
     }
 
-    cb_map_mux_.lock();
     run_ = false;
-    cb_map_cond_.notify_one();
+
+    cb_map_mux_.lock();
+    cb_map_cond_.notify_all();
     cb_map_mux_.unlock();
+
+    event_cb_mux_.lock();
+    event_cb_cond_.notify_all();
+    event_cb_mux_.unlock();
+
     thread_->join();
     thread_.reset();
     thread_ = nullptr;
+
+    event_cb_thread_->join();
+    event_cb_thread_.reset();
+    event_cb_thread_ = nullptr;
 
     client_->Destroy();
     client_.reset();
@@ -448,15 +478,20 @@ void PushSDK::relogin(bool need_to_lock)
         user_ = nullptr;
         user_lock.unlock();
         log_e("encode login request packet failed");
-        event_cb_(PS_CB_TYPE_LOGIN, PS_CB_EVENT_REQ_ENC_FAILED,
-                  "inner relogin: LoginRequest packet serialize failed. you "
-                  "should relogin manually",
-                  event_cb_args_);
+        {
+            std::unique_lock<std::mutex> lock(event_cb_mux_);
+            event_cb_pctxs.emplace_back(std::make_shared<EventCBContext>(
+                PS_CB_TYPE_LOGIN, PS_CB_EVENT_REQ_ENC_FAILED,
+                "inner relogin: LoginRequest packet serialize failed. you "
+                "should relogin manually"));
+            cb_map_cond_.notify_one();
+        }
+
         return;
     }
 
     logining_ = true;
-    call(PS_CB_TYPE_LOGIN, req, now, event_cb_, event_cb_args_, 0, 0, true,
+    call(PS_CB_TYPE_LOGIN, req, now, event_cb_, event_cb_arg_, 0, 0, true,
          need_to_lock);
 }
 
@@ -478,15 +513,19 @@ void PushSDK::rejoin_group(bool need_to_lock)
             log_w("remove all group infos. dump={}", dump_str);
         }
         user_lock.unlock();
-        event_cb_(PS_CB_TYPE_JOIN_GROUP, PS_CB_EVENT_REQ_ENC_FAILED,
-                  "inner rejoin group : JoinGroupRequest packet serialize "
-                  "failed. you "
-                  "should rejoin all group manually",
-                  event_cb_args_);
+        {
+            std::unique_lock<std::mutex> lock(event_cb_mux_);
+            event_cb_pctxs.emplace_back(std::make_shared<EventCBContext>(
+                PS_CB_TYPE_JOIN_GROUP, PS_CB_EVENT_REQ_ENC_FAILED,
+                "inner rejoin group : JoinGroupRequest packet serialize "
+                "failed. you "
+                "should rejoin all group manually"));
+            cb_map_cond_.notify_one();
+        }
         return;
     }
 
-    call(PS_CB_TYPE_JOIN_GROUP, req, now, event_cb_, event_cb_args_, 0, 0, true,
+    call(PS_CB_TYPE_JOIN_GROUP, req, now, event_cb_, event_cb_arg_, 0, 0, true,
          need_to_lock);
 }
 
@@ -626,7 +665,17 @@ void PushSDK::notify(std::shared_ptr<CallContext> ctx,
         ctx->mux.unlock();
     }
     else {
-        ctx->cb_func(ctx->type, res, desc.c_str(), ctx->cb_args);
+        if (ctx->cb_func == event_cb_) {
+            {
+                std::unique_lock<std::mutex> lock(event_cb_mux_);
+                event_cb_pctxs.emplace_back(
+                    std::make_shared<EventCBContext>(ctx->type, res, desc));
+                cb_map_cond_.notify_one();
+            }
+        }
+        else {
+            ctx->cb_func(ctx->type, res, desc.c_str(), ctx->cb_args);
+        }
     }
 }
 
@@ -640,8 +689,13 @@ void PushSDK::handle_notify_to_close()
     user_ = nullptr;
     user_lock.unlock();
 
-    event_cb_(PS_CB_TYPE_LOGIN, PS_CB_EVENT_USER_KICKED_BY_SRV,
-              "user be kicked by the server", event_cb_args_);
+    {
+        std::unique_lock<std::mutex> lock(event_cb_mux_);
+        event_cb_pctxs.emplace_back(std::make_shared<EventCBContext>(
+            PS_CB_TYPE_LOGIN, PS_CB_EVENT_USER_KICKED_BY_SRV,
+            "user be kicked by the server"));
+        cb_map_cond_.notify_one();
+    }
 }
 
 void PushSDK::handle_group_message(std::shared_ptr<PushData> msg)

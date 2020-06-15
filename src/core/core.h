@@ -271,8 +271,13 @@ class PushSDK : public Singleton<PushSDK>,
         T res;
         if (!res.ParseFromString(msg->msgdata())) {
             log_e("decode packet failed");
-            event_cb_(PS_CB_TYPE_INNER_ERR, PS_CB_EVENT_RES_DEC_FAILED,
-                      "decode packet failed", event_cb_args_);
+            {
+                std::unique_lock<std::mutex> lock(event_cb_mux_);
+                event_cb_pctxs.emplace_back(std::make_shared<EventCBContext>(
+                    PS_CB_TYPE_INNER_ERR, PS_CB_EVENT_RES_DEC_FAILED,
+                    "decode packet failed"));
+                cb_map_cond_.notify_one();
+            }
             return;
         }
 
@@ -306,26 +311,50 @@ class PushSDK : public Singleton<PushSDK>,
     }
 
   private:
-    bool                                            init_;
-    uint32_t                                        uid_;
-    uint64_t                                        appid_;
-    uint64_t                                        appkey_;
-    PushSDKEventCB                                  event_cb_;
-    void*                                           event_cb_args_;
-    std::shared_ptr<Client>                         client_;
-    std::unique_ptr<std::thread>                    thread_;
-    std::atomic<bool>                               run_;
-    std::atomic<bool>                               logining_;
-    std::string                                     desc_;
-    int                                             code_;
-    std::unique_ptr<PushSDKUserInfo>                user_;
-    std::mutex                                      user_mux_;
-    std::vector<Handler*>                           hdls_;
-    std::mutex                                      hdls_mux_;
+    struct EventCBContext
+    {
+        EventCBContext(PushSDKCBType     type,
+                       PushSDKCBEvent    res,
+                       const std::string desc)
+        {
+            this->type = type;
+            this->res  = res;
+            this->desc = desc;
+        }
+        PushSDKCBType  type;
+        PushSDKCBEvent res;
+        std::string    desc;
+    };
+
+  private:
+    bool                              init_;
+    uint32_t                          uid_;
+    uint64_t                          appid_;
+    uint64_t                          appkey_;
+    PushSDKEventCB                    event_cb_;
+    void*                             event_cb_arg_;
+    std::shared_ptr<Client>           client_;
+    std::unique_ptr<std::thread>      thread_;
+    std::atomic<bool>                 run_;
+    std::atomic<bool>                 logining_;
+    std::string                       desc_;
+    int                               code_;
+    std::multimap<uint64_t, uint64_t> groups_;
+
+    std::vector<Handler*> hdls_;
+    std::mutex            hdls_mux_;
+
+    std::unique_ptr<PushSDKUserInfo> user_;
+    std::mutex                       user_mux_;
+
     std::map<int64_t, std::shared_ptr<CallContext>> cb_map_;
     std::mutex                                      cb_map_mux_;
     std::condition_variable                         cb_map_cond_;
-    std::multimap<uint64_t, uint64_t>               groups_;
+
+    std::unique_ptr<std::thread>                event_cb_thread_;
+    std::deque<std::shared_ptr<EventCBContext>> event_cb_pctxs;
+    std::condition_variable                     event_cb_cond_;
+    std::mutex                                  event_cb_mux_;
 };
 
 }  // namespace edu
