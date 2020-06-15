@@ -273,7 +273,7 @@ class PushSDK : public Singleton<PushSDK>,
             log_e("decode packet failed");
             {
                 std::unique_lock<std::mutex> lock(event_cb_mux_);
-                event_cb_pctxs.emplace_back(std::make_shared<EventCBContext>(
+                event_cb_pctxs_.emplace_back(std::make_shared<EventCBContext>(
                     PS_CB_TYPE_INNER_ERR, PS_CB_EVENT_RES_DEC_FAILED,
                     "decode packet failed"));
                 event_cb_cond_.notify_one();
@@ -352,9 +352,11 @@ class PushSDK : public Singleton<PushSDK>,
     std::condition_variable                         cb_map_cond_;
 
     std::unique_ptr<std::thread>                event_cb_thread_;
-    std::deque<std::shared_ptr<EventCBContext>> event_cb_pctxs;
+    std::deque<std::shared_ptr<EventCBContext>> event_cb_pctxs_;
     std::condition_variable                     event_cb_cond_;
     std::mutex                                  event_cb_mux_;
+    std::thread::id                             event_cb_thread_id_;
+    std::atomic<bool>                           event_cb_thread_quit_flag_;
 };
 
 }  // namespace edu

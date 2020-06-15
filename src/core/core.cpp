@@ -93,15 +93,18 @@ int PushSDK::Initialize(uint32_t       uid,
         }
     }));
 
+    event_cb_thread_quit_flag_ = false;
     event_cb_thread_ = std::unique_ptr<std::thread>(new std::thread([this]() {
         std::deque<std::shared_ptr<EventCBContext>> temp_pctxs;
-        while (run_) {
+        while (!event_cb_thread_quit_flag_) {
             {
                 std::unique_lock<std::mutex> lock(event_cb_mux_);
-                if (run_) {
+                if (!event_cb_pctxs_.empty()) {
+                    std::swap(event_cb_pctxs_, temp_pctxs);
+                }
+                else if (!event_cb_thread_quit_flag_) {
                     event_cb_cond_.wait(lock);
                 }
-                std::swap(event_cb_pctxs, temp_pctxs);
             }
 
             while (!temp_pctxs.empty()) {
@@ -112,6 +115,8 @@ int PushSDK::Initialize(uint32_t       uid,
             }
         }
     }));
+
+    event_cb_thread_id_ = event_cb_thread_->get_id();
 
     init_ = true;
     return ret;
@@ -206,23 +211,30 @@ void PushSDK::Destroy()
         return;
     }
 
-    run_ = false;
+    // 防止在全局回调线程中调用Destroy()
+    if (event_cb_thread_id_ == std::this_thread::get_id()) {
+        throw std::runtime_error("trying to join itself");
+    }
 
-    cb_map_mux_.lock();
-    cb_map_cond_.notify_all();
-    cb_map_mux_.unlock();
-
+    event_cb_thread_quit_flag_ = true;
     event_cb_mux_.lock();
     event_cb_cond_.notify_all();
     event_cb_mux_.unlock();
+
+    event_cb_thread_->join();
+    event_cb_thread_.reset();
+    event_cb_thread_ = nullptr;
+
+    run_ = false;
+    cb_map_mux_.lock();
+    cb_map_cond_.notify_all();
+    cb_map_mux_.unlock();
 
     thread_->join();
     thread_.reset();
     thread_ = nullptr;
 
-    event_cb_thread_->join();
-    event_cb_thread_.reset();
-    event_cb_thread_ = nullptr;
+    event_cb_pctxs_.clear();
 
     client_->Destroy();
     client_.reset();
@@ -483,7 +495,7 @@ void PushSDK::relogin(bool need_to_lock)
         log_e("encode login request packet failed");
         {
             std::unique_lock<std::mutex> lock(event_cb_mux_);
-            event_cb_pctxs.emplace_back(std::make_shared<EventCBContext>(
+            event_cb_pctxs_.emplace_back(std::make_shared<EventCBContext>(
                 PS_CB_TYPE_LOGIN, PS_CB_EVENT_REQ_ENC_FAILED,
                 "inner relogin: LoginRequest packet serialize failed. you "
                 "should relogin manually"));
@@ -518,7 +530,7 @@ void PushSDK::rejoin_group(bool need_to_lock)
         user_lock.unlock();
         {
             std::unique_lock<std::mutex> lock(event_cb_mux_);
-            event_cb_pctxs.emplace_back(std::make_shared<EventCBContext>(
+            event_cb_pctxs_.emplace_back(std::make_shared<EventCBContext>(
                 PS_CB_TYPE_JOIN_GROUP, PS_CB_EVENT_REQ_ENC_FAILED,
                 "inner rejoin group : JoinGroupRequest packet serialize "
                 "failed. you "
@@ -669,12 +681,10 @@ void PushSDK::notify(std::shared_ptr<CallContext> ctx,
     }
     else {
         if (ctx->cb_func == event_cb_) {
-            {
-                std::unique_lock<std::mutex> lock(event_cb_mux_);
-                event_cb_pctxs.emplace_back(
-                    std::make_shared<EventCBContext>(ctx->type, res, desc));
-                event_cb_cond_.notify_one();
-            }
+            std::unique_lock<std::mutex> lock(event_cb_mux_);
+            event_cb_pctxs_.emplace_back(
+                std::make_shared<EventCBContext>(ctx->type, res, desc));
+            event_cb_cond_.notify_one();
         }
         else {
             ctx->cb_func(ctx->type, res, desc.c_str(), ctx->cb_args);
@@ -690,11 +700,12 @@ void PushSDK::handle_notify_to_close()
     }
 
     user_ = nullptr;
+    remove_all_group_info();
     user_lock.unlock();
 
     {
         std::unique_lock<std::mutex> lock(event_cb_mux_);
-        event_cb_pctxs.emplace_back(std::make_shared<EventCBContext>(
+        event_cb_pctxs_.emplace_back(std::make_shared<EventCBContext>(
             PS_CB_TYPE_LOGIN, PS_CB_EVENT_USER_KICKED_BY_SRV,
             "user be kicked by the server"));
         event_cb_cond_.notify_one();
