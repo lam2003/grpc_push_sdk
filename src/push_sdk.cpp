@@ -2,12 +2,11 @@
 #include <core/core.h>
 #include <push_sdk.h>
 
-#include <atomic>
 #include <mutex>
 
-static std::mutex        _mux;
-static std::atomic<bool> _initialized(false);
-static std::atomic<bool> _log_initialized(false);
+static std::mutex _mux;
+static bool       _initialized(false);
+static bool       _log_initialized(false);
 
 PushSDKRetCode PushSDKInitialize(uint32_t       uid,
                                  uint64_t       appid,
@@ -61,7 +60,7 @@ void PushSDKDestroy()
     edu::PushSDK::Instance()->Destroy();
 
     flush_logger();
-    
+
     _initialized = false;
 }
 
