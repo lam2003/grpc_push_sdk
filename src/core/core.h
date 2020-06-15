@@ -276,7 +276,7 @@ class PushSDK : public Singleton<PushSDK>,
                 event_cb_pctxs.emplace_back(std::make_shared<EventCBContext>(
                     PS_CB_TYPE_INNER_ERR, PS_CB_EVENT_RES_DEC_FAILED,
                     "decode packet failed"));
-                cb_map_cond_.notify_one();
+                event_cb_cond_.notify_one();
             }
             return;
         }

@@ -484,7 +484,7 @@ void PushSDK::relogin(bool need_to_lock)
                 PS_CB_TYPE_LOGIN, PS_CB_EVENT_REQ_ENC_FAILED,
                 "inner relogin: LoginRequest packet serialize failed. you "
                 "should relogin manually"));
-            cb_map_cond_.notify_one();
+            event_cb_cond_.notify_one();
         }
 
         return;
@@ -520,7 +520,7 @@ void PushSDK::rejoin_group(bool need_to_lock)
                 "inner rejoin group : JoinGroupRequest packet serialize "
                 "failed. you "
                 "should rejoin all group manually"));
-            cb_map_cond_.notify_one();
+            event_cb_cond_.notify_one();
         }
         return;
     }
@@ -670,7 +670,7 @@ void PushSDK::notify(std::shared_ptr<CallContext> ctx,
                 std::unique_lock<std::mutex> lock(event_cb_mux_);
                 event_cb_pctxs.emplace_back(
                     std::make_shared<EventCBContext>(ctx->type, res, desc));
-                cb_map_cond_.notify_one();
+                event_cb_cond_.notify_one();
             }
         }
         else {
@@ -694,7 +694,7 @@ void PushSDK::handle_notify_to_close()
         event_cb_pctxs.emplace_back(std::make_shared<EventCBContext>(
             PS_CB_TYPE_LOGIN, PS_CB_EVENT_USER_KICKED_BY_SRV,
             "user be kicked by the server"));
-        cb_map_cond_.notify_one();
+        event_cb_cond_.notify_one();
     }
 }
 
