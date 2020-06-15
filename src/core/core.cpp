@@ -254,6 +254,9 @@ int PushSDK::Login(const PushSDKUserInfo& user,
 
     std::unique_lock<std::mutex> user_lock(user_mux_);
 
+    // 登录之前，清理所有未发出的请求
+    client_->CleanQueue();
+
     if (user_) {
         ret = PS_RET_ALREADY_LOGIN;
         log_w("sdk alreay login. ret={}", PS_RET_ALREADY_LOGIN);

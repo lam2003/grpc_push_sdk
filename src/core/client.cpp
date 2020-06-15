@@ -237,8 +237,6 @@ int Client::Initialize(uint32_t uid, uint64_t suid)
                     }
 
                     if (event == ClientEvent::FINISHED) {
-                        CleanQueue();
-
                         if (stream_status_lis_ &&
                             st_->LastRequest() != nullptr) {
                             stream_status_lis_->OnFinish(st_->LastRequest(),
