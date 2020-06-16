@@ -122,8 +122,8 @@ for mode in build_mode:
         make_universal_list.append(z_libs)
 
     def copy_libevent_lib():
-        make_universal_list(event_libs)
-        make_universal_list(event_core_libs)
+        make_universal_list.append(event_libs)
+        make_universal_list.append(event_core_libs)
 
     def copy_push_sdk_lib():
         make_universal_list.append(service_mesh_cpp_libs)
