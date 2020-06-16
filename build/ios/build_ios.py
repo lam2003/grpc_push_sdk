@@ -34,6 +34,7 @@ for mode in build_mode:
     protobuf_libs = []
     z_libs = []
     event_libs = []
+    event_core_libs = []
 
     for arch in arch_list:
         libs_dir = os.path.abspath('../../out/lib/ios/' + mode)
@@ -71,6 +72,7 @@ for mode in build_mode:
         build('libprotobuf')
         build('grpc++')
         build('event_static')
+        build('event_core_static')
         build('push_sdk')
 
         service_mesh_cpp_libs     .append(
@@ -100,6 +102,9 @@ for mode in build_mode:
         event_libs          .append(
             BUILD_DIR + '/3rdparty/libevent/lib/libevent.a'
         )
+        event_core_libs          .append(
+            BUILD_DIR + '/3rdparty/libevent/lib/libevent_core.a'
+        )
 
     def copy_protobuf_lib():
         make_universal_list.append(protobuf_libs)
@@ -118,6 +123,7 @@ for mode in build_mode:
 
     def copy_libevent_lib():
         make_universal_list(event_libs)
+        make_universal_list(event_core_libs)
 
     def copy_push_sdk_lib():
         make_universal_list.append(service_mesh_cpp_libs)
