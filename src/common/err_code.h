@@ -1,5 +1,5 @@
-#ifndef PUSH_SDK_ERR_CODE_H
-#define PUSH_SDK_ERR_CODE_H
+#ifndef EDU_PUSH_SDK_ERR_CODE_H
+#define EDU_PUSH_SDK_ERR_CODE_H
 
 #define RES_SUCCESS 200   /* 功能成功完成,一切正常,不必担心 */
 #define RES_ACCEPTED 202  /* 功能请求已接受,等候处理 */

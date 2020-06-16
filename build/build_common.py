@@ -88,6 +88,7 @@ def copy_libs():
     copy_protobuf_lib()
     copy_ssl_lib()
     copy_grpc_lib()
+    copy_libevent_lib()
     copy_push_sdk_lib()
 
 # for ios

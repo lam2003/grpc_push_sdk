@@ -6,3 +6,6 @@
 	path = 3rdparty/spdlog
 	url = https://github.com/gabime/spdlog.git
 	branch = v1.x
+[submodule "3rdparty/libevent"]
+	path = 3rdparty/libevent
+	url = https://github.com/libevent/libevent.git

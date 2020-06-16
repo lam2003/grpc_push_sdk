@@ -48,6 +48,7 @@ for mode in build_mode:
     BUILD_MODE = mode
     build('libprotobuf')
     build('grpc++')
+    build("event_static")
     build('push_sdk')
 
     def copy_protobuf_lib():
@@ -68,6 +69,9 @@ for mode in build_mode:
         copy_file(
             BUILD_DIR + '/3rdparty/grpc/third_party/cares/cares/lib/libcares.a', libs_dir)
         copy_file(BUILD_DIR + '/3rdparty/grpc/third_party/zlib/libz.a', libs_dir)
+
+    def copy_libevent_lib():
+        copy_file(BUILD_DIR + '/3rdparty/libevent/lib/libevent.a', libs_dir)
 
     def copy_push_sdk_lib():
         copy_file(BUILD_DIR + '/src/libpush_sdk.a', libs_dir)

@@ -1,5 +1,5 @@
-#ifndef EDU_PUSH_SDK
-#define EDU_PUSH_SDK
+#ifndef EDU_PUSH_SDK_CONFIG_H
+#define EDU_PUSH_SDK_CONFIG_H
 
 #include <common/singleton.h>
 
@@ -32,7 +32,7 @@ class Config : public Singleton<Config> {
 
     // front_envoy 域名
     std::string front_envoy_host = "183.36.117.51";
-#elif
+#else
     // logger flush到文件的时间间隔(sec)
     int logger_flush_interval_sec = 1;
     // grpc日志输出到控制台开关

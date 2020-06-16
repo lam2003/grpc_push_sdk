@@ -58,6 +58,7 @@ for arch in arch_list:
         BUILD_MODE = mode
         build('libprotobuf')
         build('grpc++')
+        build('event_static')
         build('push_sdk')
 
         if mode == 'Debug':
@@ -94,5 +95,10 @@ for arch in arch_list:
                       libs_postfix + '.lib', libs_dir)
             copy_file(BUILD_DIR + '/3rdparty/grpc/third_party/zlib/'+mode+'/zlibstatic' +
                       libs_postfix + '.lib', libs_dir)
+
+        def copy_libevent_lib():
+            copy_file(BUILD_DIR + '/3rdparty/libevent/lib/'+mode+'/event' +
+                      libs_postfix + '.lib', libs_dir)
+
         makedirs(libs_dir)
         copy_libs()
