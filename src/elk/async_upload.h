@@ -1,5 +1,5 @@
-#ifndef EDU_PUSH_SDK_ELK_ASYNC_UPLOAD_H
-#define EDU_PUSH_SDK_ELK_ASYNC_UPLOAD_H
+#ifndef EDU_PUSH_SDK_ASYNC_UPLOAD_H
+#define EDU_PUSH_SDK_ASYNC_UPLOAD_H
 
 #include <common/http_client.h>
 

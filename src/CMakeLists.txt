@@ -28,11 +28,12 @@ if(PS_BUILD_SHARED)
         target_link_directories(push_sdk PUBLIC ${CMAKE_BINARY_DIR}/3rdparty/grpc/third_party/cares/cares/lib/${PS_BUILD_MODE})
         target_link_directories(push_sdk PUBLIC ${CMAKE_BINARY_DIR}/3rdparty/grpc/third_party/zlib/${PS_BUILD_MODE})
         target_link_directories(push_sdk PUBLIC ${CMAKE_BINARY_DIR}/3rdparty/libevent/lib)
+        target_link_directories(push_sdk PUBLIC ${CMAKE_BINARY_DIR}/3rdparty/json/src/lib_json)
 
         if(PS_BUILD_MODE MATCHES "Debug")
-            target_link_libraries(push_sdk grpcd gprd grpc++d  address_sortingd libprotobufd ssld cryptod caresd zlibstaticd event_core ws2_32)
+            target_link_libraries(push_sdk grpcd gprd grpc++d  address_sortingd libprotobufd ssld cryptod caresd zlibstaticd eventd event_cored jsoncppd ws2_32)
         else()
-            target_link_libraries(push_sdk grpc gpr grpc++  address_sorting libprotobuf ssl crypto cares zlibstatic event_core ws2_32)
+            target_link_libraries(push_sdk grpc gpr grpc++  address_sorting libprotobuf ssl crypto cares zlibstatic event event_core jsoncpp ws2_32)
         endif()
     endif()
 else()
@@ -57,6 +58,7 @@ target_include_directories(push_sdk
     PRIVATE ${THIRD_PARTY_DIR}/grpc/third_party/protobuf/src 
     PRIVATE ${THIRD_PARTY_DIR}/libevent/include
     PRIVATE ${CMAKE_BINARY_DIR}/3rdparty/libevent/include
+    PRIVATE ${CMAKE_BINARY_DIR}/3rdparty/jsoncpp/include
 )
 
 foreach(_source IN ITEMS ${_source_list})

@@ -72,6 +72,17 @@ class Config : public Singleton<Config> {
     int call_timeout_interval = 3000;
     // PushGateway 检测超时间隔(ms)
     int call_check_timeout_interval = 500;
+
+    // ELK project
+    std::string elk_project_name = "100edu-signal-platform";
+    // ELK region
+    std::string elk_region = "cn-shenzhen";
+    // ELK logStore
+    std::string elk_log_store = "edu_sp_push_sdk_test";
+    // ELK source 客户端无法拿到外网IP
+    std::string elk_source = "127.0.0.1";
+    // ELK encode 1代表base64，2代表URLEncode
+    int elk_encode = 2;
 };
 
 }  // namespace edu
