@@ -39,6 +39,8 @@ for mode in build_mode:
         'cmake',
         '-B', BUILD_DIR,
         '-DPS_BUILD_MODE=' + mode,
+        '-DEVENT__DISABLE_OPENSSL=true',
+        '-DEVENT__DISABLE_TESTS=true',
         '../..'
     ]
 

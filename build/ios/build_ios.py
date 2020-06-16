@@ -56,6 +56,8 @@ for mode in build_mode:
                      '-DENABLE_BITCODE=FALSE',
                      '-DENABLE_ARC=TRUE',
                      '-DPS_BUILD_MODE=' + mode,
+                     '-DEVENT__DISABLE_OPENSSL=true',
+                     '-DEVENT__DISABLE_TESTS=true',
                      '-G' + generator,
                      '../..'
                      ]

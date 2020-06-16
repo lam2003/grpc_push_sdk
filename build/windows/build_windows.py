@@ -41,6 +41,8 @@ for arch in arch_list:
                      '-DCMAKE_SYSTEM_VERSION=' + system_version,
                      '-DPS_BUILD_SHARED=true',
                      '-DPS_BUILD_MODE=' + mode,
+                     '-DEVENT__DISABLE_OPENSSL=true',
+                     '-DEVENT__DISABLE_TESTS=true',
                      '-config=' + mode
                      ]
         if vs_year >= 2019:
