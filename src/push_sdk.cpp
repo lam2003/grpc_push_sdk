@@ -4,9 +4,9 @@
 
 #include <mutex>
 
-static std::mutex _mux;
-static bool       _initialized(false);
-static bool       _log_initialized(false);
+static std::mutex    _mux;
+static volatile bool _initialized(false);
+static volatile bool _log_initialized(false);
 
 PushSDKRetCode PushSDKInitialize(uint32_t       uid,
                                  uint64_t       appid,
@@ -15,8 +15,7 @@ PushSDKRetCode PushSDKInitialize(uint32_t       uid,
                                  PushSDKEventCB cb_func,
                                  void*          cb_arg)
 {
-    PushSDKRetCode               ret = PS_RET_SUCCESS;
-    std::unique_lock<std::mutex> lock(_mux);
+    PushSDKRetCode ret = PS_RET_SUCCESS;
 
     if (_initialized) {
         log_w("push_sdk already initialized");
@@ -51,8 +50,6 @@ PushSDKRetCode PushSDKInitialize(uint32_t       uid,
 
 void PushSDKDestroy()
 {
-    std::unique_lock<std::mutex> lock(_mux);
-
     if (!_initialized) {
         return;
     }

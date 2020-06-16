@@ -111,7 +111,7 @@ typedef void (*PushSDKGroupMsgCB)(uint64_t    from_gtype,
 */
 typedef void (*PushSDKConnStateCB)(PushSDKConnState state);
 
-// @brief     初始化，必须最先调用，重复调用返 PS_RET_ALREADY_INIT，线程安全
+// @brief     初始化，必须最先调用，重复调用返 PS_RET_ALREADY_INIT，非线程安全
 // @param[in] uid 用户ID，SDK初始化时用于路由
 // @param[in] appid 应用ID
 // @param[in] appkey 应用密钥
@@ -126,7 +126,7 @@ PS_EXPORT PushSDKRetCode PushSDKInitialize(uint32_t       uid,
                                            PushSDKEventCB cb_func,
                                            void*          cb_arg);
 
-// @brief     去初始化，可重复调用，线程安全
+// @brief     去初始化，可重复调用，非线程安全
 PS_EXPORT void PushSDKDestroy(void);
 
 // @brief     同步登录，必须在SDK初始化之后调用，重复调用返回，线程安全
