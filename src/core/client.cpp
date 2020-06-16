@@ -237,11 +237,14 @@ int Client::Initialize(uint32_t uid, uint64_t suid)
                     }
 
                     if (event == ClientEvent::FINISHED) {
+
+#ifdef USE_ON_FINISH
                         if (stream_status_lis_ &&
                             st_->LastRequest() != nullptr) {
                             stream_status_lis_->OnFinish(st_->LastRequest(),
                                                          st_->GrpcStatus());
                         }
+#endif
 
                         if (going_to_quit) {
                             run_ = false;
@@ -290,10 +293,8 @@ void Client::Send(std::shared_ptr<PushRegReq> req)
 void Client::Destroy()
 {
     stream_mux_.lock();
-    if (st_) {
-        if (!st_->HalfClose()) {
-            run_ = false;
-        }
+    if (st_ && !st_->HalfClose()) {
+        run_ = false;
     }
     stream_mux_.unlock();
 

@@ -29,9 +29,11 @@ class StreamStatusListener {
     ~StreamStatusListener() {}
 
   public:
-    virtual void OnConnected()                 = 0;
+    virtual void OnConnected() = 0;
+#ifdef USE_ON_FINISH
     virtual void OnFinish(std::shared_ptr<PushRegReq> last_req,
                           grpc::Status                status) = 0;
+#endif
 };
 
 class MessageHandler {

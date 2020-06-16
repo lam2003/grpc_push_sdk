@@ -23,9 +23,11 @@ class Stream {
     virtual void Destroy();
     virtual bool IsConnected();
     virtual bool IsReadyToSend();
-    virtual grpc::Status                GrpcStatus();
+    virtual grpc::Status GrpcStatus();
+#ifdef USE_ON_FINISH
     virtual std::shared_ptr<PushRegReq> LastRequest();
-    virtual bool                        HalfClose();
+#endif
+    virtual bool HalfClose();
 
   private:
     std::shared_ptr<Client>              client_;
@@ -34,8 +36,9 @@ class Stream {
     std::unique_ptr<RW>                  rw_;
     StreamStatus                         status_;
     grpc::Status                         grpc_status_;
-    std::shared_ptr<PushRegReq>          last_req_;
-
+#ifdef USE_ON_FINISH
+    std::shared_ptr<PushRegReq> last_req_;
+#endif
     std::mutex                              mux_;
     std::deque<std::shared_ptr<PushRegReq>> msg_queue_;
 };

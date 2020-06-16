@@ -17,7 +17,9 @@ Stream::Stream(std::shared_ptr<Client> client)
     rw_        = nullptr;
     status_    = StreamStatus::WAIT_CONNECT;
     grpc_status_ = grpc::Status::OK;
-    last_req_    = nullptr;
+#ifdef USE_ON_FINISH
+    last_req_ = nullptr;
+#endif
 }
 
 Stream::~Stream()
@@ -72,7 +74,9 @@ void Stream::Process(ClientEvent event, bool ok)
             }
             else {
                 std::shared_ptr<PushRegReq> r = msg_queue_.front();
-                last_req_                     = r;
+#ifdef USE_ON_FINISH
+                last_req_ = r;
+#endif
                 rw_->Write(*r,
                            reinterpret_cast<void*>(ClientEvent::WRITE_DONE));
                 status_ = StreamStatus::WAIT_WRITE_DONE;
@@ -95,7 +99,9 @@ void Stream::Send(std::shared_ptr<PushRegReq> req)
     if (status_ == StreamStatus::READY_TO_WRITE) {
         std::shared_ptr<PushRegReq> r = msg_queue_.front();
         msg_queue_.pop_front();
+#ifdef USE_ON_FINISH
         last_req_ = r;
+#endif
         rw_->Write(*r, reinterpret_cast<void*>(ClientEvent::WRITE_DONE));
         status_ = StreamStatus::WAIT_WRITE_DONE;
     }
@@ -116,7 +122,9 @@ void Stream::SendMsgs(std::deque<std::shared_ptr<PushRegReq>>& msgs)
         }
         std::shared_ptr<PushRegReq> r = msg_queue_.front();
         msg_queue_.pop_front();
+#ifdef USE_ON_FINISH
         last_req_ = r;
+#endif
         rw_->Write(*r, reinterpret_cast<void*>(ClientEvent::WRITE_DONE));
         status_ = StreamStatus::WAIT_WRITE_DONE;
     }
@@ -130,7 +138,9 @@ void Stream::Destroy()
     rw_          = nullptr;
     status_      = StreamStatus::WAIT_CONNECT;
     grpc_status_ = grpc::Status::OK;
-    last_req_    = nullptr;
+#ifdef USE_ON_FINISH
+    last_req_ = nullptr;
+#endif
 }
 
 bool Stream::IsConnected()
@@ -156,10 +166,12 @@ grpc::Status Stream::GrpcStatus()
     return grpc_status_;
 }
 
+#ifdef USE_ON_FINISH
 std::shared_ptr<PushRegReq> Stream::LastRequest()
 {
     return last_req_;
 }
+#endif
 
 bool Stream::HalfClose()
 {

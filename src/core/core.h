@@ -101,8 +101,10 @@ class PushSDK : public Singleton<PushSDK>,
 
     virtual void NotifyChannelState(ChannelState state) override;
     virtual void OnConnected() override;
+#ifdef USE_ON_FINISH
     virtual void OnFinish(std::shared_ptr<PushRegReq> last_req,
                           grpc::Status                status) override;
+#endif
     virtual void OnMessage(std::shared_ptr<PushData> msg) override;
 
   private:
@@ -227,14 +229,21 @@ class PushSDK : public Singleton<PushSDK>,
             // ignore
         }
     }
-
+#ifdef USE_ON_FINISH
     template <typename T1, typename T2>
     void on_finish(std::shared_ptr<PushRegReq> last_req, grpc::Status status)
     {
         T1 req;
         assert(req.ParseFromString(last_req->msgdata()));
 
-        int64_t                      ts = std::stoll(req.context());
+        int64_t ts = 0;
+        try {
+            ts = std::stoll(req.context());
+        }
+        catch (std::exception& e) {
+            ts = 0;
+        }
+
         std::shared_ptr<CallContext> ctx;
 
         {
@@ -265,6 +274,8 @@ class PushSDK : public Singleton<PushSDK>,
             notify(ctx, PS_CB_EVENT_OK, "ok", 0);
         }
     }
+
+#endif
 
     template <typename T> void handle_response(std::shared_ptr<PushData> msg)
     {
