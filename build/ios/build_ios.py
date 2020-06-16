@@ -35,6 +35,7 @@ for mode in build_mode:
     z_libs = []
     event_libs = []
     event_core_libs = []
+    jsoncpp_libs = []
 
     for arch in arch_list:
         libs_dir = os.path.abspath('../../out/lib/ios/' + mode)
@@ -73,6 +74,7 @@ for mode in build_mode:
         build('grpc++')
         build('event_static')
         build('event_core_static')
+        build('jsoncpp_lib_static')
         build('push_sdk')
 
         service_mesh_cpp_libs     .append(
@@ -102,8 +104,11 @@ for mode in build_mode:
         event_libs          .append(
             BUILD_DIR + '/3rdparty/libevent/lib/libevent.a'
         )
-        event_core_libs          .append(
+        event_core_libs     .append(
             BUILD_DIR + '/3rdparty/libevent/lib/libevent_core.a'
+        )
+        jsoncpp_libs        .append(
+            BUILD_DIR + '/3rdparty/jsoncpp/src/lib_json/libjsoncpp.a'
         )
 
     def copy_protobuf_lib():
@@ -124,6 +129,9 @@ for mode in build_mode:
     def copy_libevent_lib():
         make_universal_list.append(event_libs)
         make_universal_list.append(event_core_libs)
+
+    def copy_jsoncpp_lib():
+        make_universal_list.append(jsoncpp_libs)
 
     def copy_push_sdk_lib():
         make_universal_list.append(service_mesh_cpp_libs)

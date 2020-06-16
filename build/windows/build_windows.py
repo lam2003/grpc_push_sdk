@@ -62,6 +62,7 @@ for arch in arch_list:
         build('grpc++')
         build('event_static')
         build('event_core_static')
+        build('jsoncpp_lib_static')
         build('push_sdk')
 
         if mode == 'Debug':
@@ -103,6 +104,10 @@ for arch in arch_list:
             copy_file(BUILD_DIR + '/3rdparty/libevent/lib/'+mode+'/event' +
                       libs_postfix + '.lib', libs_dir)
             copy_file(BUILD_DIR + '/3rdparty/libevent/lib/'+mode+'/event_core' +
+                      libs_postfix + '.lib', libs_dir)
+
+        def copy_jsoncpp_lib():
+            copy_file(BUILD_DIR + '/3rdparty/jsoncpp/src/lib_json/'+mode+'/jsoncpp' +
                       libs_postfix + '.lib', libs_dir)
 
         makedirs(libs_dir)
