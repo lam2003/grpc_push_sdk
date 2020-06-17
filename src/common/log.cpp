@@ -12,7 +12,7 @@
 #define SDK_LOGGER_NAME "push_sdk"
 #define GRPC_LOGGER_NAME "grpc"
 #define GRPC_LOG_PREFIX ": {}"
-#define GRPC_LOG_PREFIX_DEBUG "[{}:{}]: {}"
+#define GRPC_LOG_PREFIX_DEBUG "[{}:{}]: (GRPC) {}"
 
 #ifdef _MSC_VER
 #    define strcasecmp stricmp
@@ -64,7 +64,7 @@ void Log::SetOutputDir(const std::string& dir)
     else {
         s = dir;
     }
-    dir_ = s + "/" + logger_name_;
+    dir_ = s;
 }
 
 void Log::SetLogLevel(const std::string& log_level)
@@ -108,11 +108,9 @@ int Log::Initialize()
 
     if (dir_ != "") {
         std::ostringstream oss;
-        oss << dir_ << "/" << Utils::GetSystemTime("%Y-%m-%d") << ".log";
-        file_logger_ =
-            spdlog::rotating_logger_mt(logger_name_ + "_f", oss.str(),
-                                       1024 * 1024 * 5,  // 5MB
-                                       10, false);
+        oss << dir_ << "/" << Utils::GetSystemTime(logger_name_ + "-%Y-%m-%d")
+            << ".log";
+        file_logger_ = spdlog::basic_logger_mt(logger_name_ + "_f", oss.str());
         if (!file_logger_) {
             return PS_RET_INIT_LOG_FAILED;
         }
@@ -140,15 +138,18 @@ static void grpc_log_func(gpr_log_func_args* args)
 {
     switch (args->severity) {
         case GPR_LOG_SEVERITY_DEBUG:
-            _grpc_logger->Debug(GRPC_LOG_PREFIX_DEBUG, args->file, args->line,
+            _grpc_logger->Debug(GRPC_LOG_PREFIX_DEBUG,
+                                edu::Utils::CutFilePath(args->file), args->line,
                                 args->message);
             break;
         case GPR_LOG_SEVERITY_INFO:
-            _grpc_logger->Info(GRPC_LOG_PREFIX_DEBUG, args->file, args->line,
+            _grpc_logger->Info(GRPC_LOG_PREFIX_DEBUG,
+                               edu::Utils::CutFilePath(args->file), args->line,
                                args->message);
             break;
         case GPR_LOG_SEVERITY_ERROR:
-            _grpc_logger->Error(GRPC_LOG_PREFIX_DEBUG, args->file, args->line,
+            _grpc_logger->Error(GRPC_LOG_PREFIX_DEBUG,
+                                edu::Utils::CutFilePath(args->file), args->line,
                                 args->message);
             break;
     }
@@ -184,24 +185,25 @@ int init_logger(const std::string& log_dir)
         gpr_set_log_verbosity(GPR_LOG_SEVERITY_DEBUG);
         gpr_log_verbosity_init();
         gpr_set_log_function(&grpc_log_func);
-
-        // grpc_tracer_set_enabled("subchannel", 1);
-        // grpc_tracer_set_enabled("client_channel_routing", 1);
-        // grpc_tracer_set_enabled("client_channel_call", 1);
-        // grpc_tracer_set_enabled("connectivity_state", 1);
-        // grpc_tracer_set_enabled("call_error", 1);
-        // grpc_tracer_set_enabled("pick_first", 1);
-        // grpc_tracer_set_enabled("channel", 1);
-        // grpc_tracer_set_enabled("op_failure", 1);
-
-        // grpc_tracer_set_enabled("resolver_refcount", 1);
-        // grpc_tracer_set_enabled("flowctl", 1);
-        // grpc_tracer_set_enabled("list_tracers", 1);
-        // grpc_tracer_set_enabled("http2_stream_state", 1);
-        // grpc_tracer_set_enabled("bdp_estimator", 1);
-        // grpc_tracer_set_enabled("cares_resolver", 1);
-        // grpc_tracer_set_enabled("cares_address_sorting", 1);
-        // grpc_tracer_set_enabled("round_robin", 1);
+#if 0 
+        grpc_tracer_set_enabled("subchannel", 1);
+        grpc_tracer_set_enabled("client_channel_routing", 1);
+        grpc_tracer_set_enabled("client_channel_call", 1);
+        grpc_tracer_set_enabled("connectivity_state", 1);
+        grpc_tracer_set_enabled("call_error", 1);
+        grpc_tracer_set_enabled("pick_first", 1);
+        grpc_tracer_set_enabled("channel", 1);
+        grpc_tracer_set_enabled("op_failure", 1);
+        //-----------------------------------------------//
+        grpc_tracer_set_enabled("resolver_refcount", 1);
+        grpc_tracer_set_enabled("flowctl", 1);
+        grpc_tracer_set_enabled("list_tracers", 1);
+        grpc_tracer_set_enabled("http2_stream_state", 1);
+        grpc_tracer_set_enabled("bdp_estimator", 1);
+        grpc_tracer_set_enabled("cares_resolver", 1);
+        grpc_tracer_set_enabled("cares_address_sorting", 1);
+        grpc_tracer_set_enabled("round_robin", 1);
+#endif
     }
     catch (std::exception& e) {
         ret = PS_RET_INIT_LOG_FAILED;

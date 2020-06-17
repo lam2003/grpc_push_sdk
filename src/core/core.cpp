@@ -124,7 +124,7 @@ int PushSDK::Initialize(uint32_t       uid,
 
 void PushSDK::NotifyChannelState(ChannelState state)
 {
-    log_d("channel state change to {}", channel_state_to_string(state));
+    log_w("channel_state={}", channel_state_to_string(state)); 
     for (auto it = hdls_.begin(); it != hdls_.end(); it++) {
         if ((*it)->conn_state_cb) {
             (*it)->conn_state_cb(state == ChannelState::OK ?
@@ -223,24 +223,19 @@ void PushSDK::Destroy()
     event_cb_cond_.notify_all();
     event_cb_mux_.unlock();
 
-
-    printf("AAAAAAAAAAAAAAAAAAAAAAAAAA\n");
-
     event_cb_thread_->join();
     event_cb_thread_.reset();
     event_cb_thread_ = nullptr;
-
-        printf("AAAAAAAAAAAAAAAAAAAAAAAAAA1111\n");
 
     run_ = false;
     cb_map_mux_.lock();
     cb_map_cond_.notify_all();
     cb_map_mux_.unlock();
-        printf("AAAAAAAAAAAAAAAAAAAAAAAAAA11112222\n");
+
     thread_->join();
     thread_.reset();
     thread_ = nullptr;
-    printf("AAAAAAAAAAAAAAAAAAAAAAAAAA111122223333\n");
+
     event_cb_pctxs_.clear();
 
     client_->Destroy();

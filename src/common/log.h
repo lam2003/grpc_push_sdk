@@ -10,7 +10,7 @@
 #ifndef SPDLOG_NO_TLS
 #    define SPDLOG_NO_TLS
 #endif
-#include <spdlog/sinks/rotating_file_sink.h>
+#include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
 

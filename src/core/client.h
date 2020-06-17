@@ -63,11 +63,14 @@ class Client : public std::enable_shared_from_this<Client> {
     virtual void Send(std::shared_ptr<PushRegReq> req);
     virtual void CleanQueue();
 
+    virtual uint32_t GetUID();
+    virtual uint64_t GetSUID();
+
   private:
     void on_read(std::shared_ptr<PushData> push_data);
     void on_connected();
     void create_and_init_stream();
-    void create_channel_and_stub();
+    void create_channel_and_stub(bool need_to_change_port = false);
     void check_and_notify_channel_state();
     void check_and_reconnect();
     void send_all_msgs();

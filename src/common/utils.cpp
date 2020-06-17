@@ -89,4 +89,42 @@ std::string Utils::CutFilePath(const std::string& filepath)
     return filepath;
 }
 
+inline static uint8_t to_hex(uint8_t x)
+{
+    return x > 9 ? x + 55 : x + 48;
+}
+
+inline static uint8_t from_hex(uint8_t x)
+{
+    uint8_t y;
+    if (x >= 'A' && x <= 'Z')
+        y = x - 'A' + 10;
+    else if (x >= 'a' && x <= 'z')
+        y = x - 'a' + 10;
+    else if (x >= '0' && x <= '9')
+        y = x - '0';
+    else
+        assert(0);
+    return y;
+}
+
+std::string Utils::URLEncode(const std::string& str)
+{
+    std::string str_temp = "";
+    size_t      length   = str.length();
+    for (size_t i = 0; i < length; i++) {
+        if (isalnum((uint8_t)str[i]) || (str[i] == '-') || (str[i] == '_') ||
+            (str[i] == '.') || (str[i] == '~'))
+            str_temp += str[i];
+        else if (str[i] == ' ')
+            str_temp += "+";
+        else {
+            str_temp += '%';
+            str_temp += to_hex((uint8_t)str[i] >> 4);
+            str_temp += to_hex((uint8_t)str[i] % 16);
+        }
+    }
+    return str_temp;
+}
+
 }  // namespace edu

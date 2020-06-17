@@ -11,9 +11,6 @@
 
 #include <core/stream.h>
 
-#define HASH_HEADER_KEY "suid"
-#define UID_HEADER_KEY "uid"
-
 namespace edu {
 
 std::atomic<uint32_t> Client::port_index_(0);
@@ -66,6 +63,16 @@ void Client::CleanQueue()
     msg_queue_mux_.unlock();
 }
 
+uint32_t Client::GetUID()
+{
+    return uid_;
+}
+
+uint64_t Client::GetSUID()
+{
+    return suid_;
+}
+
 static grpc::ChannelArguments get_channel_args()
 {
     grpc::ChannelArguments args;
@@ -88,14 +95,18 @@ static grpc::ChannelArguments get_channel_args()
     return args;
 }
 
-void Client::create_channel_and_stub()
+void Client::create_channel_and_stub(bool need_to_change_port)
 {
+    if (need_to_change_port) {
+        port_index_++;
+    }
+
     std::ostringstream oss;
     oss << Config::Instance()->front_envoy_host << ":"
         << Config::Instance()->front_envoy_ports
-               [port_index_++ % Config::Instance()->front_envoy_ports.size()];
+               [port_index_ % Config::Instance()->front_envoy_ports.size()];
 
-    log_t("trying connect to {}", oss.str());
+    log_t("using address {}", oss.str());
 
     channel = grpc::CreateCustomChannel(
         oss.str(), grpc::InsecureChannelCredentials(), get_channel_args());
@@ -144,7 +155,7 @@ void Client::check_and_reconnect()
     grpc_connectivity_state state = channel->GetState(false);
     if (state == GRPC_CHANNEL_SHUTDOWN ||
         state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-        create_channel_and_stub();
+        create_channel_and_stub(true);
     }
 }
 

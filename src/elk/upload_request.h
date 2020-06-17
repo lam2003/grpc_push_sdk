@@ -35,6 +35,9 @@ class ELKUploadRequest {
         root["encode"]   = Config::Instance()->elk_encode;
         root["source"]   = Config::Instance()->elk_source;
     }
+
+  public:
+    std::vector<ELKUploadItem> items;
 };
 
 }  // namespace edu

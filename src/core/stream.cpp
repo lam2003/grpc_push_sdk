@@ -7,15 +7,23 @@
 
 #include <grpc++/grpc++.h>
 
+#define HASH_HEADER_KEY "suid"
+#define UID_HEADER_KEY "uid"
+
 namespace edu {
 
 Stream::Stream(std::shared_ptr<Client> client)
 {
-    client_    = client;
-    ctx_       = std::unique_ptr<grpc::ClientContext>(new grpc::ClientContext);
-    push_data_ = std::unique_ptr<PushData>(new PushData);
-    rw_        = nullptr;
-    status_    = StreamStatus::WAIT_CONNECT;
+    client_ = client;
+
+    ctx_ = std::unique_ptr<grpc::ClientContext>(new grpc::ClientContext);
+    // 填入header
+    ctx_->AddMetadata(HASH_HEADER_KEY, std::to_string(client->GetSUID()));
+    ctx_->AddMetadata(UID_HEADER_KEY, std::to_string(client->GetUID()));
+
+    push_data_   = std::unique_ptr<PushData>(new PushData);
+    rw_          = nullptr;
+    status_      = StreamStatus::WAIT_CONNECT;
     grpc_status_ = grpc::Status::OK;
 #ifdef USE_ON_FINISH
     last_req_ = nullptr;
