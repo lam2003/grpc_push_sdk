@@ -36,6 +36,19 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set(PUBLIC_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include)
 set(THIRD_PARTY_DIR ${PROJECT_SOURCE_DIR}/3rdparty)
 
+
+set(PUSH_SDK_VERSION v1.0.0)
+find_package(Git)
+execute_process(COMMAND ${GIT_EXECUTABLE} describe --abbrev=6 --dirty --always --tags
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    OUTPUT_VARIABLE  GIT_REPO_VERSION
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+file(WRITE ${PROJECT_SOURCE_DIR}/src/repo_version.h
+    "#ifndef EDU_PUSH_SDK_VERSION_H\n#define EDU_PUSH_SDK_VERSION_H\n#define REPO_VERSION \"${GIT_REPO_VERSION}\"\n#define PUSH_SDK_VERSION \"${PUSH_SDK_VERSION}\"\n#endif\n"
+)
+
+
 if(PS_BUILD_MODE MATCHES "Debug")
     message("##################BUILD DEBUG##################")
     if(NOT WIN32)

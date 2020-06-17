@@ -2,26 +2,70 @@
 #define EDU_PUSH_SDK_UPLOAD_REQUEST_H
 
 #include <common/config.h>
+#include <common/utils.h>
+#include <repo_version.h>
 
-#include <jsoncpp/json.h>
+#include <json/json.h>
+
+#include <deque>
 
 namespace edu {
 
 class ELKUploadItem {
   public:
-  public:
-    std::string sdk_version;
-    uint64_t    appid;
-    union
+    ELKUploadItem(const std::string  system_time,
+                  uint64_t           appid,
+                  uint32_t           uid,
+                  uint64_t           suid,
+                  uint64_t           gtype,
+                  uint64_t           gid,
+                  const std::string& action,
+                  int                code,
+                  const std::string& msg)
     {
-        uint32_t uid;
-        uint64_t suid;
-        uint64_t gid;
-        uint64_t gtype;
-    } info;
-    std::string uri;
+        this->system_time = system_time;
+        this->appid       = appid;
+        this->uid         = uid;
+        this->suid        = suid;
+        this->gtype       = gtype;
+        this->gid         = gid;
+        this->action      = action;
+        this->code        = code;
+        this->msg         = msg;
+    }
+
+  public:
+    operator Json::Value() const
+    {
+        Json::Value root;
+        root["sdk_version"]  = PUSH_SDK_VERSION;
+        root["repo_version"] = REPO_VERSION;
+        root["system_time"]  = system_time;
+        root["appid"]        = static_cast<Json::UInt64>(appid);
+        root["gid"]          = static_cast<Json::UInt64>(gid);
+        root["gtype"]        = static_cast<Json::UInt64>(gtype);
+        root["uid"]          = uid;
+        root["suid"]         = static_cast<Json::UInt64>(suid);
+        root["action"]       = action;
+        root["code"]         = code;
+        root["msg"]          = msg;
+        root["platform"]     = Utils::GetPlatformName();
+
+        return root;
+    }
+
+  public:
+    std::string system_time;
+
+    uint64_t    appid;
+    uint32_t    uid;
+    uint64_t    suid;
+    uint64_t    gid;
+    uint64_t    gtype;
+    std::string action;
     int         code;
     std::string msg;
+    std::string platform;
 };
 
 class ELKUploadRequest {
@@ -34,10 +78,20 @@ class ELKUploadRequest {
         root["logStore"] = Config::Instance()->elk_log_store;
         root["encode"]   = Config::Instance()->elk_encode;
         root["source"]   = Config::Instance()->elk_source;
+        for (std::shared_ptr<ELKUploadItem>& item : contents) {
+            root["content"].append(*item);
+        }
+
+        std::string      str;
+        Json::FastWriter w;
+
+        str = w.write(root);
+
+        return str.substr(0, str.size() - 1);
     }
 
   public:
-    std::vector<ELKUploadItem> items;
+    std::deque<std::shared_ptr<ELKUploadItem>> contents;
 };
 
 }  // namespace edu

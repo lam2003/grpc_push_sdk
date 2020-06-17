@@ -58,7 +58,7 @@ target_include_directories(push_sdk
     PRIVATE ${THIRD_PARTY_DIR}/grpc/third_party/protobuf/src 
     PRIVATE ${THIRD_PARTY_DIR}/libevent/include
     PRIVATE ${CMAKE_BINARY_DIR}/3rdparty/libevent/include
-    PRIVATE ${CMAKE_BINARY_DIR}/3rdparty/jsoncpp/include
+    PRIVATE ${THIRD_PARTY_DIR}/jsoncpp/include
 )
 
 foreach(_source IN ITEMS ${_source_list})

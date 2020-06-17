@@ -31,6 +31,7 @@ class Utils {
     static int64_t      NanoSecondsToMilliSeconds(int64_t t);
     static std::string  CutFilePath(const std::string& filepath);
     static std::string  URLEncode(const std::string& str);
+    static std::string  GetPlatformName();
 };
 
 }  // namespace edu

@@ -340,6 +340,7 @@ class PushSDK : public Singleton<PushSDK>,
   private:
     bool                              init_;
     uint32_t                          uid_;
+    uint64_t                          suid_;
     uint64_t                          appid_;
     uint64_t                          appkey_;
     PushSDKEventCB                    event_cb_;

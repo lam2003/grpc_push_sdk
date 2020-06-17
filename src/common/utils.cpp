@@ -127,4 +127,19 @@ std::string Utils::URLEncode(const std::string& str)
     return str_temp;
 }
 
+std::string Utils::GetPlatformName()
+{
+#ifdef _WIN32
+    return "pc";
+#elif __APPLE__
+    return "ios";
+#elif __ANDROID__
+    return "android"
+#elif __linux__
+    return "linux";
+#else
+    return "unknow";
+#endif
+}
+
 }  // namespace edu

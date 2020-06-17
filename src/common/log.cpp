@@ -11,8 +11,7 @@
 #define DEFAULT_FORMAT "[%Y-%m-%d %H:%M:%S.%e][%t][%l]%v%$"
 #define SDK_LOGGER_NAME "push_sdk"
 #define GRPC_LOGGER_NAME "grpc"
-#define GRPC_LOG_PREFIX ": {}"
-#define GRPC_LOG_PREFIX_DEBUG "[{}:{}]: (GRPC) {}"
+#define GRPC_LOG_PREFIX "[{}:{}]: (GRPC) {}"
 
 #ifdef _MSC_VER
 #    define strcasecmp stricmp
@@ -138,17 +137,17 @@ static void grpc_log_func(gpr_log_func_args* args)
 {
     switch (args->severity) {
         case GPR_LOG_SEVERITY_DEBUG:
-            _grpc_logger->Debug(GRPC_LOG_PREFIX_DEBUG,
+            _grpc_logger->Debug(GRPC_LOG_PREFIX,
                                 edu::Utils::CutFilePath(args->file), args->line,
                                 args->message);
             break;
         case GPR_LOG_SEVERITY_INFO:
-            _grpc_logger->Info(GRPC_LOG_PREFIX_DEBUG,
+            _grpc_logger->Info(GRPC_LOG_PREFIX,
                                edu::Utils::CutFilePath(args->file), args->line,
                                args->message);
             break;
         case GPR_LOG_SEVERITY_ERROR:
-            _grpc_logger->Error(GRPC_LOG_PREFIX_DEBUG,
+            _grpc_logger->Error(GRPC_LOG_PREFIX,
                                 edu::Utils::CutFilePath(args->file), args->line,
                                 args->message);
             break;

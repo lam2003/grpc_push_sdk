@@ -4,6 +4,8 @@
 
 #include <mutex>
 
+#include <elk/async_upload.h>
+
 static std::mutex    _mux;
 static volatile bool _initialized(false);
 static volatile bool _log_initialized(false);
@@ -22,12 +24,15 @@ PushSDKRetCode PushSDKInitialize(uint32_t       uid,
         return PS_RET_ALREADY_INIT;
     }
 
-    if (!_log_initialized && (ret = static_cast<PushSDKRetCode>(
-                                  init_logger(log_dir))) != PS_RET_SUCCESS) {
-        //日志库初始化失败, 不打日志
-        return ret;
+    if (!_log_initialized) {
+        if ((ret = static_cast<PushSDKRetCode>(init_logger(log_dir))) !=
+            PS_RET_SUCCESS) {
+            //日志库初始化失败, 不打日志
+            return ret;
+        }
+        edu::ELKAsyncUploader::Instance()->Initialize();
+        _log_initialized = true;
     }
-    _log_initialized = true;
 
     if (!cb_func) {
         ret = PS_RET_CB_IS_NULL;

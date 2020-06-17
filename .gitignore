@@ -6,3 +6,4 @@ build/ios/Debug*
 build/ios/Release*
 build/windows/Debug*
 build/windows/Release*
+src/repo_version.h

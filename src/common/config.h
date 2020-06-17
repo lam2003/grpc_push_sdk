@@ -3,6 +3,7 @@
 
 #include <common/singleton.h>
 
+#include <map>
 #include <string>
 #include <vector>
 
@@ -83,6 +84,18 @@ class Config : public Singleton<Config> {
     std::string elk_source = "127.0.0.1";
     // ELK encode 1代表base64，2代表URLEncode
     int elk_encode = 2;
+    // ELK upload interval
+    int elk_upload_interval_ms = 5000;
+    // ELK upload min size
+    int elk_upload_min_size = 5;
+    // ELK upload host
+    std::string elk_upload_host = "cloud-log.yy.com";
+    // ELK upload path
+    std::string elk_upload_path = "/api/log/put";
+    // ELK upload headers
+    std::map<std::string, std::string> elk_upload_headers = {
+        {"referer", "www.yy.com"},
+    };
 };
 
 }  // namespace edu

@@ -4,6 +4,7 @@
 #include <common/utils.h>
 #include <core/core.h>
 #include <core/packet.h>
+#include <elk/async_upload.h>
 
 namespace edu {
 
@@ -11,6 +12,7 @@ PushSDK::PushSDK()
 {
     init_         = false;
     uid_          = 0;
+    suid_         = 0;
     appid_        = 0;
     appkey_       = 0;
     event_cb_     = nullptr;
@@ -39,6 +41,7 @@ int PushSDK::Initialize(uint32_t       uid,
     }
 
     uid_          = uid;
+    suid_         = Utils::GetSUID(uid, get_user_terminal_type());
     appid_        = appid;
     appkey_       = appkey;
     event_cb_     = cb_func;
@@ -48,9 +51,7 @@ int PushSDK::Initialize(uint32_t       uid,
     client_->SetChannelStateListener(this->shared_from_this());
     client_->SetClientStatusListener(this->shared_from_this());
     client_->SetMessageHandler(this->shared_from_this());
-    if ((ret = client_->Initialize(
-             uid_, Utils::GetSUID(uid_, get_user_terminal_type()))) !=
-        PS_RET_SUCCESS) {
+    if ((ret = client_->Initialize(uid_, suid_)) != PS_RET_SUCCESS) {
         log_e("client create channel failed. ret={}", PS_RET_SUCCESS);
         return ret;
     }
@@ -124,7 +125,7 @@ int PushSDK::Initialize(uint32_t       uid,
 
 void PushSDK::NotifyChannelState(ChannelState state)
 {
-    log_w("channel_state={}", channel_state_to_string(state)); 
+    log_w("channel_state={}", channel_state_to_string(state));
     for (auto it = hdls_.begin(); it != hdls_.end(); it++) {
         if ((*it)->conn_state_cb) {
             (*it)->conn_state_cb(state == ChannelState::OK ?
@@ -163,7 +164,7 @@ void PushSDK::OnFinish(std::shared_ptr<PushRegReq> last_req,
         default: break;
     }
 }
-#endif 
+#endif
 
 void PushSDK::OnMessage(std::shared_ptr<PushData> msg)
 {
@@ -273,6 +274,7 @@ int PushSDK::Login(const PushSDKUserInfo& user,
 
     if (user_) {
         ret = PS_RET_ALREADY_LOGIN;
+        ELK_UPLOAD(appid_, uid_, suid_, 0, 0, "Login", ret, "sdk alreay login");
         log_w("sdk alreay login. ret={}", PS_RET_ALREADY_LOGIN);
         return ret;
     }
@@ -282,6 +284,8 @@ int PushSDK::Login(const PushSDKUserInfo& user,
         make_login_packet(uid_, appid_, appkey_, &user, now);
     if (!req) {
         ret = PS_RET_REQ_ENC_FAILED;
+        ELK_UPLOAD(appid_, uid_, suid_, 0, 0, "Login", ret,
+                   "encode login request packet failed");
         log_e("encode login request packet failed. ret={}", ret);
         return ret;
     }
@@ -299,6 +303,8 @@ int PushSDK::Login(const PushSDKUserInfo& user,
     else {
         call(PS_CB_TYPE_LOGIN, req, now, cb_func, cb_args);
     }
+
+    ELK_UPLOAD(appid_, uid_, suid_, 0, 0, "Login", ret, desc_);
 
     return ret;
 }

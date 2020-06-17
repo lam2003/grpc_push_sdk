@@ -22,15 +22,16 @@ class HttpClient {
 
     void HandleRequestCallBack(struct evhttp_request* req);
 
-    void Post(const std::string                         ip,
-              int                                       port,
-              const std::string&                        path,
-              const std::map<std::string, std::string>& headers,
-              const std::string&                        data);
+    bool Post(const std::string                         ip,
+             int                                       port,
+             const std::string&                        path,
+             const std::map<std::string, std::string>& headers,
+             const std::string&                        data);
 
   private:
     std::mutex  mux_;
     event_base* base_;
+    bool        ok_;
     bool        init_;
 };
 }  // namespace edu
