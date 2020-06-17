@@ -58,7 +58,6 @@ void ELKAsyncUploader::Initialize()
 
             if (!req.contents.empty()) {
                 std::string data     = req;
-                uint32_t    try_time = 0;
                 bool        ok       = false;
                 do {
                     if ((ok = http_client_->Post(
@@ -67,7 +66,6 @@ void ELKAsyncUploader::Initialize()
                              Config::Instance()->elk_upload_headers, data)) !=
                         true) {
                         //不丢弃数据,尝试重试
-                        log_e("elk upload failed.  try_time={}", try_time++);
                         usleep(500 * 1000);
                     }
                 } while (!ok && run_);

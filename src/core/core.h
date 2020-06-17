@@ -4,7 +4,7 @@
 #include <common/err_code.h>
 #include <common/singleton.h>
 #include <core/client.h>
-
+#include <elk/async_upload.h>
 #include <push_sdk.h>
 
 #include <condition_variable>
@@ -108,10 +108,11 @@ class PushSDK : public Singleton<PushSDK>,
     virtual void OnMessage(std::shared_ptr<PushData> msg) override;
 
   private:
-    bool        is_group_info_exists(uint64_t gtype, uint64_t gid);
-    void        remove_group_info(uint64_t gtype, uint64_t gid);
-    std::string dump_all_group_info();
-    void        remove_all_group_info();
+    bool               is_group_info_exists(uint64_t gtype, uint64_t gid);
+    void               remove_group_info(uint64_t gtype, uint64_t gid);
+    std::string        dump_all_group_info();
+    void               remove_all_group_info();
+    static std::string dump_group_info(const PushSDKGroupInfo& info);
 
     void call(PushSDKCBType               type,
               std::shared_ptr<PushRegReq> msg,

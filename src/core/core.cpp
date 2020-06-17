@@ -4,7 +4,6 @@
 #include <common/utils.h>
 #include <core/core.h>
 #include <core/packet.h>
-#include <elk/async_upload.h>
 
 namespace edu {
 
@@ -112,6 +111,36 @@ int PushSDK::Initialize(uint32_t       uid,
                 std::shared_ptr<EventCBContext>& ctx = temp_pctxs.front();
                 event_cb_(ctx->type, ctx->res, ctx->desc.c_str(),
                           event_cb_arg_);
+
+                // upload elk
+                int code = PS_RET_SUCCESS;
+                if (ctx->res == PS_CB_EVENT_TIMEOUT) {
+                    code = PS_RET_CALL_TIMEOUT;
+                }
+                else if (ctx->res != PS_CB_EVENT_OK) {
+                    code = PS_RET_CALL_FAILED;
+                }
+                else {
+                    // ignore
+                }
+
+                switch (ctx->type) {
+                    case PS_CB_TYPE_LOGIN: {
+                        ELK_UPLOAD(appid_, uid_, suid_, "", "ReLogin", code,
+                                   ctx->desc);
+                        break;
+                    }
+                    case PS_CB_TYPE_JOIN_GROUP: {
+                        user_mux_.lock();
+                        std::string str = dump_all_group_info();
+                        user_mux_.unlock();
+                        ELK_UPLOAD(appid_, uid_, suid_, str, "ReJoinGroup",
+                                   code, ctx->desc);
+                        break;
+                    }
+                    default: break;
+                }
+
                 temp_pctxs.pop_front();
             }
         }
@@ -120,6 +149,7 @@ int PushSDK::Initialize(uint32_t       uid,
     event_cb_thread_id_ = event_cb_thread_->get_id();
 
     init_ = true;
+
     return ret;
 }
 
@@ -264,6 +294,8 @@ int PushSDK::Login(const PushSDKUserInfo& user,
     int ret = PS_RET_SUCCESS;
     if (!init_) {
         ret = PS_RET_SDK_UNINIT;
+        ELK_UPLOAD(appid_, uid_, suid_, "", "Login", ret,
+                   "login before sdk initialize is illegal");
         return ret;
     }
 
@@ -274,7 +306,7 @@ int PushSDK::Login(const PushSDKUserInfo& user,
 
     if (user_) {
         ret = PS_RET_ALREADY_LOGIN;
-        ELK_UPLOAD(appid_, uid_, suid_, 0, 0, "Login", ret, "sdk alreay login");
+        ELK_UPLOAD(appid_, uid_, suid_, "", "Login", ret, "sdk alreay login");
         log_w("sdk alreay login. ret={}", PS_RET_ALREADY_LOGIN);
         return ret;
     }
@@ -284,7 +316,7 @@ int PushSDK::Login(const PushSDKUserInfo& user,
         make_login_packet(uid_, appid_, appkey_, &user, now);
     if (!req) {
         ret = PS_RET_REQ_ENC_FAILED;
-        ELK_UPLOAD(appid_, uid_, suid_, 0, 0, "Login", ret,
+        ELK_UPLOAD(appid_, uid_, suid_, "", "Login", ret,
                    "encode login request packet failed");
         log_e("encode login request packet failed. ret={}", ret);
         return ret;
@@ -304,7 +336,7 @@ int PushSDK::Login(const PushSDKUserInfo& user,
         call(PS_CB_TYPE_LOGIN, req, now, cb_func, cb_args);
     }
 
-    ELK_UPLOAD(appid_, uid_, suid_, 0, 0, "Login", ret, desc_);
+    ELK_UPLOAD(appid_, uid_, suid_, "", "Login", ret, desc_);
 
     return ret;
 }
@@ -316,6 +348,7 @@ int PushSDK::Logout(bool is_sync, PushSDKEventCB cb_func, void* cb_args)
     std::unique_lock<std::mutex> user_lock(user_mux_);
 
     if (!user_) {
+        ELK_UPLOAD(appid_, uid_, suid_, "", "Logout", ret, "ok");
         return ret;
     }
 
@@ -324,6 +357,8 @@ int PushSDK::Logout(bool is_sync, PushSDKEventCB cb_func, void* cb_args)
         make_logout_packet(uid_, appid_, appkey_, now);
     if (!req) {
         ret = PS_RET_REQ_ENC_FAILED;
+        ELK_UPLOAD(appid_, uid_, suid_, "", "Logout", ret,
+                   "encode logout request packet failed");
         log_e("encode logout request packet failed. ret={}", ret);
         return ret;
     }
@@ -340,6 +375,8 @@ int PushSDK::Logout(bool is_sync, PushSDKEventCB cb_func, void* cb_args)
         call(PS_CB_TYPE_LOGOUT, req, now, cb_func, cb_args);
     }
 
+    ELK_UPLOAD(appid_, uid_, suid_, "", "Logout", ret, desc_);
+
     return ret;
 }
 
@@ -353,11 +390,15 @@ int PushSDK::JoinGroup(const PushSDKGroupInfo& group,
     std::unique_lock<std::mutex> user_lock(user_mux_);
     if (!user_) {
         ret = PS_RET_UNLOGIN;
+        ELK_UPLOAD(appid_, uid_, suid_, dump_group_info(group), "JoinGroup",
+                   ret, "join group before login is illegal");
         return ret;
     }
 
     if (is_group_info_exists(group.gtype, group.gid)) {
         ret = PS_RET_ALREADY_JOIN_GROUP;
+        ELK_UPLOAD(appid_, uid_, suid_, dump_group_info(group), "JoinGroup",
+                   ret, "already join group");
         log_w("already join group. grouptype={}, groupid={}", group.gtype,
               group.gid);
         return ret;
@@ -368,6 +409,8 @@ int PushSDK::JoinGroup(const PushSDKGroupInfo& group,
         make_join_group_packet(uid_, group.gtype, group.gid, now);
     if (!req) {
         ret = PS_RET_REQ_ENC_FAILED;
+        ELK_UPLOAD(appid_, uid_, suid_, dump_group_info(group), "JoinGroup",
+                   ret, "encode join group request packet failed");
         log_e("encode join group request packet failed. ret={}", ret);
         return ret;
     }
@@ -384,6 +427,9 @@ int PushSDK::JoinGroup(const PushSDKGroupInfo& group,
              group.gid);
     }
 
+    ELK_UPLOAD(appid_, uid_, suid_, dump_group_info(group), "JoinGroup", ret,
+               desc_);
+
     return ret;
 }
 
@@ -397,11 +443,15 @@ int PushSDK::LeaveGroup(const PushSDKGroupInfo& group,
     std::unique_lock<std::mutex> user_lock(user_mux_);
     if (!user_) {
         ret = PS_RET_UNLOGIN;
+        ELK_UPLOAD(appid_, uid_, suid_, dump_group_info(group), "LeaveGroup",
+                   ret, "level group before login is illegal");
         return ret;
     }
 
     if (!is_group_info_exists(group.gtype, group.gid)) {
         // 未加入该组直接返回成功
+        ELK_UPLOAD(appid_, uid_, suid_, dump_group_info(group), "LeaveGroup",
+                   ret, "ok");
         return ret;
     }
 
@@ -410,6 +460,8 @@ int PushSDK::LeaveGroup(const PushSDKGroupInfo& group,
         make_leave_group_packet(uid_, group.gtype, group.gid, now);
     if (!req) {
         ret = PS_RET_REQ_ENC_FAILED;
+        ELK_UPLOAD(appid_, uid_, suid_, dump_group_info(group), "LeaveGroup",
+                   ret, "encode leave group request packet failed");
         log_e("encode leave group request packet failed. ret={}", ret);
         return ret;
     }
@@ -425,6 +477,9 @@ int PushSDK::LeaveGroup(const PushSDKGroupInfo& group,
         call(PS_CB_TYPE_LEAVE_GROUP, req, now, cb_func, cb_args, group.gtype,
              group.gid);
     }
+
+    ELK_UPLOAD(appid_, uid_, suid_, dump_group_info(group), "LeaveGroup", ret,
+               desc_);
 
     return ret;
 }
@@ -502,6 +557,9 @@ void PushSDK::relogin(bool need_to_lock)
         user_lock.unlock();
         log_e("encode login request packet failed");
         {
+            ELK_UPLOAD(appid_, uid_, suid_, "", "ReLogin",
+                       PS_RET_REQ_ENC_FAILED,
+                       "inner relogin: LoginRequest packet serialize failed");
             std::unique_lock<std::mutex> lock(event_cb_mux_);
             event_cb_pctxs_.emplace_back(std::make_shared<EventCBContext>(
                 PS_CB_TYPE_LOGIN, PS_CB_EVENT_REQ_ENC_FAILED,
@@ -537,10 +595,14 @@ void PushSDK::rejoin_group(bool need_to_lock)
         }
         user_lock.unlock();
         {
+            ELK_UPLOAD(
+                appid_, uid_, suid_, dump_str, "ReJoinGroup",
+                PS_RET_REQ_ENC_FAILED,
+                "inner rejoin group: JoinGroupRequest packet serialize failed");
             std::unique_lock<std::mutex> lock(event_cb_mux_);
             event_cb_pctxs_.emplace_back(std::make_shared<EventCBContext>(
                 PS_CB_TYPE_JOIN_GROUP, PS_CB_EVENT_REQ_ENC_FAILED,
-                "inner rejoin group : JoinGroupRequest packet serialize "
+                "inner rejoin group: JoinGroupRequest packet serialize "
                 "failed. you "
                 "should rejoin all group manually"));
             event_cb_cond_.notify_one();
@@ -575,6 +637,12 @@ void PushSDK::remove_group_info(uint64_t gtype, uint64_t gid)
             break;
         }
     }
+}
+
+std::string PushSDK::dump_group_info(const PushSDKGroupInfo& info)
+{
+    return "<" + std::to_string(info.gtype) + "," + std::to_string(info.gid) +
+           ">";
 }
 
 std::string PushSDK::dump_all_group_info()

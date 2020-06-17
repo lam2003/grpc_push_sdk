@@ -27,12 +27,30 @@ class ELKAsyncUploader : public Singleton<ELKAsyncUploader> {
         if (!run_) {
             return;
         }
-        std::unique_lock<std::mutex> mux_;
+
+        std::shared_ptr<ELKUploadItem> pitem = nullptr;
+
+        std::unique_lock<std::mutex> lock(mux_);
         queue_.emplace_back(
             std::make_shared<ELKUploadItem>(std::forward<Args>(args)...));
+
+        if (queue_.size() >
+            static_cast<size_t>(Config::Instance()->elk_upload_max_size)) {
+            // 丢弃头部的日志
+            pitem = queue_.front();
+            queue_.pop_front();
+        }
+
         if (queue_.size() >
             static_cast<size_t>(Config::Instance()->elk_upload_min_size)) {
             cond_.notify_one();
+        }
+
+        lock.unlock();
+
+        if (pitem) {
+            std::string logstr = *pitem;
+            log_w("drop elk log--> {}", logstr);
         }
     }
 

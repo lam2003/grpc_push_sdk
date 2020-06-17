@@ -27,7 +27,7 @@ class Config : public Singleton<Config> {
     std::string grpc_log_level = "trace";
 
     // sdk日志输出到控制台开关
-    bool sdk_log_on_console = true;
+    bool sdk_log_on_console = false;
     // sdk日志等级
     std::string sdk_log_level = "trace";
 
@@ -81,13 +81,15 @@ class Config : public Singleton<Config> {
     // ELK logStore
     std::string elk_log_store = "edu_sp_push_sdk_test";
     // ELK source 客户端无法拿到外网IP
-    std::string elk_source = "127.0.0.1";
+    std::string elk_source = "localhost";
     // ELK encode 1代表base64，2代表URLEncode
     int elk_encode = 2;
     // ELK upload interval
     int elk_upload_interval_ms = 5000;
     // ELK upload min size
     int elk_upload_min_size = 5;
+    // ELK upload max size
+    int elk_upload_max_size = 100;
     // ELK upload host
     std::string elk_upload_host = "cloud-log.yy.com";
     // ELK upload path

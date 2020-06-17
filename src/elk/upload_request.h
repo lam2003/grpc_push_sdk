@@ -13,12 +13,13 @@ namespace edu {
 
 class ELKUploadItem {
   public:
-    ELKUploadItem(const std::string  system_time,
-                  uint64_t           appid,
-                  uint32_t           uid,
-                  uint64_t           suid,
-                  uint64_t           gtype,
-                  uint64_t           gid,
+    ELKUploadItem(const std::string system_time,
+                  uint64_t          appid,
+                  uint32_t          uid,
+                  uint64_t          suid,
+                  // uint64_t           gtype,
+                  // uint64_t           gid,
+                  const std::string& group_info,
                   const std::string& action,
                   int                code,
                   const std::string& msg)
@@ -27,11 +28,12 @@ class ELKUploadItem {
         this->appid       = appid;
         this->uid         = uid;
         this->suid        = suid;
-        this->gtype       = gtype;
-        this->gid         = gid;
-        this->action      = action;
-        this->code        = code;
-        this->msg         = msg;
+        // this->gtype       = gtype;
+        // this->gid         = gid;
+        this->group_info = group_info;
+        this->action     = action;
+        this->code       = code;
+        this->msg        = msg;
     }
 
   public:
@@ -42,26 +44,39 @@ class ELKUploadItem {
         root["repo_version"] = REPO_VERSION;
         root["system_time"]  = system_time;
         root["appid"]        = static_cast<Json::UInt64>(appid);
-        root["gid"]          = static_cast<Json::UInt64>(gid);
-        root["gtype"]        = static_cast<Json::UInt64>(gtype);
-        root["uid"]          = uid;
-        root["suid"]         = static_cast<Json::UInt64>(suid);
-        root["action"]       = action;
-        root["code"]         = code;
-        root["msg"]          = msg;
-        root["platform"]     = Utils::GetPlatformName();
+        // root["gid"]          = static_cast<Json::UInt64>(gid);
+        // root["gtype"]        = static_cast<Json::UInt64>(gtype);
+        root["group_info"] = group_info;
+        root["uid"]        = uid;
+        root["suid"]       = static_cast<Json::UInt64>(suid);
+        root["action"]     = action;
+        root["code"]       = code;
+        root["msg"]        = msg;
+        root["platform"]   = Utils::GetPlatformName();
 
         return root;
+    }
+
+    operator std::string() 
+    {
+        Json::Value      root = *this;
+        std::string      str;
+        Json::FastWriter w;
+
+        str = w.write(root);
+
+        return str.substr(0, str.size() - 1);
     }
 
   public:
     std::string system_time;
 
-    uint64_t    appid;
-    uint32_t    uid;
-    uint64_t    suid;
-    uint64_t    gid;
-    uint64_t    gtype;
+    uint64_t appid;
+    uint32_t uid;
+    uint64_t suid;
+    // uint64_t    gid;
+    // uint64_t    gtype;
+    std::string group_info;
     std::string action;
     int         code;
     std::string msg;
