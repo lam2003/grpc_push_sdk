@@ -16,9 +16,11 @@ def call(command, shell=False):
 
 platform = sys.argv[3]
 
+# call("brew upgrade go", True)
 # call("brew upgrade cmake", True)
-call("go version", True)
 call("which go", True)
+call("go version", True)
+
 call("git submodule update --init --recursive", True)
 if platform.lower() == 'ios':
     call("cd build/ios/ && chmod +x ./build_ios.py && ./build_ios.py", True)
