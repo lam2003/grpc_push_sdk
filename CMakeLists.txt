@@ -11,6 +11,9 @@ cmake_policy(SET CMP0063 NEW)
 # cmake_policy(SET CMP0077 NEW)
 # cmake_policy(SET CMP0091 NEW)
 
+# ios构建系统查找go
+find_program(GO_EXECUTABLE go PATHS /usr/local/bin)
+
 if(NOT WIN32)
     add_compile_options(-fvisibility=hidden -fPIC)
 else()
