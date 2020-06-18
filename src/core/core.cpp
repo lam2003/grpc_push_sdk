@@ -249,8 +249,8 @@ void PushSDK::Destroy()
         throw std::runtime_error("trying to join itself");
     }
 
-    event_cb_thread_quit_flag_ = true;
     event_cb_mux_.lock();
+    event_cb_thread_quit_flag_ = true;
     event_cb_cond_.notify_all();
     event_cb_mux_.unlock();
 
@@ -258,8 +258,8 @@ void PushSDK::Destroy()
     event_cb_thread_.reset();
     event_cb_thread_ = nullptr;
 
-    run_ = false;
     cb_map_mux_.lock();
+    run_ = false;
     cb_map_cond_.notify_all();
     cb_map_mux_.unlock();
 
@@ -542,10 +542,10 @@ void PushSDK::AddConnStateCBToHandler(Handler* hdl, PushSDKConnStateCB cb)
     }
 }
 
-void PushSDK::relogin(bool need_to_lock)
+void PushSDK::relogin(bool need_to_lock, bool is_timeout)
 {
     std::unique_lock<std::mutex> user_lock(user_mux_);
-    if (!user_ || logining_) {
+    if (!user_ || (logining_ && !is_timeout)) {
         return;
     }
 
@@ -831,10 +831,9 @@ void PushSDK::handle_timeout_response(std::shared_ptr<CallContext> ctx)
 {
     switch (ctx->type) {
         case PS_CB_TYPE_LOGIN: {
-            logining_ = false;
             log_w("login timeout");
             if (ctx->is_retry) {
-                relogin(false);
+                relogin(false, true);
             }
             break;
         }

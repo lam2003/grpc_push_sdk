@@ -134,7 +134,7 @@ class PushSDK : public Singleton<PushSDK>,
                 const std::string&           desc,
                 int                          code);
 
-    void relogin(bool need_to_lock = true);
+    void relogin(bool need_to_lock = true, bool is_timeout = false);
     void rejoin_group(bool need_to_lock = true);
 
     void handle_timeout_response(std::shared_ptr<CallContext> ctx);
@@ -348,8 +348,8 @@ class PushSDK : public Singleton<PushSDK>,
     void*                             event_cb_arg_;
     std::shared_ptr<Client>           client_;
     std::unique_ptr<std::thread>      thread_;
-    std::atomic<bool>                 run_;
-    std::atomic<bool>                 logining_;
+    bool                              run_;
+    bool                              logining_;
     std::string                       desc_;
     int                               code_;
     std::multimap<uint64_t, uint64_t> groups_;
@@ -369,7 +369,7 @@ class PushSDK : public Singleton<PushSDK>,
     std::condition_variable                     event_cb_cond_;
     std::mutex                                  event_cb_mux_;
     std::thread::id                             event_cb_thread_id_;
-    std::atomic<bool>                           event_cb_thread_quit_flag_;
+    bool                                        event_cb_thread_quit_flag_;
 };
 
 }  // namespace edu

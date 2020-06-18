@@ -14,9 +14,9 @@ ELKAsyncUploader::ELKAsyncUploader()
 ELKAsyncUploader::~ELKAsyncUploader()
 {
     if (run_) {
-        run_ = false;
         {
             std::unique_lock<std::mutex> lock(mux_);
+            run_ = false;
             cond_.notify_all();
         }
         thread_->join();
@@ -57,8 +57,8 @@ void ELKAsyncUploader::Initialize()
             }
 
             if (!req.contents.empty()) {
-                std::string data     = req;
-                bool        ok       = false;
+                std::string data = req;
+                bool        ok   = false;
                 do {
                     if ((ok = http_client_->Post(
                              Config::Instance()->elk_upload_host, 80,
