@@ -12,5 +12,13 @@ def call(command, shell=False):
     if res != 0:
         sys.exit(-1)
 
+platform = sys.argv[3]
 
-call("git submodule update --init --recursive",True)
+call("git submodule update --init --recursive", True)
+
+if platform.lower() == 'ios':
+    call("cd build/ios/ && chmod +x ./build_ios.py && ./build_ios.py", True)
+
+
+
+
