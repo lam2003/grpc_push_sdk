@@ -9,16 +9,17 @@ import multiprocessing
 
 def call(command, shell=False):
     print('calling:', str(command))
-    res = subprocess.call(command, shell=shell)
-    if res != 0:
-        sys.exit(-1)
+    subprocess.call(command, shell=shell)
+    # if res != 0:
+    # sys.exit(-1)
 
 
 platform = sys.argv[3]
 
-# call("brew upgrade go", True)
-# call("brew upgrade cmake", True)
-call("which go", True)
+call("brew install go", True)
+call("brew upgrade go", True)
+call("brew install cmake", True)
+call("brew upgrade cmake", True)
 call("go version", True)
 
 call("git submodule update --init --recursive", True)
