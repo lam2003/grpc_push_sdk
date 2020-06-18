@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.9.1)
+cmake_minimum_required(VERSION 3.15)
 
 project(push_sdk)
 
@@ -6,14 +6,9 @@ cmake_policy(SET CMP0042 NEW)
 cmake_policy(SET CMP0048 NEW)
 cmake_policy(SET CMP0054 NEW)
 cmake_policy(SET CMP0063 NEW)
-# ios构建系统不支持
-# cmake_policy(SET CMP0074 NEW)
-# cmake_policy(SET CMP0077 NEW)
-# cmake_policy(SET CMP0091 NEW)
-
-# ios构建系统查找go
-set(GO_EXECUTABLE /usr/local/bin/go)
-
+cmake_policy(SET CMP0074 NEW)
+cmake_policy(SET CMP0077 NEW)
+cmake_policy(SET CMP0091 NEW)
 
 if(NOT WIN32)
     add_compile_options(-fvisibility=hidden -fPIC)

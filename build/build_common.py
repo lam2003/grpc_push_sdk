@@ -50,7 +50,8 @@ def build(target):
     call(['cmake',
           '--build', BUILD_DIR,
           '--target', target,
-          '--config', BUILD_MODE
+          '--config', BUILD_MODE,
+          '--parallel', str(multiprocessing.cpu_count())
           ], shell=False)
 
 

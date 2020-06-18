@@ -18,7 +18,7 @@ arch_list = ['arm64',
              ]
 build_mode = ['Debug', 'Release']
 
-# deployment_target = '10.9'
+deployment_target = '8.0'
 generator = 'Unix Makefiles'
 
 for mode in build_mode:
@@ -37,15 +37,7 @@ for mode in build_mode:
     event_core_libs = []
     jsoncpp_libs = []
 
-    cmake_toolchain_path = ''
     for arch in arch_list:
-        if arch == 'x86_64':
-            cmake_toolchain_path = os.path.abspath(
-                '../../cmake/ios.simulator.toolchain.cmake')
-        else:
-            cmake_toolchain_path = os.path.abspath(
-                '../../cmake/ios.toolchain.cmake')
-
         libs_dir = os.path.abspath('../../out/lib/ios/' + mode)
         set_build_folder_name(mode+'_'+arch)
 
@@ -56,9 +48,10 @@ for mode in build_mode:
         cmake_cmd = ['cmake',
                      '-B',
                      BUILD_DIR,
-                     '-DCMAKE_SYSTEM_NAME=Darwin',
+                     '-DCMAKE_SYSTEM_NAME=iOS',
+                     '-DAPPLE_IOS=YES',
+                     '-DCMAKE_OSX_DEPLOYMENT_TARGET=' + deployment_target,
                      '-DCMAKE_OSX_ARCHITECTURES=' + arch,
-                     '-DCMAKE_TOOLCHAIN_FILE='+cmake_toolchain_path,
                      '-Dprotobuf_BUILD_PROTOC_BINARIES=OFF',
                      '-DgRPC_BUILD_CODEGEN=OFF',
                      '-DCARES_INSTALL=OFF',
