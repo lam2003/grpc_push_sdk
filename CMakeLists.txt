@@ -20,6 +20,7 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake)
 
 include(windows_support)
 
+set(GO_EXECUTABLE /usr/local/bin/go)
 set(gRPC_BUILD_CSHARP_EXT OFF)
 set(protobuf_BUILD_TESTS OFF)
 set(BENCHMARK_ENABLE_LTO:BOOL OFF)
