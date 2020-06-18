@@ -57,6 +57,7 @@ for mode in build_mode:
                      '-B',
                      BUILD_DIR,
                      '-DAPPLE_IOS=YES',
+                     '-DCMAKE_SYSTEM_NAME=Darwin',
                      '-DCMAKE_OSX_DEPLOYMENT_TARGET=' + deployment_target,
                      '-DCMAKE_OSX_ARCHITECTURES=' + arch,
                      '-DCMAKE_TOOLCHAIN_FILE='+cmake_toolchain_path,
