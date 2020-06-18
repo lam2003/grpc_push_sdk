@@ -18,7 +18,7 @@ arch_list = ['arm64',
              ]
 build_mode = ['Debug', 'Release']
 
-deployment_target = '10.4'
+deployment_target = '10.15'
 generator = 'Unix Makefiles'
 
 for mode in build_mode:
