@@ -48,7 +48,7 @@ for mode in build_mode:
         cmake_cmd = ['cmake',
                      '-B',
                      BUILD_DIR,
-                     '-DCMAKE_SYSTEM_NAME=iOS',
+                    #  '-DCMAKE_SYSTEM_NAME=iOS',
                      '-DAPPLE_IOS=YES',
                      '-DCMAKE_OSX_DEPLOYMENT_TARGET=' + deployment_target,
                      '-DCMAKE_OSX_ARCHITECTURES=' + arch,
