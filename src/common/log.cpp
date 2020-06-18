@@ -13,10 +13,6 @@
 #define GRPC_LOGGER_NAME "grpc"
 #define GRPC_LOG_PREFIX "[{}:{}]: (GRPC) {}"
 
-#ifdef _MSC_VER
-#    define strcasecmp stricmp
-#    define strncasecmp strnicmp
-#endif
 
 namespace edu {
 
@@ -57,7 +53,7 @@ void Log::SetOutputDir(const std::string& dir)
     }
 
     std::string s;
-    if (dir != "" && dir.find_last_of('/') == dir.length() - 1) {
+    if (dir != "" && dir.find_last_of(OS_SEGMENT) == dir.length() - 1) {
         s = dir.substr(0, dir.length() - 1);
     }
     else {
@@ -107,7 +103,7 @@ int Log::Initialize()
 
     if (dir_ != "") {
         std::ostringstream oss;
-        oss << dir_ << "/" << Utils::GetSystemTime(logger_name_ + "-%Y-%m-%d")
+        oss << dir_ << OS_SEGMENT << Utils::GetSystemTime(logger_name_ + "-%Y-%m-%d")
             << ".log";
         file_logger_ = spdlog::basic_logger_mt(logger_name_ + "_f", oss.str());
         if (!file_logger_) {

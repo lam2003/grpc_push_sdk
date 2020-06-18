@@ -5,6 +5,17 @@
 
 #include <string>
 
+#ifdef _WIN32
+#    define OS_SEGMENT "\\"
+#else
+#    define OS_SEGMENT "/"
+#endif
+
+#ifdef _MSC_VER
+#    define strcasecmp stricmp
+#    define strncasecmp strnicmp
+#endif
+
 namespace edu {
 
 enum class TerminalType {

@@ -81,7 +81,7 @@ int64_t Utils::NanoSecondsToMilliSeconds(int64_t t)
 
 std::string Utils::CutFilePath(const std::string& filepath)
 {
-    size_t pos = filepath.rfind("/");
+    size_t pos = filepath.rfind(OS_SEGMENT);
     if (pos != std::string::npos) {
         return filepath.substr(pos + 1);
     }
