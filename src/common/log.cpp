@@ -13,7 +13,6 @@
 #define GRPC_LOGGER_NAME "grpc"
 #define GRPC_LOG_PREFIX "[{}:{}]: (GRPC) {}"
 
-
 namespace edu {
 
 Log::Log(const std::string& name)
@@ -103,8 +102,8 @@ int Log::Initialize()
 
     if (dir_ != "") {
         std::ostringstream oss;
-        oss << dir_ << OS_SEGMENT << Utils::GetSystemTime(logger_name_ + "-%Y-%m-%d")
-            << ".log";
+        oss << dir_ << OS_SEGMENT
+            << Utils::GetSystemTime(logger_name_ + "-%Y-%m-%d") << ".log";
         file_logger_ = spdlog::basic_logger_mt(logger_name_ + "_f", oss.str());
         if (!file_logger_) {
             return PS_RET_INIT_LOG_FAILED;
@@ -166,20 +165,22 @@ int init_logger(const std::string& log_dir)
             return ret;
         }
 
-        // initializing grpc logger
-        _grpc_logger = new edu::Log(GRPC_LOGGER_NAME);
-        _grpc_logger->LogOnConsole(
-            edu::Config::Instance()->grpc_log_on_console);
-        _grpc_logger->SetOutputDir(log_dir);
-        _grpc_logger->SetLogLevel(edu::Config::Instance()->grpc_log_level);
-        if ((ret = _grpc_logger->Initialize()) != PS_RET_SUCCESS) {
-            return ret;
-        }
+        if (edu::Config::Instance()->sdk_log_enable_grpc) {
+            // initializing grpc logger
+            _grpc_logger = new edu::Log(GRPC_LOGGER_NAME);
+            _grpc_logger->LogOnConsole(
+                edu::Config::Instance()->grpc_log_on_console);
+            _grpc_logger->SetOutputDir(log_dir);
+            _grpc_logger->SetLogLevel(edu::Config::Instance()->grpc_log_level);
+            if ((ret = _grpc_logger->Initialize()) != PS_RET_SUCCESS) {
+                return ret;
+            }
 
-        // 让grpc输出最低等级日志,用日志函数进行过滤
-        gpr_set_log_verbosity(GPR_LOG_SEVERITY_DEBUG);
-        gpr_log_verbosity_init();
-        gpr_set_log_function(&grpc_log_func);
+            // 让grpc输出最低等级日志,用日志函数进行过滤
+            gpr_set_log_verbosity(GPR_LOG_SEVERITY_DEBUG);
+            gpr_log_verbosity_init();
+            gpr_set_log_function(&grpc_log_func);
+
 #if 0 
         grpc_tracer_set_enabled("subchannel", 1);
         grpc_tracer_set_enabled("client_channel_routing", 1);
@@ -199,6 +200,7 @@ int init_logger(const std::string& log_dir)
         grpc_tracer_set_enabled("cares_address_sorting", 1);
         grpc_tracer_set_enabled("round_robin", 1);
 #endif
+        }
     }
     catch (std::exception& e) {
         ret = PS_RET_INIT_LOG_FAILED;

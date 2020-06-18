@@ -30,6 +30,8 @@ class Config : public Singleton<Config> {
     bool sdk_log_on_console = true;
     // sdk日志等级
     std::string sdk_log_level = "trace";
+    // 是否开启grpc log
+    bool sdk_log_enable_grpc = true;
 
     // front_envoy 域名
     std::string front_envoy_host = "183.36.117.51";
@@ -45,6 +47,8 @@ class Config : public Singleton<Config> {
     bool sdk_log_on_console = false;
     // sdk日志等级
     std::string sdk_log_level = "trace";
+    // 是否开启grpc log
+    bool sdk_log_enable_grpc = true;
 
     // front_envoy 域名
     std::string front_envoy_host = "front.100.com";
