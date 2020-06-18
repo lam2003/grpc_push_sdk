@@ -56,7 +56,7 @@ for mode in build_mode:
         cmake_cmd = ['cmake',
                      '-B',
                      BUILD_DIR,
-                     '-DAPPLE_IOS=YES',
+                    #  '-DAPPLE_IOS=YES',
                      '-DCMAKE_SYSTEM_NAME=Darwin',
                     #  '-DCMAKE_OSX_DEPLOYMENT_TARGET=' + deployment_target,
                      '-DCMAKE_OSX_ARCHITECTURES=' + arch,
