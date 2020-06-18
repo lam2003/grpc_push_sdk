@@ -18,7 +18,7 @@ arch_list = ['arm64',
              ]
 build_mode = ['Debug', 'Release']
 
-deployment_target = '10.9'
+# deployment_target = '10.9'
 generator = 'Unix Makefiles'
 
 for mode in build_mode:
@@ -58,7 +58,7 @@ for mode in build_mode:
                      BUILD_DIR,
                      '-DAPPLE_IOS=YES',
                      '-DCMAKE_SYSTEM_NAME=Darwin',
-                     '-DCMAKE_OSX_DEPLOYMENT_TARGET=' + deployment_target,
+                    #  '-DCMAKE_OSX_DEPLOYMENT_TARGET=' + deployment_target,
                      '-DCMAKE_OSX_ARCHITECTURES=' + arch,
                      '-DCMAKE_TOOLCHAIN_FILE='+cmake_toolchain_path,
                      '-Dprotobuf_BUILD_PROTOC_BINARIES=OFF',
