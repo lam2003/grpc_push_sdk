@@ -18,7 +18,7 @@ arch_list = ['arm64',
              ]
 build_mode = ['Debug', 'Release']
 
-deployment_target = '10.15'
+deployment_target = '11'
 generator = 'Unix Makefiles'
 
 for mode in build_mode:
@@ -48,7 +48,7 @@ for mode in build_mode:
         cmake_cmd = ['cmake',
                      '-B',
                      BUILD_DIR,
-                    #  '-DCMAKE_SYSTEM_NAME=Darwin',
+                     '-DCMAKE_SYSTEM_NAME=Darwin',
                      '-DAPPLE_IOS=YES',
                      '-DCMAKE_OSX_DEPLOYMENT_TARGET=' + deployment_target,
                      '-DCMAKE_OSX_ARCHITECTURES=' + arch,
