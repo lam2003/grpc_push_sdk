@@ -16,6 +16,7 @@ def call(command, shell=False):
 
 platform = sys.argv[3]
 
+call("which go", True)
 call("git submodule update --init --recursive", True)
 
 if platform.lower() == 'ios':
