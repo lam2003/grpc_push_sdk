@@ -13,4 +13,4 @@ def call(command, shell=False):
         sys.exit(-1)
 
 
-call("submodule update --init --recursive")
+call("git submodule update --init --recursive",True)
