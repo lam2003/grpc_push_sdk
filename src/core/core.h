@@ -288,30 +288,30 @@ class PushSDK : public Singleton<PushSDK>,
     };
 
   private:
-    bool                              init_;
-    uint32_t                          uid_;
-    uint64_t                          suid_;
-    uint64_t                          appid_;
-    uint64_t                          appkey_;
-    PushSDKEventCB                    event_cb_;
-    void*                             event_cb_arg_;
-    std::shared_ptr<Client>           client_;
-    std::unique_ptr<std::thread>      thread_;
-    bool                              run_;
-    bool                              logining_;
-    std::string                       desc_;
-    int                               code_;
-    std::multimap<uint64_t, uint64_t> groups_;
+    bool                    init_;
+    uint32_t                uid_;
+    uint64_t                suid_;
+    uint64_t                appid_;
+    uint64_t                appkey_;
+    PushSDKEventCB          event_cb_;
+    void*                   event_cb_arg_;
+    std::shared_ptr<Client> client_;
+    bool                    logining_;
+    std::string             desc_;
+    int                     code_;
 
     std::vector<Handler*> hdls_;
     std::mutex            hdls_mux_;
 
-    std::unique_ptr<PushSDKUserInfo> user_;
-    std::mutex                       user_mux_;
+    std::unique_ptr<PushSDKUserInfo>  user_;
+    std::multimap<uint64_t, uint64_t> groups_;
+    std::mutex                        user_mux_;
 
+    std::unique_ptr<std::thread>                    cb_map_thread_;
     std::map<int64_t, std::shared_ptr<CallContext>> cb_map_;
-    std::mutex                                      cb_map_mux_;
     std::condition_variable                         cb_map_cond_;
+    std::mutex                                      cb_map_mux_;
+    bool                                            cb_map_thread_quit_flag_;
 
     std::unique_ptr<std::thread>                event_cb_thread_;
     std::deque<std::shared_ptr<EventCBContext>> event_cb_pctxs_;

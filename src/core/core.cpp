@@ -17,12 +17,17 @@ PushSDK::PushSDK()
     event_cb_     = nullptr;
     event_cb_arg_ = nullptr;
     client_       = nullptr;
-    thread_       = nullptr;
-    run_          = false;
     logining_     = false;
     desc_         = "ok";
     code_         = RES_SUCCESS;
-    user_         = nullptr;
+
+    user_                    = nullptr;
+    
+    cb_map_thread_           = nullptr;
+    cb_map_thread_quit_flag_ = true;
+
+    event_cb_thread_           = nullptr;
+    event_cb_thread_quit_flag_ = true;
 }
 
 int PushSDK::Initialize(uint32_t       uid,
@@ -55,19 +60,19 @@ int PushSDK::Initialize(uint32_t       uid,
         return ret;
     }
 
-    run_    = true;
-    thread_ = std::unique_ptr<std::thread>(new std::thread([this]() {
-        while (run_) {
+    cb_map_thread_quit_flag_ = false;
+    cb_map_thread_ = std::unique_ptr<std::thread>(new std::thread([this]() {
+        while (!cb_map_thread_quit_flag_) {
             {
                 std::unique_lock<std::mutex> lock(cb_map_mux_);
 
-                if (run_) {
+                if (!cb_map_thread_quit_flag_) {
                     cb_map_cond_.wait_for(
                         lock,
                         std::chrono::milliseconds(
                             Config::Instance()->call_check_timeout_interval));
                 }
-                if (!run_) {
+                if (cb_map_thread_quit_flag_) {
                     return;
                 }
             }
@@ -233,13 +238,13 @@ void PushSDK::Destroy()
     event_cb_thread_ = nullptr;
 
     cb_map_mux_.lock();
-    run_ = false;
+    cb_map_thread_quit_flag_ = true;
     cb_map_cond_.notify_all();
     cb_map_mux_.unlock();
 
-    thread_->join();
-    thread_.reset();
-    thread_ = nullptr;
+    cb_map_thread_->join();
+    cb_map_thread_.reset();
+    cb_map_thread_ = nullptr;
 
     event_cb_pctxs_.clear();
 
