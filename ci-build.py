@@ -7,21 +7,30 @@ import subprocess
 import multiprocessing
 
 
-def call(command, shell=False):
-    print('calling:', str(command))
+def call_ignore_error(command, shell=False):
+    print('############################ call_ignore_error:', str(command))
     subprocess.call(command, shell=shell)
-    # if res != 0:
-    # sys.exit(-1)
+
+
+def call(command, shell=False):
+    print('############################ call:', str(command))
+    res = subprocess.call(command, shell=shell)
+    if res != 0:
+        sys.exit(-1)
 
 
 platform = sys.argv[3]
+output_dir = sys.argv[7]
 
-call("brew install go", True)
-call("brew upgrade go", True)
-call("brew install cmake", True)
-call("brew upgrade cmake", True)
-call("go version", True)
+
+print("('############################ output_dir:",str(output_dir))
+
+call_ignore_error("brew install go", True)
+call_ignore_error("brew upgrade go", True)
+call_ignore_error("brew install cmake", True)
+call_ignore_error("brew upgrade cmake", True)
 
 call("git submodule update --init --recursive", True)
 if platform.lower() == 'ios':
-    call("cd build/ios/ && chmod +x ./build_ios.py && ./build_ios.py", True)
+    call(
+        "cd build/ios/ && chmod +x ./build_ios.py && ./build_ios.py", True)
