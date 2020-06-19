@@ -8,12 +8,12 @@ import multiprocessing
 
 
 def call_ignore_error(command, shell=False):
-    print('############################ call_ignore_error:', str(command))
+    print('call_ignore_error:', str(command))
     subprocess.call(command, shell=shell)
 
 
 def call(command, shell=False):
-    print('############################ call:', str(command))
+    print('call:', str(command))
     res = subprocess.call(command, shell=shell)
     if res != 0:
         sys.exit(-1)
@@ -23,7 +23,7 @@ platform = sys.argv[3]
 output_dir = sys.argv[7]
 
 
-print("('############################ output_dir:",str(output_dir))
+print('output_dir:',str(output_dir))
 
 call_ignore_error("brew install go", True)
 call_ignore_error("brew upgrade go", True)
