@@ -76,9 +76,9 @@ class Client : public std::enable_shared_from_this<Client> {
     void send_all_msgs();
 
   public:
-    std::unique_ptr<grpc::CompletionQueue> cq;
-    std::unique_ptr<Stub>                  stub;
-    std::shared_ptr<grpc::Channel>         channel;
+    std::unique_ptr<grpc_impl::CompletionQueue> cq;
+    std::unique_ptr<Stub>                       stub;
+    std::shared_ptr<grpc_impl::Channel>         channel;
 
   private:
     std::unique_ptr<Stream>               st_;

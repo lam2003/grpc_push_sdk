@@ -20,11 +20,17 @@
 #include <grpcpp/impl/codegen/stub_options.h>
 #include <grpcpp/impl/codegen/sync_stream.h>
 
-namespace grpc {
+namespace grpc_impl {
 class CompletionQueue;
-class Channel;
 class ServerCompletionQueue;
 class ServerContext;
+}  // namespace grpc_impl
+
+namespace grpc {
+namespace experimental {
+template <typename RequestT, typename ResponseT>
+class MessageAllocator;
+}  // namespace experimental
 }  // namespace grpc
 
 namespace grpc {
@@ -71,7 +77,13 @@ class PushGateway final {
       virtual void PushRegister(::grpc::ClientContext* context, ::grpc::experimental::ClientBidiReactor< ::grpc::push::gateway::PushRegReq,::grpc::push::gateway::PushData>* reactor) = 0;
       // server
       virtual void PushDataToClient(::grpc::ClientContext* context, const ::grpc::push::gateway::PushToClientReq* request, ::grpc::push::gateway::PushToClientResp* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void PushDataToClient(::grpc::ClientContext* context, const ::grpc::ByteBuffer* request, ::grpc::push::gateway::PushToClientResp* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void PushDataToClient(::grpc::ClientContext* context, const ::grpc::push::gateway::PushToClientReq* request, ::grpc::push::gateway::PushToClientResp* response, ::grpc::experimental::ClientUnaryReactor* reactor) = 0;
+      virtual void PushDataToClient(::grpc::ClientContext* context, const ::grpc::ByteBuffer* request, ::grpc::push::gateway::PushToClientResp* response, ::grpc::experimental::ClientUnaryReactor* reactor) = 0;
       virtual void PushDataToGroup(::grpc::ClientContext* context, const ::grpc::push::gateway::PushToGroupReq* request, ::grpc::push::gateway::PushToGroupResp* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void PushDataToGroup(::grpc::ClientContext* context, const ::grpc::ByteBuffer* request, ::grpc::push::gateway::PushToGroupResp* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void PushDataToGroup(::grpc::ClientContext* context, const ::grpc::push::gateway::PushToGroupReq* request, ::grpc::push::gateway::PushToGroupResp* response, ::grpc::experimental::ClientUnaryReactor* reactor) = 0;
+      virtual void PushDataToGroup(::grpc::ClientContext* context, const ::grpc::ByteBuffer* request, ::grpc::push::gateway::PushToGroupResp* response, ::grpc::experimental::ClientUnaryReactor* reactor) = 0;
     };
     virtual class experimental_async_interface* experimental_async() { return nullptr; }
   private:
@@ -114,7 +126,13 @@ class PushGateway final {
      public:
       void PushRegister(::grpc::ClientContext* context, ::grpc::experimental::ClientBidiReactor< ::grpc::push::gateway::PushRegReq,::grpc::push::gateway::PushData>* reactor) override;
       void PushDataToClient(::grpc::ClientContext* context, const ::grpc::push::gateway::PushToClientReq* request, ::grpc::push::gateway::PushToClientResp* response, std::function<void(::grpc::Status)>) override;
+      void PushDataToClient(::grpc::ClientContext* context, const ::grpc::ByteBuffer* request, ::grpc::push::gateway::PushToClientResp* response, std::function<void(::grpc::Status)>) override;
+      void PushDataToClient(::grpc::ClientContext* context, const ::grpc::push::gateway::PushToClientReq* request, ::grpc::push::gateway::PushToClientResp* response, ::grpc::experimental::ClientUnaryReactor* reactor) override;
+      void PushDataToClient(::grpc::ClientContext* context, const ::grpc::ByteBuffer* request, ::grpc::push::gateway::PushToClientResp* response, ::grpc::experimental::ClientUnaryReactor* reactor) override;
       void PushDataToGroup(::grpc::ClientContext* context, const ::grpc::push::gateway::PushToGroupReq* request, ::grpc::push::gateway::PushToGroupResp* response, std::function<void(::grpc::Status)>) override;
+      void PushDataToGroup(::grpc::ClientContext* context, const ::grpc::ByteBuffer* request, ::grpc::push::gateway::PushToGroupResp* response, std::function<void(::grpc::Status)>) override;
+      void PushDataToGroup(::grpc::ClientContext* context, const ::grpc::push::gateway::PushToGroupReq* request, ::grpc::push::gateway::PushToGroupResp* response, ::grpc::experimental::ClientUnaryReactor* reactor) override;
+      void PushDataToGroup(::grpc::ClientContext* context, const ::grpc::ByteBuffer* request, ::grpc::push::gateway::PushToGroupResp* response, ::grpc::experimental::ClientUnaryReactor* reactor) override;
      private:
       friend class Stub;
       explicit experimental_async(Stub* stub): stub_(stub) { }
@@ -247,6 +265,12 @@ class PushGateway final {
                    return this->PushDataToClient(context, request, response, controller);
                  }));
     }
+    void SetMessageAllocatorFor_PushDataToClient(
+        ::grpc::experimental::MessageAllocator< ::grpc::push::gateway::PushToClientReq, ::grpc::push::gateway::PushToClientResp>* allocator) {
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::grpc::push::gateway::PushToClientReq, ::grpc::push::gateway::PushToClientResp>*>(
+          ::grpc::Service::experimental().GetHandler(1))
+              ->SetMessageAllocator(allocator);
+    }
     ~ExperimentalWithCallbackMethod_PushDataToClient() override {
       BaseClassMustBeDerivedFromService(this);
     }
@@ -271,6 +295,12 @@ class PushGateway final {
                  ::grpc::experimental::ServerCallbackRpcController* controller) {
                    return this->PushDataToGroup(context, request, response, controller);
                  }));
+    }
+    void SetMessageAllocatorFor_PushDataToGroup(
+        ::grpc::experimental::MessageAllocator< ::grpc::push::gateway::PushToGroupReq, ::grpc::push::gateway::PushToGroupResp>* allocator) {
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::grpc::push::gateway::PushToGroupReq, ::grpc::push::gateway::PushToGroupResp>*>(
+          ::grpc::Service::experimental().GetHandler(2))
+              ->SetMessageAllocator(allocator);
     }
     ~ExperimentalWithCallbackMethod_PushDataToGroup() override {
       BaseClassMustBeDerivedFromService(this);
