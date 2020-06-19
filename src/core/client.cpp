@@ -25,6 +25,7 @@ Client::Client()
     init_               = false;
     thread_             = nullptr;
     run_                = false;
+    going_to_quit_      = false;
     channel_state_lis_  = nullptr;
     msg_hdl_            = nullptr;
     stream_status_lis_  = nullptr;
@@ -124,10 +125,12 @@ void Client::create_channel_and_stub(bool need_to_change_port)
 
 void Client::create_and_init_stream()
 {
+    stream_mux_.lock();
     assert(stub);
     st_ = std::unique_ptr<Stream>(new Stream(shared_from_this()));
     assert(st_);
     st_->Init();
+    stream_mux_.unlock();
 }
 
 void Client::check_and_notify_channel_state()
@@ -201,22 +204,18 @@ int Client::Initialize(uint32_t uid, uint64_t suid)
     last_heartbeat_ts_ = 0;
     uid_               = uid;
     suid_              = suid;
-
-    run_ = true;
+    run_               = true;
+    going_to_quit_     = false;
 
     thread_ = std::unique_ptr<std::thread>(new std::thread([this]() {
-        bool         going_to_quit = false;
-        gpr_timespec tw            = gpr_time_from_millis(
+        gpr_timespec tw = gpr_time_from_millis(
             Config::Instance()->grpc_cq_timeout_ms, GPR_TIMESPAN);
         grpc::CompletionQueue::NextStatus status;
         ClientEvent                       event;
         bool                              ok;
 
         create_channel_and_stub();
-
-        stream_mux_.lock();
         create_and_init_stream();
-        stream_mux_.unlock();
 
         while (run_) {
             status = cq->AsyncNext(reinterpret_cast<void**>(&event), &ok, tw);
@@ -257,18 +256,20 @@ int Client::Initialize(uint32_t uid, uint64_t suid)
                         }
 #endif
 
-                        if (going_to_quit) {
+                        if (going_to_quit_) {
                             run_ = false;
                             continue;
                         }
 
+                        lock.unlock();
                         check_and_reconnect();
                         create_and_init_stream();
+                        
                         continue;
                     }
                     else if (event == ClientEvent::HALF_CLOSE) {
                         st_->Finish();
-                        going_to_quit = true;
+                        continue;
                     }
 
                     if (!ok && st_->IsConnected()) {
@@ -304,8 +305,9 @@ void Client::Send(std::shared_ptr<PushRegReq> req)
 void Client::Destroy()
 {
     stream_mux_.lock();
-    if (st_ && !st_->HalfClose()) {
-        run_ = false;
+    going_to_quit_ = true;
+    if (st_) {
+        st_->HalfClose();
     }
     stream_mux_.unlock();
 

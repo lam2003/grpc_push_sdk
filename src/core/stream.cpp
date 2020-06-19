@@ -47,14 +47,11 @@ void Stream::Init()
 
 void Stream::Process(ClientEvent event, bool ok)
 {
-    std::unique_lock<std::mutex> lock(mux_);
-
     switch (event) {
         case ClientEvent::CONNECTED: {
             rw_->Read(push_data_.get(),
                       reinterpret_cast<void*>(ClientEvent::READ_DONE));
             status_ = StreamStatus::READY_TO_WRITE;
-            lock.unlock();
 
             if (ok) {
                 log_t("CONNECTED");
@@ -65,7 +62,6 @@ void Stream::Process(ClientEvent event, bool ok)
         case ClientEvent::READ_DONE: {
             rw_->Read(push_data_.get(),
                       reinterpret_cast<void*>(ClientEvent::READ_DONE));
-            lock.unlock();
 
             log_t("READ_DONE");
             PushData*                 p = new PushData(*push_data_.get());
@@ -77,7 +73,6 @@ void Stream::Process(ClientEvent event, bool ok)
         case ClientEvent::WRITE_DONE: {
             if (msg_queue_.empty()) {
                 status_ = StreamStatus::READY_TO_WRITE;
-                lock.unlock();
                 log_t("WRITE_DONE");
             }
             else {
@@ -100,8 +95,6 @@ void Stream::Process(ClientEvent event, bool ok)
 
 void Stream::Send(std::shared_ptr<PushRegReq> req)
 {
-    std::unique_lock<std::mutex> lock(mux_);
-
     msg_queue_.emplace_back(req);
 
     if (status_ == StreamStatus::READY_TO_WRITE) {
@@ -117,8 +110,6 @@ void Stream::Send(std::shared_ptr<PushRegReq> req)
 
 void Stream::SendMsgs(std::deque<std::shared_ptr<PushRegReq>>& msgs)
 {
-    std::unique_lock<std::mutex> lock(mux_);
-
     for (auto it = msgs.begin(); it != msgs.end(); it++) {
         msg_queue_.emplace_back(*it);
     }
@@ -181,26 +172,22 @@ std::shared_ptr<PushRegReq> Stream::LastRequest()
 }
 #endif
 
-bool Stream::HalfClose()
+void Stream::HalfClose()
 {
-    std::unique_lock<std::mutex> lock(mux_);
-
     if (status_ == StreamStatus::WAIT_CONNECT ||
         status_ == StreamStatus::FINISHED ||
         status_ == StreamStatus::HALF_CLOSE) {
-        return false;
+        return;
     }
 
     rw_->WritesDone(reinterpret_cast<void*>(ClientEvent::HALF_CLOSE));
     status_ = StreamStatus::HALF_CLOSE;
     log_t("HALF_CLOSE");
-    return true;
+    return;
 }
 
 void Stream::Finish()
 {
-    std::unique_lock<std::mutex> lock(mux_);
-
     if (status_ == StreamStatus::WAIT_CONNECT ||
         status_ == StreamStatus::FINISHED) {
         return;

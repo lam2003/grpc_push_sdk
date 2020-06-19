@@ -27,7 +27,7 @@ class Stream {
 #ifdef USE_ON_FINISH
     virtual std::shared_ptr<PushRegReq> LastRequest();
 #endif
-    virtual bool HalfClose();
+    virtual void HalfClose();
 
   private:
     std::shared_ptr<Client>              client_;
@@ -39,7 +39,6 @@ class Stream {
 #ifdef USE_ON_FINISH
     std::shared_ptr<PushRegReq> last_req_;
 #endif
-    std::mutex                              mux_;
     std::deque<std::shared_ptr<PushRegReq>> msg_queue_;
 };
 
