@@ -9,3 +9,7 @@
 	path = 3rdparty/jsoncpp
 	url = https://github.com/open-source-parsers/jsoncpp.git
 	branch = 0.y.z
+[submodule "3rdparty/grpc"]
+	path = 3rdparty/grpc
+	url = https://github.com/grpc/grpc.git
+	branch = v1.22.x
