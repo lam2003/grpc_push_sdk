@@ -1,9 +1,17 @@
-#### 依赖git submodule
-- [grpc  v1.19.x](https://github.com/grpc/grpc/tree/v1.19.x)
-- [spdlog  v1.x](https://github.com/gabime/spdlog/tree/v1.x)
+# 信令平台ServiceMesh推送SDK
 
-git递归拉取submodule代码
-```
-git clone https://git.yy.com/opensource/100edu-platform/push_sdk.git master 
-git submodule update --init --recursive
-```
+## 依赖
+
+- [GRPC  v1.22.x](https://github.com/grpc/grpc/tree/v1.22.x)
+- [spdlog  v1.x](https://github.com/gabime/spdlog/tree/v1.x)
+- [jsoncpp  0.y.z](https://github.com/open-source-parsers/jsoncpp/tree/0.y.z)
+- [libevent master](https://github.com/libevent/libevent.git)
+
+
+## 跨平台
+
+目前支持iOS/Windows/Linux跨平台
+
+## 构建
+
+本项目使用[构建系统]( "构建系统")进行构建
