@@ -14,4 +14,4 @@
 
 ## 构建
 
-本项目使用[构建系统]( "构建系统")进行构建
+本项目使用[构建系统](https://ci.yy.com/jenkins2/view/ios_cross-lib/job/EduPushSDK-ios/ "构建系统")进行构建
