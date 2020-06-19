@@ -19,18 +19,28 @@ def call(command, shell=False):
         sys.exit(-1)
 
 
+def makedirs(dir):
+    if not os.path.isdir(dir):
+        os.makedirs(dir)
+
+
 platform = sys.argv[3]
 output_dir = sys.argv[7]
 
 
-print('output_dir:',str(output_dir))
+# call_ignore_error("brew install go", True)
+# call_ignore_error("brew upgrade go", True)
+# call_ignore_error("brew install cmake", True)
+# call_ignore_error("brew upgrade cmake", True)
 
-call_ignore_error("brew install go", True)
-call_ignore_error("brew upgrade go", True)
-call_ignore_error("brew install cmake", True)
-call_ignore_error("brew upgrade cmake", True)
+# call("git submodule update --init --recursive", True)
+# if platform.lower() == 'ios':
+#     call(
+#         "cd build/ios/ && chmod +x ./build_ios.py && ./build_ios.py", True)
 
-call("git submodule update --init --recursive", True)
-if platform.lower() == 'ios':
-    call(
-        "cd build/ios/ && chmod +x ./build_ios.py && ./build_ios.py", True)
+makedirs(output_dir)
+makedirs("./out")
+print("################################# output_dir:", output_dir)
+
+copycmd = 'zip -r ' + str(output_dir) + '/out.zip ' + './out/*'
+call(copycmd, True)
