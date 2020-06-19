@@ -101,10 +101,6 @@ class PushSDK : public Singleton<PushSDK>,
 
     virtual void NotifyChannelState(ChannelState state) override;
     virtual void OnConnected() override;
-#ifdef USE_ON_FINISH
-    virtual void OnFinish(std::shared_ptr<PushRegReq> last_req,
-                          grpc::Status                status) override;
-#endif
     virtual void OnMessage(std::shared_ptr<PushData> msg) override;
 
   private:
@@ -230,53 +226,6 @@ class PushSDK : public Singleton<PushSDK>,
             // ignore
         }
     }
-#ifdef USE_ON_FINISH
-    template <typename T1, typename T2>
-    void on_finish(std::shared_ptr<PushRegReq> last_req, grpc::Status status)
-    {
-        T1 req;
-        assert(req.ParseFromString(last_req->msgdata()));
-
-        int64_t ts = 0;
-        try {
-            ts = std::stoll(req.context());
-        }
-        catch (std::exception& e) {
-            ts = 0;
-        }
-
-        std::shared_ptr<CallContext> ctx;
-
-        {
-            std::unique_lock<std::mutex> lock(cb_map_mux_);
-            if (ts == 0) {
-                // 这个回复属于客户端重新发送登出、离组请求，直接返回
-                return;
-            }
-            else if (cb_map_.find(ts) == cb_map_.end()) {
-                return;
-            }
-            else {
-                ctx = cb_map_[ts];
-                cb_map_.erase(ts);
-            }
-        }
-
-        T2 res;
-        res.set_errmsg(status.error_message());
-        res.set_rescode(status.error_code());
-        if (status.error_code() != grpc::StatusCode::OK) {
-            handle_failed_response<T2>(res, ctx);
-            notify(ctx, PS_CB_EVENT_FAILED, res.errmsg().c_str(),
-                   res.rescode());
-        }
-        else {
-            handle_success_response<T2>(ctx);
-            notify(ctx, PS_CB_EVENT_OK, "ok", 0);
-        }
-    }
-
-#endif
 
     template <typename T> void handle_response(std::shared_ptr<PushData> msg)
     {

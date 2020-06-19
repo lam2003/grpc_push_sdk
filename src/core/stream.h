@@ -24,21 +24,15 @@ class Stream {
     virtual bool IsConnected();
     virtual bool IsReadyToSend();
     virtual grpc::Status GrpcStatus();
-#ifdef USE_ON_FINISH
-    virtual std::shared_ptr<PushRegReq> LastRequest();
-#endif
-    virtual void HalfClose();
+    virtual void         HalfClose();
 
   private:
-    std::shared_ptr<Client>              client_;
-    std::shared_ptr<grpc::ClientContext> ctx_;
-    std::unique_ptr<PushData>            push_data_;
-    std::unique_ptr<RW>                  rw_;
-    StreamStatus                         status_;
-    grpc::Status                         grpc_status_;
-#ifdef USE_ON_FINISH
-    std::shared_ptr<PushRegReq> last_req_;
-#endif
+    std::shared_ptr<Client>                 client_;
+    std::shared_ptr<grpc::ClientContext>    ctx_;
+    std::unique_ptr<PushData>               push_data_;
+    std::unique_ptr<RW>                     rw_;
+    StreamStatus                            status_;
+    grpc::Status                            grpc_status_;
     std::deque<std::shared_ptr<PushRegReq>> msg_queue_;
 };
 

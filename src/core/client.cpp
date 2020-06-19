@@ -247,15 +247,6 @@ int Client::Initialize(uint32_t uid, uint64_t suid)
                     }
 
                     if (event == ClientEvent::FINISHED) {
-
-#ifdef USE_ON_FINISH
-                        if (stream_status_lis_ &&
-                            st_->LastRequest() != nullptr) {
-                            stream_status_lis_->OnFinish(st_->LastRequest(),
-                                                         st_->GrpcStatus());
-                        }
-#endif
-
                         if (going_to_quit_) {
                             run_ = false;
                             continue;
@@ -264,7 +255,7 @@ int Client::Initialize(uint32_t uid, uint64_t suid)
                         lock.unlock();
                         check_and_reconnect();
                         create_and_init_stream();
-                        
+
                         continue;
                     }
                     else if (event == ClientEvent::HALF_CLOSE) {
